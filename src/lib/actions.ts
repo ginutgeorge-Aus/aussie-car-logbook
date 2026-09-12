@@ -18,7 +18,11 @@ export async function saveVehicleAction(_prev: ActionResult, fd: FormData): Prom
 export async function createTripAction(_prev: ActionResult, fd: FormData): Promise<ActionResult> {
   const parsed = parseTripForm(fd);
   if (!parsed.ok) return { ok: false, fieldErrors: parsed.fieldErrors };
-  await createTrip(parsed.value);
+  try {
+    await createTrip(parsed.value);
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
   revalidatePath("/trips");
   revalidatePath("/");
   return { ok: true };
@@ -27,7 +31,11 @@ export async function createTripAction(_prev: ActionResult, fd: FormData): Promi
 export async function updateTripAction(id: number, _prev: ActionResult, fd: FormData): Promise<ActionResult> {
   const parsed = parseTripForm(fd);
   if (!parsed.ok) return { ok: false, fieldErrors: parsed.fieldErrors };
-  await updateTrip(id, parsed.value);
+  try {
+    await updateTrip(id, parsed.value);
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
   revalidatePath("/trips");
   revalidatePath("/");
   return { ok: true };
