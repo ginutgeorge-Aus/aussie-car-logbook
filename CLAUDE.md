@@ -17,6 +17,8 @@ Package manager is **pnpm, invoked via corepack** (`pnpm` is not always on PATH)
 | `corepack pnpm dev` | Run app locally (:3000) |
 | `corepack pnpm build` | Production build (also the CI + typecheck gate) |
 | `corepack pnpm test` | Vitest — the tax-engine correctness gate |
+| `corepack pnpm test <path>` | Run one test file (e.g. `... test src/lib/tax/dates.test.ts`) |
+| `corepack pnpm test -t "<name>"` | Run tests matching a name |
 | `corepack pnpm exec tsc --noEmit` | Typecheck only |
 | `corepack pnpm drizzle-kit generate` | Generate a D1 migration from schema |
 | `corepack pnpm db:local` / `db:seed` | Apply migrations + fake seed to local D1 |
