@@ -3,6 +3,7 @@ import { getVehicle } from "@/lib/data/vehicle";
 import { listTrips } from "@/lib/data/trip";
 import { filterTripsByFy, fyBusinessPct } from "@/lib/logbook/compute";
 import { financialYear } from "@/lib/tax";
+import { todayIso } from "@/lib/today";
 import { FySwitcher } from "@/components/FySwitcher";
 import { TripForm } from "@/components/TripForm";
 import { TripRow } from "@/components/TripRow";
@@ -21,7 +22,7 @@ export default async function TripsPage({ searchParams }: PageProps<"/trips">) {
   }
 
   const trips = await listTrips();
-  const currentFy = financialYear(new Date().toISOString().slice(0, 10)).label;
+  const currentFy = financialYear(todayIso()).label;
   const sp = await searchParams;
   const activeFy = typeof sp.fy === "string" ? sp.fy : currentFy;
 

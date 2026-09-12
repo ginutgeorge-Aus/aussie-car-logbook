@@ -12,7 +12,7 @@ export async function saveVehicleAction(_prev: ActionResult, fd: FormData): Prom
   await upsertVehicle(parsed.value);
   revalidatePath("/");
   revalidatePath("/vehicle");
-  return { ok: true };
+  return { ok: true, saved: true };
 }
 
 export async function createTripAction(_prev: ActionResult, fd: FormData): Promise<ActionResult> {

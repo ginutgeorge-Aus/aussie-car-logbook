@@ -3,6 +3,7 @@ import { getVehicle } from "@/lib/data/vehicle";
 import { listTrips } from "@/lib/data/trip";
 import { fyBusinessPct } from "@/lib/logbook/compute";
 import { financialYear } from "@/lib/tax";
+import { todayIso } from "@/lib/today";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,7 @@ export default async function Home() {
   }
 
   const trips = await listTrips();
-  const fyLabel = financialYear(new Date().toISOString().slice(0, 10)).label;
+  const fyLabel = financialYear(todayIso()).label;
   const pct = fyBusinessPct(trips, fyLabel);
 
   return (

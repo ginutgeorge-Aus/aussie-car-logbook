@@ -27,7 +27,7 @@ export type ParseResult<T> =
   | { ok: false; fieldErrors: Record<string, string> };
 
 export type ActionResult =
-  | { ok: true }
+  | { ok: true; saved?: boolean }
   | { ok: false; error?: string; fieldErrors?: Record<string, string> };
 
 export type { TripLeg };

@@ -51,7 +51,7 @@ export function VehicleForm({ vehicle }: { vehicle: VehicleRow | null }) {
       <button type="submit" disabled={pending} className="rounded bg-black text-white px-4 py-2 disabled:opacity-50">
         {pending ? "Saving…" : "Save vehicle"}
       </button>
-      {state.ok && !pending ? <p className="text-sm text-green-600">Saved.</p> : null}
+      {state.ok && state.saved && !pending ? <p className="text-sm text-green-600">Saved.</p> : null}
     </form>
   );
 }
