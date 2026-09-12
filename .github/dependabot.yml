@@ -1,0 +1,40 @@
+version: 2
+updates:
+  # App dependencies (pnpm uses the npm ecosystem).
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      next-ecosystem:
+        patterns:
+          - "next"
+          - "@opennextjs/*"
+      react-ecosystem:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+      drizzle-ecosystem:
+        patterns:
+          - "drizzle-orm"
+          - "drizzle-kit"
+      cloudflare-ecosystem:
+        patterns:
+          - "wrangler"
+          - "@cloudflare/*"
+
+  # Keep GitHub Actions versions current + patched.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns:
+          - "*"
