@@ -15,14 +15,14 @@ jobs:
     name: Test + Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # corepack activates the pinned pnpm from package.json#packageManager,
       # and makes the `pnpm` shim available for setup-node's cache.
       - name: Enable corepack
         run: corepack enable
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
