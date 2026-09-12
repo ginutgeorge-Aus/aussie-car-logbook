@@ -1,0 +1,17 @@
+{
+  "project": "Ginoo's Log Book",
+  "description": "TBD — scope on first card",
+  "version": "0.1",
+  "stack": {
+    "framework": "TBD",
+    "language": "TBD"
+  },
+  "keyFiles": {},
+  "conventions": {
+    "imports": "@/ alias → src/"
+  },
+  "mcp": {
+    "codegraph": "structural queries — callers, callees, impact, explore",
+    "context7": "library docs"
+  }
+}
