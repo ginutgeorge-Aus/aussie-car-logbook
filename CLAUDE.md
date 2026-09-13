@@ -51,15 +51,17 @@ Repo is public. **Never commit** secrets, `account_id`/`database_id`, personal d
 - Real tax data lives only in the user's own D1/R2 — never in the repo.
 - **Drizzle migrations are versioned, forward-only, non-destructive** (data survives upgrades). Add a backup step before a major upgrade.
 - Work on a `feat|fix|chore/<slug>` branch (a guard hook blocks direct edits on the default branch).
+- `main` is branch-protected on GitHub: **PRs required** (CI + CodeQL + gitleaks must pass), **squash-merge only**, linear history, merged branches auto-deleted. See [CONTRIBUTING.md](CONTRIBUTING.md); report vulns privately per [SECURITY.md](SECURITY.md).
 
 ## Where things live
 
 | Path | What |
 |------|------|
 | `docs/superpowers/plans/` | Implementation plans (Plan 1 = foundation + tax engine) |
+| `docs/ocr.md` | Receipt OCR (Workers AI vision → expense-form pre-fill) design + flow |
 | `src/lib/tax/` | Pure tax functions + colocated `*.test.ts` |
 | `src/db/schema.ts`, `src/db/migrations/` | Drizzle schema + generated SQL |
 | `.superpowers/sdd/progress.md` | Subagent-driven execution ledger (git-ignored scratch) |
-| `.claude/rules/` | Path-scoped rules (being adapted from the Prisma template to Drizzle/D1) |
+| `.claude/rules/` | Path-scoped rules — auto-load when you open matching files (tax-engine, database, data-model, server-actions, auth, cloudflare, security, testing, e2e) |
 
 Slice roadmap: Foundation+TaxEngine → Vehicles/Logbook UI → Expenses/OCR → Reports → Auth → PWA polish → Release infra.
