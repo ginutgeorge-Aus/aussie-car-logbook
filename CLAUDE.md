@@ -60,8 +60,9 @@ Repo is public. **Never commit** secrets, `account_id`/`database_id`, personal d
 | `docs/superpowers/plans/` | Implementation plans (Plan 1 = foundation + tax engine) |
 | `docs/ocr.md` | Receipt OCR (Workers AI vision → expense-form pre-fill) design + flow |
 | `src/lib/tax/` | Pure tax functions + colocated `*.test.ts` |
+| `src/lib/reports/` | Pure FY-report aggregation (`buildFyReport` → BAS quarters + annual deduction) composing `src/lib/tax` |
 | `src/db/schema.ts`, `src/db/migrations/` | Drizzle schema + generated SQL |
 | `.superpowers/sdd/progress.md` | Subagent-driven execution ledger (git-ignored scratch) |
-| `.claude/rules/` | Path-scoped rules — auto-load when you open matching files (tax-engine, database, data-model, server-actions, auth, cloudflare, security, testing, e2e) |
+| `.claude/rules/` | Path-scoped rules — auto-load when you open matching files (tax-engine, database, data-model, server-actions, auth, cloudflare, security, testing) |
 
 Slice roadmap: Foundation+TaxEngine → Vehicles/Logbook UI → Expenses/OCR → Reports → Auth → PWA polish → Release infra.
