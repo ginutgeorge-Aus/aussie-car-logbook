@@ -6,9 +6,12 @@ import { upsertVehicle } from "@/lib/data/vehicle";
 import { createTrip, updateTrip, deleteTrip } from "@/lib/data/trip";
 import type { ActionResult } from "@/lib/logbook/types";
 import { parseExpenseForm } from "@/lib/expenses/parse";
-import { putReceipt } from "@/lib/data/receipts";
+import { putReceipt, assertReceiptFile } from "@/lib/data/receipts";
 import { createExpense, updateExpense, deleteExpense } from "@/lib/data/expense";
 import { getVehicle } from "@/lib/data/vehicle";
+import { runReceiptOcr } from "@/lib/data/ocr";
+import { parseOcrResult } from "@/lib/ocr/parse";
+import type { OcrActionResult } from "@/lib/ocr/types";
 
 export async function saveVehicleAction(_prev: ActionResult, fd: FormData): Promise<ActionResult> {
   const parsed = parseVehicleForm(fd);
@@ -105,5 +108,27 @@ export async function deleteExpenseAction(fd: FormData): Promise<void> {
     await deleteExpense(id);
     revalidatePath("/expenses");
     revalidatePath("/");
+  }
+}
+
+export async function scanReceiptAction(
+  _prev: OcrActionResult,
+  fd: FormData,
+): Promise<OcrActionResult> {
+  const file = fileFrom(fd);
+  if (!file) return { ok: false, error: "Pick a receipt first." };
+  try {
+    assertReceiptFile(file);
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+  if (file.type === "image/heic") {
+    return { ok: false, error: "Scan isn't available for HEIC images — enter details manually." };
+  }
+  try {
+    const raw = await runReceiptOcr(file);
+    return { ok: true, value: parseOcrResult(raw) };
+  } catch {
+    return { ok: false, error: "Couldn't read the receipt. Enter details manually." };
   }
 }
