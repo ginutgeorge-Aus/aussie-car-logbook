@@ -35,8 +35,13 @@ function fullYear(y: number): number {
   return y < 100 ? 2000 + y : y;
 }
 
+function daysInMonth(y: number, mo: number): number {
+  // mo is 1-indexed; day 0 of month `mo` (0-indexed) is the last day of the 1-indexed month `mo`.
+  return new Date(y, mo, 0).getDate();
+}
+
 function toIso(y: number, mo: number, d: number): string | null {
-  if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  if (mo < 1 || mo > 12 || d < 1 || d > daysInMonth(y, mo)) return null;
   return `${y}-${pad(mo)}-${pad(d)}`;
 }
 

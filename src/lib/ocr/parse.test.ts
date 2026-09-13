@@ -70,4 +70,12 @@ describe("parseOcrResult", () => {
     expect(parseOcrResult([1, 2, 3])).toEqual(ALL_NULL);
     expect(parseOcrResult({ unrelated: "key" })).toEqual(ALL_NULL);
   });
+
+  it("rejects calendar-invalid days (month- and leap-aware)", () => {
+    expect(parseOcrResult({ date: "31/04/2026" }).dateISO).toBeNull();
+    expect(parseOcrResult({ date: "30/02/2026" }).dateISO).toBeNull();
+    expect(parseOcrResult({ date: "29/02/2025" }).dateISO).toBeNull();
+    expect(parseOcrResult({ date: "29/02/2024" }).dateISO).toBe("2024-02-29");
+    expect(parseOcrResult({ date: "2026-04-31" }).dateISO).toBeNull();
+  });
 });
