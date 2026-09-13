@@ -1,5 +1,5 @@
 import { expect, test, describe, it } from "vitest";
-import { CAR_LIMIT_CENTS, carLimitFor, diminishingValue, depreciationForFy, EFFECTIVE_LIFE_YEARS } from "@/lib/tax/depreciation";
+import { carLimitFor, diminishingValue, depreciationForFy, EFFECTIVE_LIFE_YEARS } from "@/lib/tax/depreciation";
 
 test("car limit lookup by FY", () => {
   expect(carLimitFor("2024-25")).toBe(6967400);
