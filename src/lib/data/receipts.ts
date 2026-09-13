@@ -7,18 +7,22 @@ async function bucket(): Promise<R2Bucket> {
   return env.RECEIPTS;
 }
 
-function extFromType(type: string): string {
-  if (type === "image/jpeg") return "jpg";
-  if (type === "image/png") return "png";
-  if (type === "image/webp") return "webp";
-  if (type === "image/heic") return "heic";
-  return "bin";
-}
+// Allowlist of raster image types only. SVG is deliberately excluded: an
+// image/svg+xml object can carry inline <script> that executes when the
+// receipt route serves it same-origin (stored XSS). Only these types are
+// accepted and, in turn, ever set as the served Content-Type.
+const ALLOWED_TYPES: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/heic": "heic",
+};
 
 export async function putReceipt(vehicleId: number, file: File): Promise<string> {
-  if (!file.type.startsWith("image/")) throw new Error("Receipt must be an image.");
+  const ext = ALLOWED_TYPES[file.type];
+  if (!ext) throw new Error("Receipt must be a JPEG, PNG, WebP, or HEIC image.");
   if (file.size > MAX_BYTES) throw new Error("Receipt image is too large (max 10 MB).");
-  const key = `receipts/${vehicleId}/${crypto.randomUUID()}.${extFromType(file.type)}`;
+  const key = `receipts/${vehicleId}/${crypto.randomUUID()}.${ext}`;
   const b = await bucket();
   await b.put(key, await file.arrayBuffer(), { httpMetadata: { contentType: file.type } });
   return key;
