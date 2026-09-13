@@ -1,0 +1,55 @@
+name: Bug report
+description: Something is broken or behaves incorrectly
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Security issue?** Do not file it here — see [SECURITY.md](../../security/policy).
+        **Never paste secrets, real tax data, or receipt images.**
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What went wrong, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to ...
+        2. Click ...
+        3. See error
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version / tag or commit
+      placeholder: "v0.2.0 or commit sha"
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Expenses / receipts
+        - Receipt OCR
+        - Logbook / vehicles
+        - Reports (BAS / income tax)
+        - Tax calculations
+        - Auth / Cloudflare Access
+        - Deploy / build
+        - Other
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Environment
+      description: Browser, device, self-host vs local dev. Redact anything sensitive.
+    validations:
+      required: false
