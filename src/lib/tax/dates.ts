@@ -36,3 +36,26 @@ export function basQuarter(dateISO: string) {
   const [startISO, endISO] = ranges[quarter];
   return { quarter, startISO, endISO, label: `Q${quarter} ${fy.label}` };
 }
+
+export function fyQuarters(fyLabel: string) {
+  const startYear = Number(fyLabel.slice(0, 4));
+  const endYear = startYear + 1;
+  const ranges: Array<{ quarter: 1 | 2 | 3 | 4; startISO: string; endISO: string }> = [
+    { quarter: 1, startISO: `${startYear}-07-01`, endISO: `${startYear}-09-30` },
+    { quarter: 2, startISO: `${startYear}-10-01`, endISO: `${startYear}-12-31` },
+    { quarter: 3, startISO: `${endYear}-01-01`, endISO: `${endYear}-03-31` },
+    { quarter: 4, startISO: `${endYear}-04-01`, endISO: `${endYear}-06-30` },
+  ];
+  return ranges.map((r) => ({ ...r, label: `Q${r.quarter} ${fyLabel}` }));
+}
+
+export function daysHeldInFy(dateISO: string, fyLabel: string): number {
+  const startYear = Number(fyLabel.slice(0, 4));
+  const fyStartISO = `${startYear}-07-01`;
+  const fyEndISO = `${startYear + 1}-06-30`;
+  if (dateISO > fyEndISO) return 0;
+  const startISO = dateISO < fyStartISO ? fyStartISO : dateISO;
+  const start = new Date(startISO + "T00:00:00Z").getTime();
+  const end = new Date(fyEndISO + "T00:00:00Z").getTime();
+  return Math.round((end - start) / 86400000) + 1; // inclusive
+}
