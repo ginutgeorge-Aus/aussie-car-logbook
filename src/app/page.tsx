@@ -69,9 +69,10 @@ export default async function Home() {
         </div>
         <p className="mt-2 text-xs text-zinc-400">Estimate only — full reports come later.</p>
       </section>
-      <div className="flex gap-3">
+      <div className="flex gap-3 flex-wrap">
         <Link href="/trips" className="rounded bg-black text-white px-4 py-2">Manage trips</Link>
         <Link href="/expenses" className="rounded bg-black text-white px-4 py-2">Manage expenses</Link>
+        <Link href="/reports" className="rounded bg-black text-white px-4 py-2">Reports</Link>
       </div>
     </main>
   );

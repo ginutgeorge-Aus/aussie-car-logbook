@@ -36,7 +36,7 @@ export default async function TripsPage({ searchParams }: PageProps<"/trips">) {
         <h1 className="text-2xl font-semibold">Trips</h1>
         <Link href="/" className="text-sm underline">Dashboard</Link>
       </div>
-      <FySwitcher fyLabels={fyLabels} active={activeFy} />
+      <FySwitcher fyLabels={fyLabels} active={activeFy} basePath="/trips" />
       <p className="my-4 text-sm text-zinc-600">Business use — FY {activeFy}: <span className="font-semibold">{pct}%</span></p>
       <TripForm />
       {fyTrips.length === 0 ? (
