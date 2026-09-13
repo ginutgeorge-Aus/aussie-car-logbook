@@ -18,10 +18,18 @@ const ALLOWED_TYPES: Record<string, string> = {
   "image/heic": "heic",
 };
 
+export function assertReceiptFile(file: File): void {
+  if (!ALLOWED_TYPES[file.type]) {
+    throw new Error("Receipt must be a JPEG, PNG, WebP, or HEIC image.");
+  }
+  if (file.size > MAX_BYTES) {
+    throw new Error("Receipt image is too large (max 10 MB).");
+  }
+}
+
 export async function putReceipt(vehicleId: number, file: File): Promise<string> {
+  assertReceiptFile(file);
   const ext = ALLOWED_TYPES[file.type];
-  if (!ext) throw new Error("Receipt must be a JPEG, PNG, WebP, or HEIC image.");
-  if (file.size > MAX_BYTES) throw new Error("Receipt image is too large (max 10 MB).");
   const key = `receipts/${vehicleId}/${crypto.randomUUID()}.${ext}`;
   const b = await bucket();
   await b.put(key, await file.arrayBuffer(), { httpMetadata: { contentType: file.type } });
