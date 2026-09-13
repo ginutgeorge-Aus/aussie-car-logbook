@@ -20,6 +20,11 @@ export async function GET(
     headers: {
       "Content-Type": object.httpMetadata?.contentType ?? "application/octet-stream",
       "Cache-Control": "private, max-age=3600",
+      // Defence-in-depth against a mislabelled/hostile stored object executing
+      // as script when opened same-origin: stop MIME sniffing and sandbox the
+      // response so no script/plugin can run even if the type is wrong.
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "default-src 'none'; sandbox; style-src 'unsafe-inline'",
     },
   });
 }
