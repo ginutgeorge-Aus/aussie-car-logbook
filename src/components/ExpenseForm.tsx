@@ -87,6 +87,10 @@ export function ExpenseForm() {
         <input name="vendor" value={vendor} onChange={(e) => setVendor(e.target.value)} className="border rounded px-2 py-1" />
       </label>
       <label className="flex flex-col gap-1">
+        <span className="text-sm">Notes</span>
+        <input name="notes" className="border rounded px-2 py-1" />
+      </label>
+      <label className="flex flex-col gap-1">
         <span className="text-sm">Receipt</span>
         <input ref={fileRef} name="receipt" type="file" accept="image/*" capture="environment" onChange={(e) => setHasFile(!!e.target.files?.length)} className="text-sm" />
       </label>
