@@ -53,4 +53,16 @@ describe("depreciationForFy", () => {
   it("exports an 8-year effective life default", () => {
     expect(EFFECTIVE_LIFE_YEARS).toBe(8);
   });
+
+  // Purchase 2024-07-01 for $40,000, rolled to FY2027-28 which contains the
+  // leap day 2028-02-29 (366-day FY). Chain of full-year diminishing declines:
+  //   FY24-25 (365d): open 4000000, decline 1000000 -> close 3000000
+  //   FY25-26 (365d): decline 750000 -> close 2250000
+  //   FY26-27 (365d): decline 562500 -> close 1687500
+  //   FY27-28 (366d): round(1687500 * 0.25 * 366/365) = 423031  (would be 421875 if 365 were used)
+  it("uses actual (366) days for a later leap financial year", () => {
+    expect(
+      depreciationForFy({ purchaseCostCents: 4000000, purchaseDateISO: "2024-07-01", fyLabel: "2027-28" }),
+    ).toBe(423031);
+  });
 });

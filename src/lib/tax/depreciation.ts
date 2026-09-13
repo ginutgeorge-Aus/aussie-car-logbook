@@ -42,7 +42,7 @@ export function depreciationForFy(input: {
   let opening = Math.min(purchaseCostCents, carLimitFor(purchaseFy));
   for (let sy = purchaseStartYear; sy <= targetStartYear; sy++) {
     const label = `${sy}-${String(sy + 1).slice(2)}`;
-    const daysHeld = sy === purchaseStartYear ? daysHeldInFy(purchaseDateISO, label) : 365;
+    const daysHeld = daysHeldInFy(purchaseDateISO, label);
     const decline = diminishingValue({ openingValueCents: opening, daysHeld, effectiveLifeYears });
     const closing = Math.max(0, opening - decline);
     if (sy === targetStartYear) return opening - closing;
