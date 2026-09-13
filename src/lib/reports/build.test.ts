@@ -66,4 +66,32 @@ describe("buildFyReport", () => {
     expect(r.annual.depreciationDeductionCents).toBe(0);
     expect(r.notices).toEqual([]);
   });
+
+  it("excludes expenses outside the target FY from every figure", () => {
+    const trips = [trip({ odoStart: 0, odoEnd: 100, isBusiness: true })]; // 100% business, FY 2024-25
+    const expenses = [
+      expense({ id: 1, date: "2024-08-01", category: "fuel", amountInclCents: 11000, gstCents: 1000 }), // in FY 2024-25
+      expense({ id: 2, date: "2024-05-01", category: "fuel", amountInclCents: 55000, gstCents: 5000 }), // FY 2023-24 — must be ignored
+    ];
+    const r = buildFyReport({ trips, expenses, vehicle: null, settings: { gstRegistered: true }, fyLabel: "2024-25" });
+
+    expect(r.bas.totalGstCreditCents).toBe(1000); // only the in-FY $10 GST, not $50
+    expect(r.annual.runningCostsDeductionCents).toBe(10000); // 11000 - 1000, out-of-FY excluded
+    expect(r.annual.byCategory).toEqual([{ category: "fuel", totalInclCents: 11000 }]);
+  });
+
+  it("aggregates expense totals per category within the FY", () => {
+    const trips = [trip({ odoStart: 0, odoEnd: 100, isBusiness: true })];
+    const expenses = [
+      expense({ id: 1, date: "2024-08-01", category: "fuel", amountInclCents: 11000 }),
+      expense({ id: 2, date: "2024-09-01", category: "fuel", amountInclCents: 22000 }),
+      expense({ id: 3, date: "2024-10-01", category: "rego", amountInclCents: 33000 }),
+    ];
+    const r = buildFyReport({ trips, expenses, vehicle: null, settings: { gstRegistered: true }, fyLabel: "2024-25" });
+
+    expect(r.annual.byCategory).toEqual([
+      { category: "fuel", totalInclCents: 33000 }, // 11000 + 22000
+      { category: "rego", totalInclCents: 33000 },
+    ]);
+  });
 });
