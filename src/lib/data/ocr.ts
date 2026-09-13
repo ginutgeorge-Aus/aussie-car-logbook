@@ -16,5 +16,8 @@ export async function runReceiptOcr(file: File): Promise<unknown> {
     ],
     image: bytes,
   } as never);
-  return (res as { response?: unknown }).response ?? res;
+  // Different Workers AI models place the generated text under different keys:
+  // chat models use `response`, this vision model uses `result`, LLaVA uses `description`.
+  const r = res as { response?: unknown; result?: unknown; description?: unknown };
+  return r.response ?? r.result ?? r.description ?? res;
 }

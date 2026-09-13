@@ -23,3 +23,6 @@ and never auto-saves.
 - HEIC images can be uploaded and saved but **cannot be scanned** (the vision model
   expects JPEG/PNG/WebP); the button reports this and manual entry still works.
 - Any AI/parse failure degrades silently to manual entry.
+- GST: OCR fills the GST field only when a GST/tax line is printed on the receipt. If
+  none is printed, the field is left blank and the form auto-computes GST as 1/11 of the
+  total on save — tick **GST-free** for a genuinely non-GST vendor so no GST is claimed.

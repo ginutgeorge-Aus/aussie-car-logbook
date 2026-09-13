@@ -47,7 +47,13 @@ export function ExpenseForm() {
         }
         if (v.vendor) setVendor(v.vendor);
         if (v.category) setCategory(v.category);
-        setScanMsg("AI-filled — check every field before saving.");
+        const filledAny =
+          !!v.dateISO || v.amountInclCents != null || v.gstCents != null || !!v.vendor || !!v.category;
+        setScanMsg(
+          filledAny
+            ? "AI-filled — check every field before saving."
+            : "Couldn't read any fields — enter details manually.",
+        );
       } else {
         setScanMsg(res.error);
       }
