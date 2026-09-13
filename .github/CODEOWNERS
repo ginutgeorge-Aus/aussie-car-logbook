@@ -1,0 +1,11 @@
+# Every change is owned by the maintainer by default.
+* @ginutgeorge-Aus
+
+# Tax engine is the correctness core — pure, unit-tested, change test-first.
+/src/lib/tax/ @ginutgeorge-Aus
+
+# Database schema + forward-only migrations.
+/src/db/ @ginutgeorge-Aus
+
+# CI, security workflows, and repo governance.
+/.github/ @ginutgeorge-Aus
