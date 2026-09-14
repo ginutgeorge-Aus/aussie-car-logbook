@@ -29,4 +29,4 @@ method, self-hosted on Cloudflare.
   / `preview` scripts and a documented setup flow.
 - **Auth** — delegated to Cloudflare Access (no in-app auth); setup documented.
 
-[0.1.0]: https://github.com/ggeorge/ginoos-log-book/releases/tag/v0.1.0
+[0.1.0]: https://github.com/ginutgeorge-Aus/aussie-car-logbook/releases/tag/v0.1.0

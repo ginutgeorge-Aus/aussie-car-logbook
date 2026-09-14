@@ -35,7 +35,7 @@ cp .env.example .dev.vars
 
 Each user self-hosts their own copy on **Cloudflare Workers** (via
 [OpenNext](https://opennext.js.org/cloudflare)). You deploy a
-[tagged release](https://github.com/ggeorge/ginoos-log-book/releases), not `main`.
+[tagged release](https://github.com/ginutgeorge-Aus/aussie-car-logbook/releases), not `main`.
 
 **1. Create the Cloudflare resources** (once), then note their IDs:
 
