@@ -9,7 +9,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:local": "wrangler d1 migrations apply DB --local",
-    "db:seed": "wrangler d1 execute DB --local --file src/db/seed.sql"
+    "db:seed": "wrangler d1 execute DB --local --file src/db/seed.sql",
+    "db:remote": "wrangler d1 migrations apply DB --remote",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",

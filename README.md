@@ -33,16 +33,42 @@ cp .env.example .dev.vars
 
 ## Deploy to Cloudflare
 
-> Placeholder — filled in once the Cloudflare/Drizzle/D1 setup lands (see
-> `.superpowers/sdd/` task briefs). Broad shape:
+Each user self-hosts their own copy on **Cloudflare Workers** (via
+[OpenNext](https://opennext.js.org/cloudflare)). You deploy a
+[tagged release](https://github.com/ggeorge/ginoos-log-book/releases), not `main`.
+
+**1. Create the Cloudflare resources** (once), then note their IDs:
 
 ```bash
-cp wrangler.toml.example wrangler.toml
-# fill in your own D1 database_id, then:
-pnpm dlx wrangler d1 migrations apply <DB_NAME>
-pnpm build
-pnpm dlx wrangler deploy
+pnpm dlx wrangler d1 create ginoos-log-book
+pnpm dlx wrangler r2 bucket create ginoos-log-book-receipts
+# Workers AI needs no resource — the [ai] binding is enough.
 ```
+
+**2. Configure wrangler** — copy the example and fill in your own `database_id`:
+
+```bash
+cp wrangler.toml.example wrangler.toml   # gitignored; never commit real IDs
+```
+
+**3. Apply migrations to the remote D1, then build + deploy:**
+
+```bash
+pnpm cf-typegen        # generate CloudflareEnv types (optional but recommended)
+pnpm db:remote         # wrangler d1 migrations apply DB --remote
+pnpm deploy            # opennextjs-cloudflare build && ... deploy
+```
+
+Use `pnpm preview` to run the built Worker locally before deploying.
+
+### Lock it down — Cloudflare Access (required)
+
+This app has **no built-in login**; it assumes a single user and delegates
+auth to **[Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/policies/access/)**
+(free tier). Before exposing your deployment, add a **self-hosted Access
+application** covering your Worker's hostname with a policy that allows only
+your own Google account or email (one-time-PIN). Without this, your financial
+data is public. See [SECURITY.md](SECURITY.md).
 
 ## No personal data in this repo
 
