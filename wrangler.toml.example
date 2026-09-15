@@ -1,9 +1,23 @@
 name = "ginoos-log-book"
+main = ".open-next/worker.js"
 compatibility_date = "2025-09-01"
-compatibility_flags = ["nodejs_compat"]
-pages_build_output_dir = ".open-next/assets"
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
 
 # Copy this file to wrangler.toml and fill in your own IDs (gitignored).
+# Built by `opennextjs-cloudflare build`; deployed with `opennextjs-cloudflare deploy`.
+
+[assets]
+binding = "ASSETS"
+directory = ".open-next/assets"
+
+[observability]
+enabled = true
+
+# Self-reference lets the worker call itself (required by the OpenNext adapter).
+[[services]]
+binding = "WORKER_SELF_REFERENCE"
+service = "ginoos-log-book"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "ginoos-log-book"
