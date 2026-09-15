@@ -1,0 +1,56 @@
+name: Sync Wiki
+
+# Mirror the in-repo wiki/ folder (source of truth) to the GitHub Wiki.
+# Edit pages under wiki/ in a PR; on merge to main this publishes them.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "wiki/**"
+      - ".github/workflows/wiki-sync.yml"
+  # Allow a manual re-sync from the Actions tab.
+  workflow_dispatch:
+
+# Needed to push to the <repo>.wiki.git repository via GITHUB_TOKEN.
+permissions:
+  contents: write
+
+concurrency:
+  group: wiki-sync
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v7
+
+      - name: Publish wiki/ to the GitHub Wiki
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          WIKI_URL="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git"
+
+          # The wiki repo only exists after its first page is created in the UI.
+          if ! git ls-remote "$WIKI_URL" >/dev/null 2>&1; then
+            echo "::error::Wiki repo not found. Create the first page once via the repo's Wiki tab, then re-run."
+            exit 1
+          fi
+
+          git clone --depth 1 "$WIKI_URL" wiki-remote
+          # Mirror wiki/ into the clone: copy current pages, drop deleted ones.
+          find wiki-remote -maxdepth 1 -name '*.md' -delete
+          cp wiki/*.md wiki-remote/
+
+          cd wiki-remote
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Wiki already up to date."
+          else
+            git commit -m "docs(wiki): sync from wiki/ @ ${GITHUB_SHA::7}"
+            git push
+          fi

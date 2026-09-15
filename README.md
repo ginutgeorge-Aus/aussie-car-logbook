@@ -5,6 +5,13 @@ An open-source car logbook PWA for Australian taxpayers using the ATO
 readings, and business-use percentage, then generate the records the ATO
 expects for your logbook period.
 
+## 📖 User guide (non-technical)
+
+New here or not a developer? The **[Wiki](https://github.com/ginutgeorge-Aus/aussie-car-logbook/wiki)**
+is a plain-English manual: what you need, a step-by-step setup guide, how to
+use the app day to day, the logbook method explained, and the reports. Source
+lives in [`wiki/`](wiki/) and is published to the Wiki automatically.
+
 ## Stack
 
 - [Next.js](https://nextjs.org) 16 (App Router, TypeScript strict mode)
