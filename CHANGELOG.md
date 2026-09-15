@@ -6,6 +6,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Users deploy tagged releases, not `main`.
 
+## [0.1.1] — 2026-09-15
+
+Deploy-flow fixes — v0.1.0 could not be deployed by following the README from a
+clean clone. No app/runtime behaviour changed.
+
+### Fixed
+- **D1 migrations not found on deploy** — `wrangler.toml.example` lacked
+  `migrations_dir`, so `pnpm db:remote` looked in the default `./migrations`
+  and failed with "No migrations present". Now points at `src/db/migrations`.
+- **Production build demanded `CLOUDFLARE_API_TOKEN`** — `next.config.ts` ran
+  `initOpenNextCloudflareForDev()` unconditionally, so `next build` (run
+  non-interactively by `pnpm deploy`) opened a remote connection for the `[ai]`
+  binding and aborted. It now runs only under `next dev`.
+- **README deploy steps** — added the initial `wrangler login` step and an
+  explicit "set `database_id`" note.
+
 ## [0.1.0] — 2026-09-14
 
 First public base release. An Australian car logbook PWA using the ATO logbook
@@ -29,4 +45,5 @@ method, self-hosted on Cloudflare.
   / `preview` scripts and a documented setup flow.
 - **Auth** — delegated to Cloudflare Access (no in-app auth); setup documented.
 
+[0.1.1]: https://github.com/ginutgeorge-Aus/aussie-car-logbook/releases/tag/v0.1.1
 [0.1.0]: https://github.com/ginutgeorge-Aus/aussie-car-logbook/releases/tag/v0.1.0
