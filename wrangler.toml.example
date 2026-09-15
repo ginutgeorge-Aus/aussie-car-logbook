@@ -22,6 +22,8 @@ service = "ginoos-log-book"
 binding = "DB"
 database_name = "ginoos-log-book"
 database_id = "REPLACE_WITH_YOUR_D1_ID"
+# Drizzle migrations live here, not the wrangler default ./migrations.
+migrations_dir = "src/db/migrations"
 
 [[r2_buckets]]
 binding = "RECEIPTS"

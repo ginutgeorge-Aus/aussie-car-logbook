@@ -37,7 +37,13 @@ Each user self-hosts their own copy on **Cloudflare Workers** (via
 [OpenNext](https://opennext.js.org/cloudflare)). You deploy a
 [tagged release](https://github.com/ginutgeorge-Aus/aussie-car-logbook/releases), not `main`.
 
-**1. Create the Cloudflare resources** (once), then note their IDs:
+**1. Log in to your Cloudflare account** (once):
+
+```bash
+pnpm dlx wrangler login
+```
+
+**2. Create the Cloudflare resources** (once), then note the printed IDs:
 
 ```bash
 pnpm dlx wrangler d1 create ginoos-log-book
@@ -45,13 +51,14 @@ pnpm dlx wrangler r2 bucket create ginoos-log-book-receipts
 # Workers AI needs no resource — the [ai] binding is enough.
 ```
 
-**2. Configure wrangler** — copy the example and fill in your own `database_id`:
+**3. Configure wrangler** — copy the example and paste your own `database_id`:
 
 ```bash
 cp wrangler.toml.example wrangler.toml   # gitignored; never commit real IDs
+# edit wrangler.toml: set database_id (the id printed by `d1 create` above)
 ```
 
-**3. Apply migrations to the remote D1, then build + deploy:**
+**4. Apply migrations to the remote D1, then build + deploy:**
 
 ```bash
 pnpm cf-typegen        # generate CloudflareEnv types (optional but recommended)
