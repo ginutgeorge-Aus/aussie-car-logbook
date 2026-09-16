@@ -46,18 +46,23 @@ pnpm install
 ## Step 4 — Connect to your Cloudflare account
 
 ```bash
-pnpm dlx wrangler login
+corepack pnpm exec wrangler login
 ```
 
-A browser window opens — sign in to Cloudflare and click **Allow**.
+A browser window opens — sign in to Cloudflare and click **Allow** (do it
+promptly — it stops waiting after a minute or two).
+
+> ⚠️ Use `corepack pnpm exec wrangler …`, **not** `pnpm dlx wrangler …`. On
+> newer pnpm the `dlx` form stops with an `ERR_PNPM_IGNORED_BUILDS` error and
+> never runs. `exec` uses the copy that came with the app in Step 3.
 
 ## Step 5 — Create your storage (once)
 
 These commands create your private database and your receipt-photo storage:
 
 ```bash
-pnpm dlx wrangler d1 create ginoos-log-book
-pnpm dlx wrangler r2 bucket create ginoos-log-book-receipts
+corepack pnpm exec wrangler d1 create ginoos-log-book
+corepack pnpm exec wrangler r2 bucket create ginoos-log-book-receipts
 ```
 
 The first command prints a **`database_id`** — copy it, you need it next.

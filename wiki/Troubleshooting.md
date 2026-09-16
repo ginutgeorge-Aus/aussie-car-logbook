@@ -11,9 +11,17 @@ Common problems and fixes. If your issue isn't here, open an issue on
 Turn it on with `corepack enable` (needs Node.js installed first — see
 [What You Need](What-You-Need)). Close and reopen your terminal afterwards.
 
-### `wrangler login` doesn't open a browser
+### `ERR_PNPM_IGNORED_BUILDS` when running a `wrangler` command
+You used the `pnpm dlx wrangler …` form. Newer pnpm blocks that. Use
+`corepack pnpm exec wrangler …` instead (same command, just `exec` not `dlx`) —
+it runs the wrangler that came with the app in Step 3 of the
+[Setup Guide](Setup-Guide).
+
+### `wrangler login` doesn't open a browser (or "Timed out waiting for authorization code")
 Copy the link it prints and paste it into your browser manually, then sign in
-to Cloudflare and click **Allow**.
+to Cloudflare and click **Allow** — do it promptly, it stops waiting after a
+minute or two. Run it from **inside the app folder** with
+`corepack pnpm exec wrangler login`.
 
 ### Deploy fails / "database_id" errors
 Check Step 6 of the [Setup Guide](Setup-Guide): you must copy
@@ -73,7 +81,7 @@ has data.
 ### How do I back up before updating?
 Export your database and download your receipts before a big update:
 ```bash
-pnpm dlx wrangler d1 export ginoos-log-book --output backup.sql
+corepack pnpm exec wrangler d1 export ginoos-log-book --output backup.sql
 ```
 Download receipt images from your **R2 bucket** in the Cloudflare dashboard.
 
