@@ -70,14 +70,20 @@ Each user self-hosts their own copy on **Cloudflare Workers** (via
 **1. Log in to your Cloudflare account** (once):
 
 ```bash
-pnpm dlx wrangler login
+corepack pnpm install                      # installs the pinned local wrangler
+corepack pnpm exec wrangler login
 ```
+
+> Use the project-local `wrangler` (`corepack pnpm exec wrangler …`), **not**
+> `pnpm dlx wrangler`. On pnpm 12 `dlx` blocks the `esbuild`/`workerd` build
+> scripts and aborts with `ERR_PNPM_IGNORED_BUILDS`. The local binary is
+> already pinned in `package.json` and matches CI.
 
 **2. Create the Cloudflare resources** (once), then note the printed IDs:
 
 ```bash
-pnpm dlx wrangler d1 create ginoos-log-book
-pnpm dlx wrangler r2 bucket create ginoos-log-book-receipts
+corepack pnpm exec wrangler d1 create ginoos-log-book
+corepack pnpm exec wrangler r2 bucket create ginoos-log-book-receipts
 # Workers AI needs no resource — the [ai] binding is enough.
 ```
 
