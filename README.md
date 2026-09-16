@@ -1,9 +1,32 @@
 # Ginoo's Log Book
 
+![100% AI-coded](https://img.shields.io/badge/100%25-AI--coded-blueviolet)
+![Built with Claude](https://img.shields.io/badge/built%20with-Claude%20Code-8A2BE2)
+![Status: early / experimental](https://img.shields.io/badge/status-early%20%2F%20experimental-orange)
+
 An open-source car logbook PWA for Australian taxpayers using the ATO
 **logbook method** to claim work-related car expenses. Track trips, odometer
 readings, and business-use percentage, then generate the records the ATO
 expects for your logbook period.
+
+> ⚠️ **Early stage — use with caution.** This project is a **100% AI-coded**
+> experiment (see [Built with Claude](#-built-with-claude--100-ai-coded)).
+> It is not yet battle-tested. **Always double-check every figure before you
+> lodge anything with the ATO, and confirm with a registered tax agent.** Not
+> tax advice.
+
+## 🤖 Built with Claude / 100% AI-coded
+
+Every line of this project — code, tests, docs, and this README — was written
+by **[Claude](https://claude.com/claude-code)** (Anthropic's Claude Code), with
+a human acting only as product owner: setting direction, reviewing, and
+approving. No human hand-wrote the implementation. It was built the "vibecoded"
+way: brainstorm → plan → test-driven development → PR review → deploy, all
+driven by Claude.
+
+That's the fun of it — and the caveat. It's **early and experimental**; treat
+outputs as a starting point, not gospel. Bug reports and scrutiny welcome via
+[Issues](https://github.com/ginutgeorge-Aus/aussie-car-logbook/issues).
 
 ## 📖 User guide (non-technical)
 

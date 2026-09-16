@@ -16,6 +16,10 @@ Nobody else can see your trips or receipts.
 > ATO **logbook method**, but you are responsible for what you claim. If in
 > doubt, check with a registered tax agent.
 
+> 🤖 **Early stage & 100% AI-coded.** Every line of this project was written by
+> Claude (see [How This Was Built](How-This-Was-Built)). It's an early,
+> experimental tool — **double-check every figure before you lodge anything**.
+
 ---
 
 ## New here? Start with these
