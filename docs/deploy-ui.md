@@ -17,10 +17,15 @@ unavoidable terminal moment** (or zero, if you paste SQL by hand).
 ## Before you start
 
 - A **Cloudflare account** (free) — <https://dash.cloudflare.com/sign-up>.
-- A **GitHub account** with your **own copy (fork)** of this repo.
-  - **Keep your fork private** if you commit `wrangler.toml` (Step 4) — it will
-    contain your D1 database ID. That ID isn't a password, but there's no
-    reason to publish it.
+- A **private GitHub copy** of this repo. **Do not use "Fork"** — a fork of a
+  public repo is always public and can't be made private, and in Step 4 you'll
+  commit a `wrangler.toml` containing your D1 database ID. Instead **import**
+  the repo into a new **private** repository:
+  - GitHub → **New** → **Import a repository** → source URL
+    `https://github.com/ginutgeorge-Aus/aussie-car-logbook` → set visibility
+    **Private** → **Begin import**.
+  - That ID isn't a password, but a private repo keeps it (and your future
+    tweaks) off the public internet.
 
 The app needs three Cloudflare resources, wired to these exact **binding
 names** (the code looks them up by name — don't rename them):
@@ -83,9 +88,21 @@ don't wire them up by hand — the build picks them up from this file.
 
 ## Step 5 — Connect the repo and deploy
 
+> **Deploy a release, not `main`.** This project's rule (see
+> [README.md](../README.md#deploy-to-cloudflare)) is to run a **tagged
+> release**, not the in-progress `main` branch. Before connecting, make a
+> release branch in your private copy: GitHub → **Branches** → **New branch**,
+> name it `release`, and base it on the latest **tag** from the
+> [Releases page](https://github.com/ginutgeorge-Aus/aussie-car-logbook/releases)
+> (or a `git checkout -b release <tag> && git push -u origin release`). You'll
+> point the build at `release` in step 3, and re-point it at the next tag when
+> you upgrade.
+
 1. Dashboard → **Workers & Pages** → **Create** → **Import a repository**.
-2. Authorize GitHub, pick your `ginoos-log-book` copy.
+2. Authorize GitHub, pick your `ginoos-log-book` private copy.
 3. Set the build settings:
+   - **Production branch / branch to build:** `release` (the tag-based branch
+     above) — **not** `main`.
    - **Build command:** `npx opennextjs-cloudflare build`
    - **Deploy command:** `npx opennextjs-cloudflare deploy`
    - (Leave the output/root defaults.)
@@ -108,22 +125,30 @@ When it finishes you get a public URL like
 ## Step 6 — Lock it down with Cloudflare Access (required)
 
 Right now that `workers.dev` URL is **public** — anyone with the link can see
-and edit your data. Before putting real tax data in, gate it.
+and edit your data. Before putting real tax data in, gate it. You don't need a
+custom domain — a self-hosted Access application can protect the `workers.dev`
+hostname directly.
 
-Access self-hosted apps need a **hostname on a domain in your Cloudflare
-account** (a `workers.dev` subdomain can't be gated on its own). If you don't
-have a domain, add one (Cloudflare sells them at cost, or move an existing one
-in — the DNS is free).
+**Option A — gate the `workers.dev` hostname (no domain needed):**
 
-1. Point a custom hostname at the Worker: Worker → **Settings** →
-   **Domains & Routes** → **Add** → **Custom domain** (e.g.
-   `logbook.yourdomain.com`).
-2. Dashboard → **Zero Trust** → **Access** → **Applications** → **Add an
+1. Dashboard → **Zero Trust** → **Access** → **Applications** → **Add an
    application** → **Self-hosted**.
-3. **Application domain:** the custom hostname from step 1.
-4. Add a **policy**: Action **Allow**, rule **Emails** → your email address.
-5. Save. Now only your logged-in email reaches the app; everyone else hits
+2. **Application domain:** your
+   `ginoos-log-book.<your-subdomain>.workers.dev` hostname.
+3. Add a **policy**: Action **Allow**, rule **Emails** → your email address.
+4. Save. Now only your logged-in email reaches the app; everyone else hits
    Cloudflare's login screen.
+
+**Option B — use a custom domain** (optional, if you own one): Worker →
+**Settings** → **Domains & Routes** → **Add** → **Custom domain**, then repeat
+the steps above with that hostname as the application domain.
+
+> **⚠️ Close the `workers.dev` back door.** If you use a custom domain (Option
+> B), the original `workers.dev` URL **stays live and ungated** unless you also
+> handle it. Either add a **second** Access application for the `workers.dev`
+> hostname, **or** turn the route off entirely by adding
+> `workers_dev = false` to your `wrangler.toml` and redeploying. Otherwise your
+> data is still reachable at the old public URL.
 
 > **Demo exception.** For a throwaway *public* demo, **skip Step 6** and share
 > the `workers.dev` URL directly. Load the fake seed data (Step 3 optional),
