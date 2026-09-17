@@ -59,7 +59,7 @@ Repo is public. **Never commit** secrets, `account_id`/`database_id`, personal d
 |------|------|
 | `docs/superpowers/plans/` | Implementation plans (Plan 1 = foundation + tax engine) |
 | `docs/ocr.md` | Receipt OCR (Workers AI vision → expense-form pre-fill) design + flow |
-| `docs/deploy-auto.md` | Push-to-deploy via Workers Builds (build-secret D1 id, `ci:build`/`ci:deploy` scripts) |
+| `docs/deploy-auto.md` | Workers Builds deploy off a `release` branch (build-secret D1 id, `ci:build`/`ci:deploy`; `main` never deploys) |
 | `docs/deploy-ui.md` | Manual / tag-based dashboard deploy guide |
 | `scripts/gen-wrangler.mjs` | CI-only: writes `wrangler.toml` from example + `D1_DATABASE_ID` secret |
 | `src/lib/tax/` | Pure tax functions + colocated `*.test.ts` |
