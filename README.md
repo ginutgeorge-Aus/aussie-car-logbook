@@ -126,10 +126,14 @@ is needed — Access protects the `*.workers.dev` URL directly:
 2. **Workers & Pages → your Worker → Access tab → Protect this Worker behind
    Access**, scope **All traffic** (production + preview URLs).
 3. Policy: rule type **Emails** (not "Email domain") → your own address only.
-4. Login method: **One-time PIN** (email code, zero setup); add Google later if
-   you like.
+4. Login method: **One-time PIN** (email code). If it isn't offered, enable it
+   once under **Zero Trust → Settings → Authentication → Login methods → Add →
+   One-time PIN** (new Zero Trust orgs no longer add it automatically). Add
+   Google later if you like.
 5. Verify in an incognito window: the Cloudflare login page must appear before
-   the app, and a different email must be denied.
+   the app loads. Note a non-allowed email still sees that page and a "code
+   emailed" message — Cloudflare does this to prevent address enumeration; only
+   your allowed email actually receives a working code and reaches the app.
 
 See [SECURITY.md](SECURITY.md).
 

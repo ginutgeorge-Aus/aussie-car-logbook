@@ -142,9 +142,13 @@ and the **Free** plan.
 3. Add a **policy**: Action **Allow**, rule **Emails** → your email address
    (use **Emails**, not "Email domain", so only you get in).
 4. Login method: **One-time PIN** (Cloudflare emails you a code — no IdP setup).
-   Add Google later if you prefer.
-5. Save. Now only your logged-in email reaches the app; everyone else hits
-   Cloudflare's login screen.
+   If it isn't offered, add it once under **Zero Trust → Settings →
+   Authentication → Login methods → Add → One-time PIN** — new Zero Trust orgs
+   no longer enable it automatically. Add Google later if you prefer.
+5. Save. Now only your allowed email reaches the app. Everyone else still sees
+   Cloudflare's login screen and a "code emailed" message (by design, so
+   outsiders can't discover which addresses exist), but never receives a working
+   code.
 
 <details><summary>Alternative — self-hosted Access application (manual)</summary>
 
