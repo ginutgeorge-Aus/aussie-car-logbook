@@ -27,10 +27,37 @@ export function assertReceiptFile(file: File): void {
   }
 }
 
-export async function putReceipt(vehicleId: number, file: File): Promise<string> {
+// Optional descriptive bits woven into the R2 key so stored receipts are
+// human-scannable (date_category_amount) instead of opaque UUIDs. A short
+// random suffix still guarantees uniqueness.
+export type ReceiptMeta = {
+  date?: string; // ISO YYYY-MM-DD
+  category?: string;
+  amountInclCents?: number;
+};
+
+// Keeps only filename-safe chars; collapses the rest to single dashes.
+function slug(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+}
+
+function receiptName(meta: ReceiptMeta | undefined, ext: string): string {
+  const parts: string[] = [];
+  if (meta?.date) parts.push(meta.date);
+  if (meta?.category) parts.push(slug(meta.category));
+  if (meta?.amountInclCents != null) parts.push((meta.amountInclCents / 100).toFixed(2).replace(".", "-"));
+  parts.push(crypto.randomUUID().slice(0, 8));
+  return `${parts.join("_")}.${ext}`;
+}
+
+export async function putReceipt(vehicleId: number, file: File, meta?: ReceiptMeta): Promise<string> {
   assertReceiptFile(file);
   const ext = ALLOWED_TYPES[file.type];
-  const key = `receipts/${vehicleId}/${crypto.randomUUID()}.${ext}`;
+  const key = `receipts/${vehicleId}/${receiptName(meta, ext)}`;
   const b = await bucket();
   await b.put(key, await file.arrayBuffer(), { httpMetadata: { contentType: file.type } });
   return key;

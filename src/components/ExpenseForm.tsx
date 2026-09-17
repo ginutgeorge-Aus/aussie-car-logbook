@@ -2,6 +2,7 @@
 
 import { useActionState, useRef, useState, useTransition } from "react";
 import { createExpenseAction, scanReceiptAction } from "@/lib/actions";
+import { compressReceipt } from "@/lib/image/compress";
 import { EXPENSE_CATEGORIES } from "@/lib/expenses/categories";
 import { FieldError } from "@/components/FieldError";
 import { todayIso } from "@/lib/today";
@@ -29,13 +30,35 @@ export function ExpenseForm() {
   const [scanning, startScan] = useTransition();
   const [scanMsg, setScanMsg] = useState<string | null>(null);
 
-  function onScan() {
-    const f = fileRef.current?.files?.[0];
-    if (!f) return;
-    const fd = new FormData();
-    fd.set("receipt", f);
+  function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) {
+      setHasFile(false);
+      return;
+    }
+    scanFile(f);
+  }
+
+  function scanFile(original: File) {
     setScanMsg(null);
     startScan(async () => {
+      let file: File;
+      try {
+        file = await compressReceipt(original);
+      } catch {
+        setHasFile(false);
+        setScanMsg("Couldn't read that image — pick another receipt.");
+        return;
+      }
+      // Swap the input's file for the compressed JPEG so the form submit stores
+      // the tiny version in R2, not the multi-MB camera original.
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      if (fileRef.current) fileRef.current.files = dt.files;
+      setHasFile(true);
+
+      const fd = new FormData();
+      fd.set("receipt", file);
       const res = await scanReceiptAction({ ok: false, error: "" }, fd);
       if (res.ok) {
         const v = res.value;
@@ -96,12 +119,9 @@ export function ExpenseForm() {
         <span className="text-sm">Notes</span>
         <input name="notes" className="border rounded px-2 py-1" />
       </label>
-      <label className="flex flex-col gap-1">
-        <span className="text-sm">Receipt</span>
-        <input ref={fileRef} name="receipt" type="file" accept="image/*" capture="environment" onChange={(e) => setHasFile(!!e.target.files?.length)} className="text-sm" />
-      </label>
-      <button type="button" onClick={onScan} disabled={!hasFile || scanning} className="rounded border px-3 py-2 disabled:opacity-50">
-        {scanning ? "Scanning…" : "Scan receipt"}
+      <input ref={fileRef} name="receipt" type="file" accept="image/*" capture="environment" onChange={onFileChange} className="sr-only" />
+      <button type="button" onClick={() => fileRef.current?.click()} disabled={scanning} className="rounded border px-3 py-2 disabled:opacity-50">
+        {scanning ? "Scanning…" : hasFile ? "📷 Rescan receipt" : "📷 Scan receipt"}
       </button>
       <button type="submit" disabled={pending} className="rounded bg-black text-white px-4 py-2 disabled:opacity-50">
         {pending ? "Adding…" : "Add expense"}
