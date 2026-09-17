@@ -54,10 +54,11 @@ Secrets**):
 - **Production branch:** `release` — **not** `main`.
 - **Non-production branch builds:** **OFF** — so pushes to `main` and feature
   branches don't build or deploy.
-- **Build command:** `pnpm ci:build`
+- **Build command:** `pnpm run ci:build`
   - runs `gen-wrangler.mjs` (writes `wrangler.toml` from the example +
     `D1_DATABASE_ID`), then `opennextjs-cloudflare build`.
-- **Deploy command:** `pnpm ci:deploy` (`opennextjs-cloudflare deploy`).
+  - use `run` — bare `pnpm ci:build` risks colliding with pnpm's `ci` builtin.
+- **Deploy command:** `pnpm run ci:deploy` (`opennextjs-cloudflare deploy`).
 - Root directory / output: defaults.
 
 `account_id` is **not** needed in the config — Workers Builds deploys into the
