@@ -99,19 +99,43 @@ cp wrangler.toml.example wrangler.toml   # gitignored; never commit real IDs
 ```bash
 pnpm cf-typegen        # generate CloudflareEnv types (optional but recommended)
 pnpm db:remote         # wrangler d1 migrations apply DB --remote
-pnpm deploy            # opennextjs-cloudflare build && ... deploy
+pnpm run deploy        # opennextjs-cloudflare build && ... deploy
 ```
 
 Use `pnpm preview` to run the built Worker locally before deploying.
+
+> **Use `pnpm run deploy`, not `pnpm deploy`.** `deploy` is a built-in pnpm
+> command, so the bare form ignores this project's script and aborts with
+> `ERR_PNPM_INVALID_DEPLOY_TARGET`. The `run` prefix forces the package script.
+
+> **Your checkout path must not contain an apostrophe** (or other shell-special
+> characters). OpenNext bakes the absolute build path into the bundled Worker,
+> and esbuild then chokes on a path like `.../Ginoo's Log Book/...` with
+> `Expected ")" but found "s"`. Clone into a plain path such as
+> `aussie-car-logbook/` and the build succeeds.
 
 ### Lock it down — Cloudflare Access (required)
 
 This app has **no built-in login**; it assumes a single user and delegates
 auth to **[Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/policies/access/)**
-(free tier). Before exposing your deployment, add a **self-hosted Access
-application** covering your Worker's hostname with a policy that allows only
-your own Google account or email (one-time-PIN). Without this, your financial
-data is public. See [SECURITY.md](SECURITY.md).
+(free tier). **Without this, your financial data is public.** No custom domain
+is needed — Access protects the `*.workers.dev` URL directly:
+
+1. **Zero Trust** (<https://one.dash.cloudflare.com>) — first time only, pick a
+   team name and the **Free** plan.
+2. **Workers & Pages → your Worker → Access tab → Protect this Worker behind
+   Access**, scope **All traffic** (production + preview URLs).
+3. Policy: rule type **Emails** (not "Email domain") → your own address only.
+4. Login method: **One-time PIN** (email code). If it isn't offered, enable it
+   once under **Zero Trust → Settings → Authentication → Login methods → Add →
+   One-time PIN** (new Zero Trust orgs no longer add it automatically). Add
+   Google later if you like.
+5. Verify in an incognito window: the Cloudflare login page must appear before
+   the app loads. Note a non-allowed email still sees that page and a "code
+   emailed" message — Cloudflare does this to prevent address enumeration; only
+   your allowed email actually receives a working code and reaches the app.
+
+See [SECURITY.md](SECURITY.md).
 
 ## No personal data in this repo
 

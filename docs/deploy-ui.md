@@ -115,8 +115,12 @@ When it finishes you get a public URL like
 > **The one terminal escape hatch.** If the Git-connected build gives you
 > trouble, you can deploy from your laptop instead. From the project folder:
 > `corepack pnpm install`, then `corepack pnpm exec wrangler login` once, then
-> `corepack pnpm deploy`. (Use the project-local wrangler — **not**
-> `pnpm dlx wrangler`, which aborts on pnpm 12.) See
+> `corepack pnpm run deploy`. (Use `run deploy`, not bare `pnpm deploy` — the
+> latter hits pnpm's built-in `deploy` command and aborts with
+> `ERR_PNPM_INVALID_DEPLOY_TARGET`. And use the project-local wrangler — **not**
+> `pnpm dlx wrangler`, which aborts on pnpm 12.) Clone into a path with **no
+> apostrophe or shell-special characters**, or the local OpenNext build fails
+> with `Expected ")" but found "s"`. See
 > [README.md](../README.md#deploy-to-cloudflare). Everything above (resources,
 > migrations) still stands.
 
@@ -126,29 +130,48 @@ When it finishes you get a public URL like
 
 Right now that `workers.dev` URL is **public** — anyone with the link can see
 and edit your data. Before putting real tax data in, gate it. You don't need a
-custom domain — a self-hosted Access application can protect the `workers.dev`
-hostname directly.
+custom domain — Access protects the `workers.dev` hostname directly. First-time
+only: open **Zero Trust** (<https://one.dash.cloudflare.com>), pick a team name
+and the **Free** plan.
 
-**Option A — gate the `workers.dev` hostname (no domain needed):**
+**Option A — one-click Worker Access (simplest, no domain needed):**
 
-1. Dashboard → **Zero Trust** → **Access** → **Applications** → **Add an
-   application** → **Self-hosted**.
-2. **Application domain:** your
-   `ginoos-log-book.<your-subdomain>.workers.dev` hostname.
-3. Add a **policy**: Action **Allow**, rule **Emails** → your email address.
-4. Save. Now only your logged-in email reaches the app; everyone else hits
-   Cloudflare's login screen.
+1. Dashboard → **Workers & Pages** → your `ginoos-log-book` Worker → **Access**
+   tab → **Protect this Worker behind Access**.
+2. Scope: **All traffic** (covers both production and preview URLs).
+3. Add a **policy**: Action **Allow**, rule **Emails** → your email address
+   (use **Emails**, not "Email domain", so only you get in).
+4. Login method: **One-time PIN** (Cloudflare emails you a code — no IdP setup).
+   If it isn't offered, add it once under **Zero Trust → Settings →
+   Authentication → Login methods → Add → One-time PIN** — new Zero Trust orgs
+   no longer enable it automatically. Add Google later if you prefer.
+5. Save. Now only your allowed email reaches the app. Everyone else still sees
+   Cloudflare's login screen and a "code emailed" message (by design, so
+   outsiders can't discover which addresses exist), but never receives a working
+   code.
 
-**Option B — use a custom domain** (optional, if you own one): Worker →
-**Settings** → **Domains & Routes** → **Add** → **Custom domain**, then repeat
-the steps above with that hostname as the application domain.
+<details><summary>Alternative — self-hosted Access application (manual)</summary>
 
-> **⚠️ Close the `workers.dev` back door.** If you use a custom domain (Option
-> B), the original `workers.dev` URL **stays live and ungated** unless you also
-> handle it. Either add a **second** Access application for the `workers.dev`
-> hostname, **or** turn the route off entirely by adding
-> `workers_dev = false` to your `wrangler.toml` and redeploying. Otherwise your
-> data is still reachable at the old public URL.
+Dashboard → **Zero Trust** → **Access** → **Applications** → **Add an
+application** → **Self-hosted**. Set the **Application domain** to your
+`ginoos-log-book.<your-subdomain>.workers.dev` hostname, then add the same
+**Allow / Emails** policy as above. The one-click flow above does this for you.
+
+</details>
+
+**Option B — add a custom domain** (optional, if you own one): Worker →
+**Settings** → **Domains & Routes** → **Add** → **Custom domain**. With the
+one-click Worker Access above (scope **All traffic**), the new domain is
+**already gated** — Access is attached to the Worker, so every hostname it
+serves is covered.
+
+> **⚠️ Only if you used the manual self-hosted route.** A self-hosted Access
+> application gates **one hostname**. If you add a custom domain, the original
+> `workers.dev` URL (and vice versa) **stays live and ungated** unless you also
+> cover it — add a **second** Access application for the other hostname, **or**
+> turn the `workers.dev` route off with `workers_dev = false` in your
+> `wrangler.toml` and redeploy. The one-click "All traffic" option (Option A)
+> avoids this entirely.
 
 > **Demo exception.** For a throwaway *public* demo, **skip Step 6** and share
 > the `workers.dev` URL directly. Load the fake seed data (Step 3 optional),

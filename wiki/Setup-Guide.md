@@ -80,8 +80,12 @@ Open the new `wrangler.toml` file in any text editor and paste your
 
 ```bash
 pnpm db:remote
-pnpm deploy
+pnpm run deploy
 ```
+
+> Type `pnpm run deploy` exactly — `run` matters. Plain `pnpm deploy` runs a
+> different built-in command and stops with an `ERR_PNPM_INVALID_DEPLOY_TARGET`
+> error instead of publishing.
 
 When it finishes, it prints your app's web address (something like
 `https://ginoos-log-book.<your-name>.workers.dev`). **This is your app.**
@@ -93,21 +97,34 @@ When it finishes, it prints your app's web address (something like
 Right now your app's address is public — anyone with the link could see your
 financial data. You must add a lock so **only you** can open it.
 
-This lock is a free Cloudflare feature called **Access**:
+This lock is a free Cloudflare feature called **Access**. First time only:
+open **Zero Trust** (<https://one.dash.cloudflare.com>), pick any team name, and
+choose the **Free** plan.
 
-1. In your Cloudflare dashboard, go to **Zero Trust → Access → Applications**.
-2. Click **Add an application** → **Self-hosted**.
-3. Give it any name, and enter your app's web address (from Step 7).
-4. Add a **policy** that allows **only your own email** (or your Google
-   account). Choose "Emails" and enter just your address.
-5. Save.
+Then protect the app in a few clicks:
 
-Now, when you open your app, Cloudflare asks you to sign in first. Only your
-email gets in. Everyone else is blocked.
+1. In your Cloudflare dashboard, go to **Workers & Pages** and open your app.
+2. Open the **Access** tab → **Protect this Worker behind Access**.
+3. Choose **All traffic** (this covers your web address and any preview links).
+4. Add a **policy** that allows **only your own email**: choose **Emails** and
+   enter just your address (not "Email domain" — that would let in anyone with
+   that email provider).
+5. For the sign-in method, pick **One-time PIN** — Cloudflare emails you a code,
+   no extra setup. (If One-time PIN isn't offered, add it once under **Zero
+   Trust → Settings → Authentication → Login methods → Add → One-time PIN**.)
+6. Save.
 
-> Full security notes are in the project's **SECURITY.md** file. If you're
-> unsure whether the lock is on, open your app's address in a private/
-> incognito window — you should be *stopped* at a sign-in screen.
+Now, when you open your app, Cloudflare asks you to sign in first. It emails a
+code to your address; only your email can actually get in.
+
+> Full security notes are in the project's **SECURITY.md** file. To check the
+> lock is on, open your app's address in a private/incognito window — you should
+> be *stopped* at a Cloudflare sign-in screen before the app loads.
+>
+> Don't be alarmed if a *wrong* email also sees that sign-in screen and the
+> "we emailed you a code" message — Cloudflare shows it to everyone on purpose,
+> so outsiders can't tell which addresses exist. The difference is only your
+> allowed email actually receives a working code; everyone else is stopped.
 
 ---
 
@@ -125,5 +142,5 @@ start logging.
 ## Updating later (optional)
 
 When a new stable release comes out, download it, and from its folder run
-`pnpm db:remote` then `pnpm deploy` again. **Your data stays put** — updates
+`pnpm db:remote` then `pnpm run deploy` again. **Your data stays put** — updates
 never wipe your trips or receipts. See [FAQ](FAQ) for backups.
