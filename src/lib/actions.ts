@@ -71,7 +71,11 @@ export async function createExpenseAction(_prev: ActionResult, fd: FormData): Pr
     if (file) {
       const vehicle = await getVehicle();
       if (!vehicle) return { ok: false, error: "No vehicle set up yet." };
-      receiptKey = await putReceipt(vehicle.id, file);
+      receiptKey = await putReceipt(vehicle.id, file, {
+        date: parsed.value.date,
+        category: parsed.value.category,
+        amountInclCents: parsed.value.amountInclCents,
+      });
     }
     await createExpense(parsed.value, receiptKey);
   } catch (e) {
@@ -91,7 +95,11 @@ export async function updateExpenseAction(id: number, _prev: ActionResult, fd: F
     if (file) {
       const vehicle = await getVehicle();
       if (!vehicle) return { ok: false, error: "No vehicle set up yet." };
-      receiptKey = await putReceipt(vehicle.id, file);
+      receiptKey = await putReceipt(vehicle.id, file, {
+        date: parsed.value.date,
+        category: parsed.value.category,
+        amountInclCents: parsed.value.amountInclCents,
+      });
     }
     await updateExpense(id, parsed.value, receiptKey);
   } catch (e) {
@@ -121,9 +129,6 @@ export async function scanReceiptAction(
     assertReceiptFile(file);
   } catch (e) {
     return { ok: false, error: (e as Error).message };
-  }
-  if (file.type === "image/heic") {
-    return { ok: false, error: "Scan isn't available for HEIC images — enter details manually." };
   }
   try {
     const raw = await runReceiptOcr(file);
