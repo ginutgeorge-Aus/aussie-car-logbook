@@ -1,5 +1,9 @@
 # Deploy from the Cloudflare dashboard (no-terminal-ish guide)
 
+> **Want push-to-deploy?** See [deploy-auto.md](deploy-auto.md) — Workers Builds
+> with a build secret for the D1 id (nothing committed, no private copy needed).
+> This guide is the manual / tag-based alternative.
+
 This walks you through deploying **Ginoo's Log Book** using the Cloudflare
 **dashboard UI** as much as possible, for people who'd rather not live in a
 terminal. The CLI path in [README.md](../README.md#deploy-to-cloudflare) is
