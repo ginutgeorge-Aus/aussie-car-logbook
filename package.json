@@ -13,6 +13,9 @@
     "db:remote": "wrangler d1 migrations apply DB --remote",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "gen:wrangler": "node scripts/gen-wrangler.mjs",
+    "ci:build": "node scripts/gen-wrangler.mjs && opennextjs-cloudflare build",
+    "ci:deploy": "opennextjs-cloudflare deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv"
   },
   "dependencies": {
