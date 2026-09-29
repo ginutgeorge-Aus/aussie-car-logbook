@@ -9,8 +9,8 @@ changes focused and read this first.
 - **Open an issue** for anything beyond a trivial fix, so we agree on the
   approach before code is written.
 - **Tax math is the correctness core.** Anything under `src/lib/tax/` is pure,
-  unit-tested, and must be changed **test-first**. See `CLAUDE.md` → *Domain rules*.
-- Read `CLAUDE.md` for architecture, domain rules, and the security hard-rules.
+  unit-tested, and must be changed **test-first**. See [docs/domain-rules.md](docs/domain-rules.md).
+- Read [docs/domain-rules.md](docs/domain-rules.md) for the domain rules and the security hard-rules.
 
 ## Local setup
 
@@ -32,7 +32,7 @@ corepack pnpm dev        # http://localhost:3000
 
 1. Branch off `main`: `feat|fix|chore/<slug>` (direct pushes to `main` are blocked).
 2. Keep money as **integer cents** and dates as **ISO `YYYY-MM-DD`** everywhere
-   except the UI edge. See *Domain rules* in `CLAUDE.md`.
+   except the UI edge. See [docs/domain-rules.md](docs/domain-rules.md).
 3. Add or update tests. For tax logic, write the failing test first.
 4. Run `corepack pnpm test` and `corepack pnpm build` locally.
 5. Open a PR. CI (**Test + Build**), **CodeQL**, and **gitleaks** must pass; the
