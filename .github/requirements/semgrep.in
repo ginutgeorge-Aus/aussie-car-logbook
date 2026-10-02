@@ -1,1 +1,3 @@
-semgrep==1.178.0
+semgrep==1.179.0
+# CI-only transitive pin: pyjwt <2.15 has open GHSAs (dependency-review blocks them)
+pyjwt>=2.15.1
