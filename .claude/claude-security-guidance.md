@@ -1,82 +1,32 @@
 # Ginoo's Log Book security guidance
 
-## Field encryption
+Threat model: **public repo, private data.** Each user self-hosts one deployment holding their own tax records and receipt photos. Detailed checklists live in `.claude/rules/security.md` (code) and `.claude/rules/cloudflare.md` (secrets/bindings); this file is the summary.
 
-The following fields are always AES-256-GCM encrypted before writing to the DB via `src/lib/crypto.ts`:
-- `Family`: address, suburb, homePhone, notes
-- `Person`: dateOfBirth, mobile, workPhone, homePhone, pastoralNotes, emergencyContactName, emergencyContactPhone
-- `Transaction`: description
-- `ReceiptSend`: sentTo
+## Auth boundary
 
-**Rule:** Any write to these fields MUST call `encrypt()` first. Any read MUST call `decrypt()` immediately after the DB fetch. Never log or expose these raw values.
+- Cloudflare Access gates the entire hostname. No in-app auth, roles, or sessions — never add a route or action that bypasses Access (see `.claude/rules/auth.md`).
+- Inside the gate everything is "the owner", so focus on **injection, XSS, and data leakage**, not authorisation.
 
-## Role gates
+## Never commit
 
-Four roles: ADMIN, PASTOR, AUDITOR, VIEWER. Guards live in `src/lib/role-guard.ts`.
+- Secrets, Cloudflare `account_id` / `database_id`, API tokens.
+- Real personal data: names, regos, ABNs, addresses, odometer logs, receipt images.
+- Local config: `.dev.vars`, `wrangler.toml`, `.env*`, `.wrangler/`, `.open-next/`. Commit only `*.example` with placeholders. gitleaks blocks leaks in CI.
 
-- `canEdit` → ADMIN | PASTOR. Required on every mutation (Server Action and API route).
-- `canViewAccounting` → ADMIN | PASTOR | AUDITOR. Required on all accounting read paths.
-- `canAccessAccounting` → ADMIN | PASTOR only. Required on all accounting mutations.
-- `canSeePastoralNotes` → ADMIN | PASTOR only. Gate ALL reads/renders of pastoralNotes — client-side hiding is insufficient; strip from action payload when role fails.
-- AUDITOR must never trigger mutations — any Server Action reachable by AUDITOR must be read-only.
+## Receipts (R2)
 
-**Rule:** Every Server Action and API route must check role before any DB access. Role check in both the page/component AND the action.
+- Upload allowlist: JPEG/PNG/WebP/HEIC, ≤10 MB, checked before reading the body. No SVG (stored XSS).
+- Keys are server-generated (`receipts/<vehicleId>/<uuid>.<ext>`); the serving route only reads the `receipts/` prefix and responds with `nosniff` + sandbox CSP.
+- Deleting an expense deletes its receipt object.
 
-## IDOR prevention
+## Untrusted inputs
 
-- Before updating or deleting any record, call `findUnique` to confirm existence and ownership: `if (!rec || rec.parentId !== expectedParent) return { error: "Not found" }`.
-- For `RegistrationItem`, verify parent `Registration` belongs to the correct `Event`.
-- For `PettyCashReceipt`/`PettyCashExpense`, verify parent `PettyCashSession` belongs to the expected session and is OPEN before mutation.
-- `AppSetting` upsert: validate key against an explicit allowlist — arbitrary key writes are IDOR risk.
-- Never accept a `userId` from client input for ownership checks; derive from `session.user.id`.
+- **FormData** → always through a pure `parse*Form` (bounds, ISO dates, integer cents).
+- **OCR model output** → always through `parseOcrResult()`; it only pre-fills the form, the user confirms.
+- No raw SQL (`sql.raw`, `env.DB.prepare`) — Drizzle builders only (semgrep `glb-no-raw-sql`).
+- No `dangerouslySetInnerHTML`. Future CSV exports: prefix `=`, `+`, `-`, `@` cells with `'`.
 
-## Server actions — `session.user.id`
+## Data integrity
 
-`session.user.id` is a string. Always `parseInt(session!.user!.id!, 10)` before comparing to DB int IDs. Never look up the current user by email.
-
-## Self-action guard
-
-`parseInt(session!.user!.id!, 10) === targetId` — no DB lookup needed. Must block: users deleting or demoting themselves.
-
-## ANZ bank import trust boundary
-
-- The ANZ import endpoint receives a PDF from a staff user. Treat it as untrusted binary — check `file.size > 50 * 1024 * 1024` before `arrayBuffer()` (OOM DoS).
-- `bankRef` is the dedup key — format `ANZ_{acct}_{date}_{amount}_{desc20}_{balanceCents}`. Never skip the dedup check on confirm.
-- `x-forwarded-for` IP for rate limiting: use the rightmost entry only (trusted Azure ingress).
-
-## Event registration (public endpoint)
-
-- `POST /api/events/[slug]/register` is unauthenticated. Rate limit: 10 req/min/IP (in-memory).
-- Never trust any FK from the public payload — validate against the DB after parsing.
-- `RegistrationItem.unitPrice` must always be snapshotted from DB at registration time — never from client input.
-
-## CSV export formula injection
-
-All CSV exports must prefix cells starting with `=`, `+`, `-`, `@` with a single quote `'` to prevent spreadsheet formula injection.
-
-## Password / OTP lockout
-
-- 5 wrong password attempts → 15 min lockout (throws `AccountLocked`).
-- 5 wrong OTP codes → 15 min lockout (throws `OtpLocked`).
-- `DISABLE_OTP=true` is dev-only; never allow in production path.
-
-## Audit log
-
-- Every sensitive action must call `logAudit(userId, "VERB_NOUN", resourceType, resourceId?, metadata?, ip?)`.
-- `logAudit` swallows its own errors — do NOT wrap it in try-catch that silences the primary action.
-- Never log PII (email, mobile, pastoral notes) in `metadata`.
-
-## Unique constraint + redirect
-
-- Wrap ONLY the DB call in try-catch — `redirect()` throws internally and gets swallowed if inside catch.
-
-## Zod validation
-
-- All Zod string fields must have `.max()` bounds to prevent oversized payloads.
-- Zod v4 uses `.issues` not `.errors`.
-
-## General
-
-- No raw SQL — all DB access via `prisma` from `@/lib/prisma`.
-- `prisma.X.findMany` for lists feeding UI: always use `select` not `include` to avoid leaking PII columns.
-- Route param integers: guard `isNaN(id) || id <= 0 || id > 2147483647` before use.
+- Migrations forward-only and non-destructive — users' existing D1 data must survive every upgrade.
+- Destructive remote ops (`wrangler d1 execute --remote` with DROP/DELETE, `wrangler d1 delete`, R2 deletes) are blocked by `.claude/hooks/guard-bash.js` — confirm with the user.

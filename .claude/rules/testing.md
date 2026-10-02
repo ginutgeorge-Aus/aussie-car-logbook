@@ -1,18 +1,15 @@
 ---
 paths:
-  - "__tests__/**"
-  - "src/**/__tests__/**"
+  - "src/**/*.test.ts"
+  - "vitest.config.ts"
 ---
 
-# Jest Notes
+# Testing — Vitest
 
-- Tests live in **two** places: the root `/__tests__/` tree (subdirs mirror domain: `actions/`, `api/`, `app/`, `components/`, `lib/`) **and** colocated `__tests__/` dirs nested under `src/app/**` / `src/lib/**` (e.g. `src/lib/actions/__tests__/`, `src/app/(dashboard)/…/__tests__/`). Both run in CI — when a module has a test in both trees, update the right one (and beware a same-named test existing in both, which has bitten CI before). New tests: prefer colocating next to the module under test.
-- Global env: `jest-environment-jsdom`
-- API route + server action tests: add `/** @jest-environment node */` (jsdom lacks `Request`)
-- **Server Component page tests**: also use `/** @jest-environment node */`. Call the async page function directly — `await Page({ searchParams: Promise.resolve({}) })` — don't `render()`. Mock `redirect` to throw: `jest.fn(() => { throw new Error("REDIRECT") })`, then assert `rejects.toThrow("REDIRECT")`. Mock client components as `() => null`. Prisma Decimal mock: `{ toString: () => "10000" }` — `Number()` coerces via `toString()` when `valueOf()` returns non-primitive.
-- Mock NextAuth: `jest.mock("@/auth", () => ({ auth: jest.fn() }))`; `auth.test.ts` also mocks `next-auth`, `next-auth/providers/credentials`, `@/auth.config`
-- Mock Prisma: mock ALL methods called — missing method → "is not a function"
-- Enums: import from `@/lib/generated/prisma/enums`
-- Zod v4: `.issues` not `.errors`
-- **IDOR-guarded actions**: mock `findUnique` to return valid record or `update` never fires
-- **Self-action guard**: mock session with `id`: `{ user: { role: "ADMIN", id: "1" } }`
+- Tests are **colocated** `src/**/*.test.ts` (config: `vitest.config.ts`, `environment: "node"`, `@` → `src`). No `__tests__/` dirs, no jsdom.
+- **Test the pure layer**: `src/lib/tax/**` (correctness gate), `src/lib/reports/**`, and every `parse*`/`compute*` in `src/lib/<domain>/`. These take plain values — no mocks needed.
+- **Don't unit-test `src/lib/data/**` or actions against a fake D1.** Keep logic out of them so there's nothing to test; verify with `corepack pnpm dev` + local D1.
+- Tax changes are **test-first** (`.claude/rules/tax-engine.md`): add the ATO worked example as a failing test, then implement.
+- **Bugfix = failing-first regression test in the same PR** (lessons ladder layer 3 — `.claude/rules/lessons.md`).
+- Money assertions in integer cents; dates as ISO strings. Avoid `new Date()` in tests — pass dates in (see `src/lib/today.ts`).
+- Run one file: `corepack pnpm test src/lib/tax/gst.test.ts`; by name: `corepack pnpm test -t "<name>"`.

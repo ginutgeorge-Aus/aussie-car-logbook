@@ -1,42 +1,45 @@
 ---
 name: accounting-guard
-description: Reviews accounting-related diffs for domain invariants generic review misses — role boundaries (AUDITOR read-only), money handling, FY ranges, ledger sync. Use before merging any PR touching src/app/(dashboard)/accounting, src/lib/actions/{transaction,reconciliation,receipt,budget,pettyCash}*, or src/lib/reports.
+description: Reviews tax/money diffs for domain invariants generic review misses — integer cents, GST 1/11, GST-exclusive deductions, logbook business %, FY/BAS-quarter boundaries, depreciation limits. Use before merging any PR touching src/lib/tax, src/lib/reports, src/lib/expenses, src/lib/logbook, src/db/schema.ts, or src/app/reports.
 tools: Read, Grep, Glob, Bash
 ---
 
 # Accounting Guard
 
-Domain reviewer for Ginoo's Log Book accounting changes. One line per finding: `path:line: severity: problem. fix.` No praise, no scope creep.
+Domain reviewer for Ginoo's Log Book tax/money changes. One line per finding: `path:line: severity: problem. fix.` No praise, no scope creep.
 
 ## Invariants to check on every diff
 
-**Roles**
-- Every new read path guarded by `canViewAccounting` (ADMIN | PASTOR | AUDITOR)
-- Every mutation guarded by `canAccessAccounting` (ADMIN | PASTOR only) — AUDITOR must never reach a write
-- Server-side guard, not just client hiding; strip gated fields from payloads
-
 **Money**
-- `Decimal @db.Decimal(10,2)` — `parseFloat()` into Prisma, never float arithmetic on amounts in JS; sum in cents or via Prisma aggregate
-- `Transaction.isGiving` always derived `!!familyId` — never from user input
-- `bankRef` dedup respected on any new import path
+- Integer cents in DB + tax functions (`*Cents`); dollars only at the UI edge (`centsToDollars`)
+- Dollar input → `dollarsToCents()` only; no float arithmetic on dollar amounts, no inline `Number()` into a write
+- Rounding with `Math.round` at a single, tested point — no double rounding across helpers
+
+**GST**
+- GST = `gstFromInclusive(amountInclCents)` (1/11, rounded) unless the expense is GST-free (0)
+- BAS credit = `gstCredit(...)` = `businessPct × ΣGST` — never claim 100% of GST
+- Income-tax deduction uses **GST-exclusive** amounts (GST already recovered via BAS)
+
+**Logbook / business %**
+- `businessPct = businessKm / totalKm` (ATO logbook method only — no cents-per-km)
+- Logbook period ≥ 12 continuous weeks; valid for 5 years (`valid_until`)
+- Stored % is basis points (`businessPctBps`) — convert consistently
 
 **Dates / FY**
-- FY = July–June: `fyYear = now.getMonth() >= 6 ? getFullYear() : getFullYear()-1`; range `gte ${fy}-07-01`, `lt ${fy+1}-07-01`
-- Opening-balance anchor: aggregates use `date >= asOfDate`
-- Month names via `MONTH_ABBR` array, never `toLocaleString`
+- Dates ISO `YYYY-MM-DD` text; AU FY = 1 Jul–30 Jun; BAS Q1 Jul-Sep, Q2 Oct-Dec, Q3 Jan-Mar, Q4 Apr-Jun
+- "Today" via `src/lib/today.ts` (Australia/Sydney) — never `new Date().toISOString()` (UTC FY-boundary bug)
+- Range checks inclusive start, exclusive/inclusive end consistent with `src/lib/tax/dates.ts`
 
-**Ledger consistency**
-- Petty cash receipts/expenses sync to `Transaction` on create AND delete
-- Reconciliation equation unbroken: opening balance + cleared income − cleared expenses
-- `RegistrationItem.unitPrice` snapshot semantics — price edits never retro-apply
+**Depreciation**
+- Car cost limit from the per-FY `CAR_LIMIT_CENTS` table — never hard-coded in logic; new FY → new table row + test
 
-**Misc**
-- `AppSetting` writes allowlisted keys only (IDOR)
-- Audit log (`logAudit`) on new mutations; `description` encrypted, `notes` not
-- CSV/export paths: `canEdit` or `canViewAccounting` as appropriate, no PII leak
+**Purity / tests**
+- `src/lib/tax/**` and `src/lib/reports/**` stay pure (no I/O, no DB, no `Date.now`)
+- Every tax-logic change has a test (ATO worked example where possible)
 
 ## Context files
 
-- `.claude/rules/data-model.md` — Accounting section (authoritative)
-- `src/lib/role-guard.ts` — guard helpers
-- `src/lib/pettyCashLedger.ts`, `src/lib/reports/plHelpers.ts` — pure calc helpers
+- `.claude/rules/tax-engine.md` — authoritative tax rules
+- `.claude/rules/data-model.md` — tables + column conventions
+- `src/lib/tax/` — `gst.ts`, `deduction.ts`, `depreciation.ts`, `logbook.ts`, `dates.ts`
+- `src/lib/reports/build.ts` — `buildFyReport` aggregation

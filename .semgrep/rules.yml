@@ -1,0 +1,57 @@
+# Project-specific Semgrep rules.
+#
+# Community rulesets (p/typescript, p/react) cover generic web-vuln classes.
+# These rules encode invariants unique to THIS codebase that no off-the-shelf
+# ruleset knows about.
+#
+# All rules are ERROR severity; the workflow runs with --error so a match fails CI.
+# Suppress a verified false positive inline with `// nosemgrep: <rule-id>` + reason.
+
+rules:
+  - id: glb-no-raw-sql
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: >
+      Raw SQL is banned — all D1 access goes through the typed Drizzle client
+      (db.select/insert/update/delete). sql.raw() splices unescaped strings
+      (SQL injection); calling the D1 binding directly (env.DB.prepare/exec)
+      bypasses the typed schema. Drizzle's tagged `sql` template is parameterised
+      and stays allowed.
+    pattern-either:
+      - pattern: sql.raw(...)
+      - pattern: $ENV.DB.prepare(...)
+      - pattern: $ENV.DB.exec(...)
+
+  - id: glb-no-float-money
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: >
+      Money is integer cents. Inline Number()/parseFloat() into a *Cents column
+      inside a Drizzle write lets NaN, Infinity, negatives and fractional cents
+      reach D1. Convert via dollarsToCents() (src/lib/logbook/parse.ts), which
+      validates and rounds, then pass the result.
+    patterns:
+      - pattern-either:
+          - pattern: "$KEY: parseFloat(...)"
+          - pattern: "$KEY: Number(...)"
+          - pattern: "$KEY: +$X"
+      - metavariable-regex:
+          metavariable: $KEY
+          regex: ^.*Cents$
+      - pattern-either:
+          - pattern-inside: $Q.values({...})
+          - pattern-inside: $Q.set({...})
+
+  - id: glb-no-float-gst
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: >
+      GST must be computed in integer cents via gstFromInclusive() in
+      src/lib/tax/gst.ts (1/11 of the GST-inclusive amount, rounded). Dividing
+      by 11 inline (often on dollars) drifts by a cent and bypasses the tested
+      tax engine. UI previews may suppress with `// nosemgrep: glb-no-float-gst`.
+    paths:
+      exclude:
+        - "**/src/lib/tax/gst.ts"
+        - "**/*.test.ts"
+    pattern: $X / 11
