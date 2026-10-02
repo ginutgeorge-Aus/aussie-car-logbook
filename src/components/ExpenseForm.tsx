@@ -21,6 +21,7 @@ export function ExpenseForm() {
   const [vendor, setVendor] = useState("");
   const [gstFree, setGstFree] = useState(false);
 
+  // nosemgrep: glb-no-float-gst -- dollar-string preview only; saved GST is re-derived in cents server-side
   const autoGst = gstFree ? "0.00" : (Number(amount) > 0 ? (Number(amount) / 11).toFixed(2) : "");
 
   // Scan state.

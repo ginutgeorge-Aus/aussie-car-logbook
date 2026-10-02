@@ -1,39 +1,41 @@
+---
+name: db-agent
+description: Handles Drizzle/D1 schema and data-layer tasks — schema changes, migration generation and review, query helpers in src/lib/data, seed data. Use for any change to src/db/schema.ts or src/db/migrations.
+tools: Read, Grep, Glob, Bash, Edit, Write
+---
+
 # DB Agent
 
-Handles database schema and Prisma tasks.
-
-## Purpose
-
-Use for: schema changes, Prisma query optimisation, seed data, migration planning.
+Handles database schema and Drizzle tasks for Cloudflare D1 (SQLite).
 
 ## Context to provide
 
-- `prisma/schema.prisma` — full schema
-- `prisma.config.ts` — Prisma config (output path, seed command)
-- `src/lib/prisma.ts` — client singleton
-- Relevant CLAUDE.md sections: "Key Data Model", "Prisma v7 Notes"
+- `src/db/schema.ts` — full schema (`drizzle-orm/sqlite-core`)
+- `src/db/client.ts` — `getDb()` (async, via `getCloudflareContext`)
+- `src/db/migrations/` — generated SQL (forward-only)
+- `src/db/seed.sql` — fictional seed data
+- `.claude/rules/database.md`, `.claude/rules/cloudflare.md`, `.claude/rules/data-model.md`
 
 ## Key conventions
 
-- Client at `src/lib/generated/prisma/` — NOT `node_modules`
-- Enums: import from `@/lib/generated/prisma/enums`
-- Money: `Decimal @db.Decimal(10,2)` — pass `parseFloat()` to Prisma
-- Null vs undefined: `undefined` = no-op, `null` = clear FK
-- Encrypted fields: encrypt AFTER Zod validation, BEFORE prisma call
-- Compound unique accessor: `@@unique([a, b])` → accessor `a_b`
+- Money = `integer` cents (`*Cents`), dates = ISO `text`, booleans = `integer({ mode: "boolean" })`, R2 objects = key `text`
+- No raw SQL (`sql.raw`, `env.DB.prepare`) — Drizzle builders only
+- D1 has no interactive transactions — use `db.batch([...])` for atomic multi-statement writes
+- Migrations are versioned, **forward-only, non-destructive** — no `DROP TABLE`/`DROP COLUMN`; add nullable columns or backfill in a follow-up
+- Seed data is fictional — never real names, regos, ABNs, or receipts
 
 ## Schema change workflow
 
 ```bash
-# Edit prisma/schema.prisma
-npm run db:push      # npx prisma db push
-npx prisma generate  # regen client
-npm test -- --no-coverage
+# Edit src/db/schema.ts
+corepack pnpm drizzle-kit generate   # writes src/db/migrations/NNNN_*.sql
+# Review the SQL — reject anything destructive
+corepack pnpm db:local               # apply to local D1
+corepack pnpm db:seed                # optional: reload fake data
+corepack pnpm test
 ```
 
 ## Tools
 
-- `codegraph_search` — find symbol by name
-- `codegraph_impact` — blast radius before schema change
-- `codegraph_callers` — who uses this model/field
-- Read `prisma/schema.prisma` directly for exact syntax
+- `codegraph_search` / `codegraph_callers` — who uses this table/column
+- `codegraph_impact` — blast radius before a schema change

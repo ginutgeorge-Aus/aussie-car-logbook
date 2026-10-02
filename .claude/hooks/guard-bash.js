@@ -1,18 +1,16 @@
 #!/usr/bin/env node
 // PreToolUse(Bash) guard: block destructive/protected ops.
-// Converted from hookify.block-prod-destructive.local.md (hookify plugin was never enabled).
 // Fail-safe: any error exits 0 (allows the command) — a guard bug must not wedge the shell.
 const fs = require("fs");
 try {
   const input = JSON.parse(fs.readFileSync(0, "utf8") || "{}");
   const cmd = input?.tool_input?.command || "";
   const rx =
-    /(prisma\s+migrate\s+reset|prisma\s+db\s+push\s+.*--accept-data-loss|git\s+push\s+(--force\s+)?origin\s+main\b)/;
+    /(wrangler\s+d1\s+execute\b(?=[\s\S]*--remote)(?=[\s\S]*(\b(drop|delete|truncate|update|insert|replace|alter|create|attach|pragma)\b|--file\b))|wrangler\s+d1\s+delete\b|wrangler\s+r2\s+(bucket\s+delete|object\s+delete)\b|git\s+push\s+(--force\s+)?origin\s+main\b)/i;
   if (rx.test(cmd)) {
     const reason = [
       "BLOCKED — destructive/protected operation.",
-      "- `prisma migrate reset` wipes the DB. Dev: confirm with user first. Prod: never.",
-      "- `db push --accept-data-loss` dropped prod data before. Schema changes go via `prisma migrate dev` + PR + tag (CI runs `migrate deploy`).",
+      "- Any write (DROP/DELETE/UPDATE/INSERT/ALTER/…) or file-based (`--file`, contents unchecked) SQL against the REMOTE D1 — only read-only SELECTs pass — or deleting the D1 database / R2 receipts, destroys real tax records. Confirm with the user first; schema changes go via `drizzle-kit generate` + PR (forward-only migrations).",
       "- Direct push to `main` violates branch+PR workflow. Open a PR instead.",
     ].join("\n");
     process.stdout.write(

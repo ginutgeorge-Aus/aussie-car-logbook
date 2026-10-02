@@ -1,0 +1,37 @@
+name: Dependency review
+
+# Blocks PRs that add a dependency with a known vulnerability (moderate+) or a
+# licence outside the MIT-compatible allowlist below (no strong copyleft).
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: moderate
+          fail-on-scopes: runtime, development, unknown
+          allow-licenses: >-
+            MIT, MIT-0, ISC, 0BSD, BSD-2-Clause, BSD-3-Clause, Apache-2.0,
+            Zlib, Unlicense, CC0-1.0, CC-BY-3.0, CC-BY-4.0, BlueOak-1.0.0,
+            MPL-2.0, LGPL-2.1-or-later, LGPL-3.0-only, LGPL-3.0-or-later
+          # argparse (via js-yaml) is Python-2.0 — a dev/build-time JS port, OK
+          # per-package. mcp (Python-2.0), protobuf (LicenseRef-scancode-protobuf)
+          # and typing-extensions (PSF-2.0) come from the hash-locked Semgrep in
+          # .github/requirements — CI-only tooling, never deployed.
+          allow-dependencies-licenses: >-
+            pkg:npm/argparse, pkg:pypi/mcp, pkg:pypi/protobuf,
+            pkg:pypi/typing-extensions
+          comment-summary-in-pr: on-failure
