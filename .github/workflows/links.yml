@@ -32,6 +32,7 @@ jobs:
             README.md CONTRIBUTING.md SECURITY.md 'docs/**/*.md'
           output: lychee-repo.md
           fail: false
+          failIfEmpty: false
       - id: wiki
         uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
         with:
@@ -41,6 +42,7 @@ jobs:
             'wiki/*.md'
           output: lychee-wiki.md
           fail: false
+          failIfEmpty: false
       - name: Open or update issue
         if: steps.repo.outputs.exit_code != 0 || steps.wiki.outputs.exit_code != 0
         env:

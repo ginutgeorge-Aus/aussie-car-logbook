@@ -22,7 +22,7 @@ Domain reviewer for Ginoo's Log Book tax/money changes. One line per finding: `p
 
 **Logbook / business %**
 - `businessPct = businessKm / totalKm` (ATO logbook method only — no cents-per-km)
-- Logbook period ≥ 12 continuous weeks; valid for 5 years (`valid_until`)
+- Logbook period ≥ 12 continuous weeks **representative of usual work travel**; valid for 5 years (`valid_until`) — a significant change in use pattern requires a new logbook before relying on `businessPct`
 - Stored % is basis points (`businessPctBps`) — convert consistently
 
 **Dates / FY**

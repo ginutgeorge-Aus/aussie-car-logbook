@@ -11,7 +11,7 @@ Standard skill order for any bug or test failure in Ginoo's Log Book.
 Diagnose root cause before touching code. Surface assumptions. Check logs, tests, and stack traces.
 
 ### 2. Write a reproducing test
-Before fixing, write a colocated `*.test.ts` that fails with the current bug. This is your success criterion (lessons ladder layer 3 — `.claude/rules/lessons.md`).
+Before fixing, write a colocated `*.test.ts` that fails with the current bug. This is your success criterion.
 
 ### 3. Fix — minimal, surgical
 Touch only the broken code. Do not refactor adjacent code. Match existing style.

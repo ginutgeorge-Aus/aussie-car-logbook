@@ -63,8 +63,8 @@ Repo is public. **Never commit** secrets, `account_id`/`database_id`, personal d
 | `src/lib/tax/` | Pure tax functions + colocated `*.test.ts` |
 | `src/lib/reports/` | Pure FY-report aggregation (`buildFyReport` → BAS quarters + annual deduction) composing `src/lib/tax` |
 | `src/db/schema.ts`, `src/db/migrations/` | Drizzle schema + generated SQL |
-| `.semgrep/rules.yml` | Repo semgrep rules (`glb-*`: no raw SQL, no float money/GST) — CI-blocking; promotion loop in `.claude/rules/lessons.md` |
+| `.semgrep/rules.yml` | Repo semgrep rules (`glb-*`: no raw SQL, no float money/GST) — CI-blocking |
 | `.superpowers/sdd/progress.md` | Subagent-driven execution ledger (git-ignored scratch) |
-| `.claude/rules/` | Path-scoped rules — auto-load when you open matching files (tax-engine, database, data-model, server-actions, auth, cloudflare, security, testing, lessons) |
+| `.claude/rules/` | Path-scoped rules — auto-load when you open matching files (tax-engine, database, data-model, server-actions, auth, cloudflare, security, testing) |
 
 Slice roadmap: Foundation+TaxEngine → Vehicles/Logbook UI → Expenses/OCR → Reports → Auth → PWA polish → Release infra.
