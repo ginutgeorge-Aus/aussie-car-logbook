@@ -6,11 +6,11 @@ try {
   const input = JSON.parse(fs.readFileSync(0, "utf8") || "{}");
   const cmd = input?.tool_input?.command || "";
   const rx =
-    /(wrangler\s+d1\s+execute\b(?=.*--remote)(?=.*\b(drop|delete|truncate)\b)|wrangler\s+d1\s+delete\b|wrangler\s+r2\s+(bucket\s+delete|object\s+delete)\b|git\s+push\s+(--force\s+)?origin\s+main\b)/i;
+    /(wrangler\s+d1\s+execute\b(?=.*--remote)(?=.*(\b(drop|delete|truncate)\b|--file\b))|wrangler\s+d1\s+delete\b|wrangler\s+r2\s+(bucket\s+delete|object\s+delete)\b|git\s+push\s+(--force\s+)?origin\s+main\b)/i;
   if (rx.test(cmd)) {
     const reason = [
       "BLOCKED — destructive/protected operation.",
-      "- Destructive SQL against the REMOTE D1, or deleting the D1 database / R2 receipts, destroys real tax records. Confirm with the user first; schema changes go via `drizzle-kit generate` + PR (forward-only migrations).",
+      "- Destructive or file-based (`--file`, contents unchecked) SQL against the REMOTE D1, or deleting the D1 database / R2 receipts, destroys real tax records. Confirm with the user first; schema changes go via `drizzle-kit generate` + PR (forward-only migrations).",
       "- Direct push to `main` violates branch+PR workflow. Open a PR instead.",
     ].join("\n");
     process.stdout.write(
