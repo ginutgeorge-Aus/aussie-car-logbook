@@ -24,7 +24,7 @@
     "react-dom": "19.2.8"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260911.1",
+    "@cloudflare/workers-types": "^5.20260929.1",
     "@opennextjs/cloudflare": "^1.20.6",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
@@ -37,7 +37,7 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^5.0.0",
-    "wrangler": "^4.131.0"
+    "wrangler": "^4.143.0"
   },
   "packageManager": "pnpm@12.4.1"
 }
