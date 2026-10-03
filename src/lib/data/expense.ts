@@ -17,11 +17,21 @@ export async function listExpenses(): Promise<ExpenseRow[]> {
   return db.select().from(expense).orderBy(desc(expense.date));
 }
 
+/** Deletes a just-uploaded receipt when its DB write failed, then rethrows. */
+async function discardUpload(receiptKey: string | null | undefined, e: unknown): Promise<never> {
+  if (receiptKey) await deleteReceipt(receiptKey).catch(() => {});
+  throw e;
+}
+
 export async function createExpense(input: ExpenseInput, receiptKey: string | null): Promise<void> {
-  const vehicleId = await currentVehicleId();
-  if (vehicleId === null) throw new Error("No vehicle set up yet.");
-  const db = await getDb();
-  await db.insert(expense).values({ ...input, vehicleId, receiptKey });
+  try {
+    const vehicleId = await currentVehicleId();
+    if (vehicleId === null) throw new Error("No vehicle set up yet.");
+    const db = await getDb();
+    await db.insert(expense).values({ ...input, vehicleId, receiptKey });
+  } catch (e) {
+    await discardUpload(receiptKey, e);
+  }
 }
 
 export async function updateExpense(
@@ -29,10 +39,21 @@ export async function updateExpense(
   input: ExpenseInput,
   receiptKey?: string | null,
 ): Promise<void> {
-  const db = await getDb();
-  // Only overwrite receiptKey when a value is passed (undefined = keep existing).
-  const values = receiptKey === undefined ? input : { ...input, receiptKey };
-  await db.update(expense).set(values).where(eq(expense.id, id));
+  let oldKey: string | null = null;
+  try {
+    const db = await getDb();
+    if (receiptKey !== undefined) {
+      const rows = await db.select({ receiptKey: expense.receiptKey }).from(expense).where(eq(expense.id, id)).limit(1);
+      oldKey = rows[0]?.receiptKey ?? null;
+    }
+    // Only overwrite receiptKey when a value is passed (undefined = keep existing).
+    const values = receiptKey === undefined ? input : { ...input, receiptKey };
+    await db.update(expense).set(values).where(eq(expense.id, id));
+  } catch (e) {
+    await discardUpload(receiptKey, e);
+  }
+  // The row now points at the new receipt; the replaced object is unreachable.
+  if (oldKey && oldKey !== receiptKey) await deleteReceipt(oldKey).catch(() => {});
 }
 
 export async function deleteExpense(id: number): Promise<void> {

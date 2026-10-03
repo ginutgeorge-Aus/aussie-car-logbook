@@ -13,12 +13,33 @@ import { runReceiptOcr } from "@/lib/data/ocr";
 import { parseOcrResult } from "@/lib/ocr/parse";
 import type { OcrActionResult } from "@/lib/ocr/types";
 
+/** Revalidates every page that reads trips, expenses or the vehicle. */
+function revalidateAll(listPath: string): void {
+  revalidatePath(listPath);
+  revalidatePath("/");
+  revalidatePath("/reports");
+}
+
+/** Normalises a thrown error into a failed ActionResult. */
+function failure(e: unknown): ActionResult {
+  return { ok: false, error: e instanceof Error ? e.message : "Something went wrong." };
+}
+
+/** Reads the row id posted by a delete form, or null if it is not an integer. */
+function idFrom(fd: FormData): number | null {
+  const id = Number(fd.get("id"));
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
+
 export async function saveVehicleAction(_prev: ActionResult, fd: FormData): Promise<ActionResult> {
   const parsed = parseVehicleForm(fd);
   if (!parsed.ok) return { ok: false, fieldErrors: parsed.fieldErrors };
-  await upsertVehicle(parsed.value);
-  revalidatePath("/");
-  revalidatePath("/vehicle");
+  try {
+    await upsertVehicle(parsed.value);
+  } catch (e) {
+    return failure(e);
+  }
+  revalidateAll("/vehicle");
   return { ok: true, saved: true };
 }
 
@@ -28,10 +49,9 @@ export async function createTripAction(_prev: ActionResult, fd: FormData): Promi
   try {
     await createTrip(parsed.value);
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failure(e);
   }
-  revalidatePath("/trips");
-  revalidatePath("/");
+  revalidateAll("/trips");
   return { ok: true };
 }
 
@@ -41,20 +61,22 @@ export async function updateTripAction(id: number, _prev: ActionResult, fd: Form
   try {
     await updateTrip(id, parsed.value);
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failure(e);
   }
-  revalidatePath("/trips");
-  revalidatePath("/");
+  revalidateAll("/trips");
   return { ok: true };
 }
 
-export async function deleteTripAction(fd: FormData): Promise<void> {
-  const id = Number(fd.get("id"));
-  if (Number.isInteger(id)) {
+export async function deleteTripAction(_prev: ActionResult, fd: FormData): Promise<ActionResult> {
+  const id = idFrom(fd);
+  if (id === null) return { ok: false, error: "Invalid trip." };
+  try {
     await deleteTrip(id);
-    revalidatePath("/trips");
-    revalidatePath("/");
+  } catch (e) {
+    return failure(e);
   }
+  revalidateAll("/trips");
+  return { ok: true };
 }
 
 function fileFrom(fd: FormData): File | null {
@@ -75,10 +97,9 @@ export async function createExpenseAction(_prev: ActionResult, fd: FormData): Pr
     }
     await createExpense(parsed.value, receiptKey);
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failure(e);
   }
-  revalidatePath("/expenses");
-  revalidatePath("/");
+  revalidateAll("/expenses");
   return { ok: true };
 }
 
@@ -95,20 +116,22 @@ export async function updateExpenseAction(id: number, _prev: ActionResult, fd: F
     }
     await updateExpense(id, parsed.value, receiptKey);
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failure(e);
   }
-  revalidatePath("/expenses");
-  revalidatePath("/");
+  revalidateAll("/expenses");
   return { ok: true };
 }
 
-export async function deleteExpenseAction(fd: FormData): Promise<void> {
-  const id = Number(fd.get("id"));
-  if (Number.isInteger(id)) {
+export async function deleteExpenseAction(_prev: ActionResult, fd: FormData): Promise<ActionResult> {
+  const id = idFrom(fd);
+  if (id === null) return { ok: false, error: "Invalid expense." };
+  try {
     await deleteExpense(id);
-    revalidatePath("/expenses");
-    revalidatePath("/");
+  } catch (e) {
+    return failure(e);
   }
+  revalidateAll("/expenses");
+  return { ok: true };
 }
 
 export async function scanReceiptAction(
