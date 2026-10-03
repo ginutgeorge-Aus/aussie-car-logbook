@@ -24,7 +24,7 @@ export function TripRow({ trip }: { trip: TripRowType }) {
         <td className="py-2 pr-4">{trip.purpose ?? ""}</td>
         <td className="py-2 flex gap-3">
           <button type="button" onClick={() => setEditing(true)} className="text-sm underline">Edit</button>
-          <form onSubmit={del.onSubmit}>
+          <form method="post" onSubmit={del.onSubmit}>
             <input type="hidden" name="id" value={trip.id} />
             <button type="submit" disabled={del.pending} className="text-sm text-red-600 underline disabled:opacity-50">
               {del.pending ? "Deleting…" : "Delete"}
@@ -59,7 +59,7 @@ export function TripRow({ trip }: { trip: TripRowType }) {
         <input name="purpose" form={`edit-${trip.id}`} defaultValue={trip.purpose ?? ""} className="border rounded px-2 py-1" />
       </td>
       <td className="py-2">
-        <form id={`edit-${trip.id}`} onSubmit={onSubmit} className="flex gap-3">
+        <form id={`edit-${trip.id}`} method="post" onSubmit={onSubmit} className="flex gap-3">
           <button type="submit" disabled={pending} className="text-sm underline disabled:opacity-50">{pending ? "Saving…" : "Save"}</button>
           <button type="button" onClick={() => setEditing(false)} className="text-sm underline">Cancel</button>
         </form>

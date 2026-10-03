@@ -11,7 +11,7 @@ export function VehicleForm({ vehicle }: { vehicle: VehicleRow | null }) {
   const errs = state.ok ? {} : (state.fieldErrors ?? {});
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4 max-w-md">
+    <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4 max-w-md">
       <label className="flex flex-col gap-1">
         <span>Make</span>
         <input name="make" defaultValue={vehicle?.make ?? ""} className="border rounded px-2 py-1" />

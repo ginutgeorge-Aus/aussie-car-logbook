@@ -61,5 +61,6 @@ export async function deleteExpense(id: number): Promise<void> {
   const rows = await db.select({ receiptKey: expense.receiptKey }).from(expense).where(eq(expense.id, id)).limit(1);
   await db.delete(expense).where(eq(expense.id, id));
   const key = rows[0]?.receiptKey;
-  if (key) await deleteReceipt(key);
+  // Best-effort: the row is already gone, so a failed R2 delete must not report failure.
+  if (key) await deleteReceipt(key).catch(() => {});
 }

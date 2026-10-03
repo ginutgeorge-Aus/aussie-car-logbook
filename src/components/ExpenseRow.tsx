@@ -38,7 +38,7 @@ export function ExpenseRow({ expense }: { expense: ExpenseRowType }) {
         </td>
         <td className="py-2 flex gap-3">
           <button type="button" onClick={() => setEditing(true)} className="text-sm underline">Edit</button>
-          <form onSubmit={del.onSubmit}>
+          <form method="post" onSubmit={del.onSubmit}>
             <input type="hidden" name="id" value={expense.id} />
             <button type="submit" disabled={del.pending} className="text-sm text-red-600 underline disabled:opacity-50">
               {del.pending ? "Deleting…" : "Delete"}
@@ -77,7 +77,7 @@ export function ExpenseRow({ expense }: { expense: ExpenseRowType }) {
         <input name="receipt" type="file" accept="image/*" form={fid} className="text-xs w-28" />
       </td>
       <td className="py-2">
-        <form id={fid} onSubmit={onSubmit} className="flex gap-3">
+        <form id={fid} method="post" onSubmit={onSubmit} className="flex gap-3">
           <input type="hidden" name="notes" value={expense.notes ?? ""} />
           <button type="submit" disabled={pending} className="text-sm underline disabled:opacity-50">{pending ? "Saving…" : "Save"}</button>
           <button type="button" onClick={() => setEditing(false)} className="text-sm underline">Cancel</button>

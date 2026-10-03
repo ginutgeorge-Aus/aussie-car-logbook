@@ -9,7 +9,7 @@ export function TripForm() {
   const errs = state.ok ? {} : (state.fieldErrors ?? {});
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-3 border rounded p-4">
+    <form method="post" onSubmit={onSubmit} className="flex flex-wrap items-end gap-3 border rounded p-4">
       <label className="flex flex-col gap-1">
         <span className="text-sm">Date</span>
         <input name="date" type="date" className="border rounded px-2 py-1" />
