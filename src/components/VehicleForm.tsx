@@ -1,19 +1,17 @@
 "use client";
 
-import { useActionState } from "react";
 import { saveVehicleAction } from "@/lib/actions";
 import { FieldError } from "@/components/FieldError";
+import { useFormSubmit } from "@/components/useFormSubmit";
 import { centsToDollars } from "@/lib/logbook/parse";
-import type { ActionResult, VehicleRow } from "@/lib/logbook/types";
-
-const initial: ActionResult = { ok: true };
+import type { VehicleRow } from "@/lib/logbook/types";
 
 export function VehicleForm({ vehicle }: { vehicle: VehicleRow | null }) {
-  const [state, action, pending] = useActionState(saveVehicleAction, initial);
+  const { state, pending, onSubmit } = useFormSubmit(saveVehicleAction);
   const errs = state.ok ? {} : (state.fieldErrors ?? {});
 
   return (
-    <form action={action} className="flex flex-col gap-4 max-w-md">
+    <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4 max-w-md">
       <label className="flex flex-col gap-1">
         <span>Make</span>
         <input name="make" defaultValue={vehicle?.make ?? ""} className="border rounded px-2 py-1" />
@@ -52,6 +50,7 @@ export function VehicleForm({ vehicle }: { vehicle: VehicleRow | null }) {
         {pending ? "Saving…" : "Save vehicle"}
       </button>
       {state.ok && state.saved && !pending ? <p className="text-sm text-green-600">Saved.</p> : null}
+      {!state.ok && state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
     </form>
   );
 }
