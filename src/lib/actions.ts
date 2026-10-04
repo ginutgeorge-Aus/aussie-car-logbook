@@ -10,6 +10,7 @@ import { putReceipt, assertReceiptFile } from "@/lib/data/receipts";
 import { createExpense, updateExpense, deleteExpense } from "@/lib/data/expense";
 import { getVehicle } from "@/lib/data/vehicle";
 import { runReceiptOcr } from "@/lib/data/ocr";
+import { OcrLicenceError } from "@/lib/ocr/model";
 import { parseOcrResult } from "@/lib/ocr/parse";
 import type { OcrActionResult } from "@/lib/ocr/types";
 
@@ -156,7 +157,11 @@ export async function scanReceiptAction(
   try {
     const raw = await runReceiptOcr(file);
     return { ok: true, value: parseOcrResult(raw) };
-  } catch {
+  } catch (e) {
+    console.error("scanReceiptAction: OCR failed", e);
+    if (e instanceof OcrLicenceError) {
+      return { ok: false, error: "Receipt scanning needs one-time setup (accept the Llama licence) — see docs/ocr.md." };
+    }
     return { ok: false, error: "Couldn't read the receipt. Enter details manually." };
   }
 }

@@ -131,7 +131,7 @@ export function ExpenseForm() {
         <span className="text-sm">Notes</span>
         <input name="notes" className="border rounded px-2 py-1" />
       </label>
-      <input ref={fileRef} name="receipt" type="file" accept="image/*" capture="environment" onChange={onFileChange} className="sr-only" />
+      <input ref={fileRef} name="receipt" type="file" accept="image/*" onChange={onFileChange} className="sr-only" />
       <button type="button" onClick={() => fileRef.current?.click()} disabled={scanning} className="rounded border px-3 py-2 disabled:opacity-50">
         {scanning ? "Scanning…" : hasFile ? "📷 Rescan receipt" : "📷 Scan receipt"}
       </button>
