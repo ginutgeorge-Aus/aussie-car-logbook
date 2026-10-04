@@ -19,12 +19,13 @@ This improves on the manual [deploy-ui.md](deploy-ui.md) guide in one way:
 
 ## Prerequisites
 
-Create the three Cloudflare resources first — follow **Steps 1–3** of
+Create the two Cloudflare resources first — follow **Steps 1–2** of
 [deploy-ui.md](deploy-ui.md#step-1--create-the-d1-database):
 
 1. D1 database `ginoos-log-book` (binding `DB`) — **copy its Database ID.**
 2. R2 bucket `ginoos-log-book-receipts` (binding `RECEIPTS`).
-3. Apply the migration once (D1 Console → paste `src/db/migrations/*.sql`).
+
+No manual SQL: the deploy command applies database migrations for you (Step 4).
 
 ## Step 1 — Create the `release` branch
 
@@ -58,8 +59,14 @@ Secrets**):
   - runs `gen-wrangler.mjs` (writes `wrangler.toml` from the example +
     `D1_DATABASE_ID`), then `opennextjs-cloudflare build`.
   - use `run` — bare `pnpm ci:build` risks colliding with pnpm's `ci` builtin.
-- **Deploy command:** `pnpm run ci:deploy` (`opennextjs-cloudflare deploy`).
+- **Deploy command:** `pnpm run ci:deploy`
+  - applies pending D1 migrations (`wrangler d1 migrations apply DB --remote`),
+    then `opennextjs-cloudflare deploy`. Schema always lands before the code
+    that reads it.
 - Root directory / output: defaults.
+- **API token:** the build token Cloudflare creates covers Workers, KV and R2
+  but **not D1**. Under **Settings → Build → API token**, edit the token and add
+  **Account → D1 → Edit**, or the migration step fails with an auth error.
 
 `account_id` is **not** needed in the config — Workers Builds deploys into the
 connected account automatically. `RECEIPTS` and `AI` bindings need no ids.
@@ -80,19 +87,27 @@ of [deploy-ui.md](deploy-ui.md#step-6--lock-it-down-with-cloudflare-access-requi
 ```bash
 git tag v1.1.0 <commit-on-main>      # tag the stable point
 git push --tags
-git branch -f release v1.1.0         # move release to the tag
-git push -f origin release           # → Workers Builds deploys
+git push origin v1.1.0:release       # fast-forward release → Workers Builds deploys
 ```
 
-## Database migrations (before you ship)
+The push is rejected unless `release` fast-forwards to the tag, so it can't
+roll back or overwrite history by accident. Protect `release` with a branch
+ruleset (GitHub → **Settings → Rules**): **block force pushes**, **restrict
+deletions**, and limit who can push — whoever can push to `release` can deploy.
 
-Deploy ships **code**, not schema. Drizzle migrations are forward-only and
-non-destructive, but they are **not** applied by the build.
+## Database migrations
 
-**When a release includes a new migration, apply it to remote D1 first**, then
-move `release`:
-- `corepack pnpm run db:remote` (applies `src/db/migrations/*` to remote), **or**
-- paste the new `.sql` into the D1 Console (pure UI).
+Applied automatically by `ci:deploy`, before the new code goes live. Wrangler
+records each applied migration in D1 (`d1_migrations` table) and only runs new
+ones, so every deploy is safe to repeat. Drizzle migrations here are
+forward-only and non-destructive.
+
+Before a **major** upgrade, take a restore point: D1 Time Travel keeps 30 days
+of point-in-time history (`wrangler d1 time-travel info ginoos-log-book`).
+
+> **Don't paste migration SQL into the D1 Console.** It creates the tables
+> without recording them in `d1_migrations`, so the next deploy tries to create
+> them again and fails. If you already did, see the troubleshooting row below.
 
 ## How other people run this app
 
@@ -107,7 +122,9 @@ however they like (their own Workers Builds, or manual `pnpm run deploy`).
 |---------|--------------|
 | Push to `main` deployed | Production branch is `main`, not `release`, or non-prod builds are ON. |
 | Build fails at `gen-wrangler` | `D1_DATABASE_ID` secret not set (Step 3). |
-| "binding not found" in logs | Secret value is wrong, or migration not applied. |
-| App loads but every page errors | Migration not run on remote D1 — see above. |
+| Deploy fails at `migrations apply` with an auth error | Build token lacks **D1 Edit** (Step 4). |
+| Deploy fails with `table ... already exists` | Tables were created by pasting SQL. In the D1 Console run `CREATE TABLE IF NOT EXISTS d1_migrations(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE, applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);` then `INSERT INTO d1_migrations(name) VALUES ('<file>.sql');` for each file you pasted, and redeploy. |
+| "binding not found" in logs | `D1_DATABASE_ID` secret value is wrong. |
+| App loads but every page errors | Migrations didn't run — check the deploy log for the `migrations apply` step. |
 | Receipt upload fails | R2 bucket name ≠ `ginoos-log-book-receipts`. |
 | OCR does nothing | Workers AI `AI` binding missing (it's in `wrangler.toml.example`). |
