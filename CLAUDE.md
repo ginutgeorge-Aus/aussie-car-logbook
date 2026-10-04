@@ -17,6 +17,7 @@ Package manager is **pnpm, invoked via corepack** (`pnpm` is not always on PATH)
 | `corepack pnpm dev` | Run app locally (:3000) |
 | `corepack pnpm build` | Production build (also the CI + typecheck gate) |
 | `corepack pnpm test` | Vitest — the tax-engine correctness gate |
+| `corepack pnpm lint` / `knip` | ESLint (next core-web-vitals + TS) / unused files·exports·deps — both CI gates |
 | `corepack pnpm test <path>` | Run one test file (e.g. `... test src/lib/tax/dates.test.ts`) |
 | `corepack pnpm test -t "<name>"` | Run tests matching a name |
 | `corepack pnpm exec tsc --noEmit` | Typecheck only |
@@ -51,7 +52,7 @@ Repo is public. **Never commit** secrets, `account_id`/`database_id`, personal d
 - Real tax data lives only in the user's own D1/R2 — never in the repo.
 - **Drizzle migrations are versioned, forward-only, non-destructive** (data survives upgrades). Add a backup step before a major upgrade.
 - Work on a `feat|fix|chore/<slug>` branch (a guard hook blocks direct edits on the default branch).
-- `main` is branch-protected on GitHub: **PRs required** (CI + CodeQL + gitleaks must pass), **squash-merge only**, linear history, merged branches auto-deleted. See [CONTRIBUTING.md](CONTRIBUTING.md); report vulns privately per [SECURITY.md](SECURITY.md).
+- `main` is branch-protected on GitHub: **PRs required** (CI + CodeQL + gitleaks must pass; semgrep, zizmor, dependency-review, Conventional-Commits PR title also run), **squash-merge only**, linear history, merged branches auto-deleted. See [CONTRIBUTING.md](CONTRIBUTING.md); report vulns privately per [SECURITY.md](SECURITY.md).
 
 ## Where things live
 
@@ -62,6 +63,7 @@ Repo is public. **Never commit** secrets, `account_id`/`database_id`, personal d
 | `src/lib/tax/` | Pure tax functions + colocated `*.test.ts` |
 | `src/lib/reports/` | Pure FY-report aggregation (`buildFyReport` → BAS quarters + annual deduction) composing `src/lib/tax` |
 | `src/db/schema.ts`, `src/db/migrations/` | Drizzle schema + generated SQL |
+| `.semgrep/rules.yml` | Repo semgrep rules (`glb-*`: no raw SQL, no float money/GST) — CI-blocking |
 | `.superpowers/sdd/progress.md` | Subagent-driven execution ledger (git-ignored scratch) |
 | `.claude/rules/` | Path-scoped rules — auto-load when you open matching files (tax-engine, database, data-model, server-actions, auth, cloudflare, security, testing) |
 

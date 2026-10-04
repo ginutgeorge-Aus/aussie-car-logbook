@@ -30,7 +30,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_response.filePath // .tool_input.file_path' | { read -r f; case \"$f\" in */src/*.ts|*/src/*.tsx) cd \"/home/ggeorge/workspace/Projects/Ginoo's Log Book\" && npx eslint --fix \"$f\" 2>/dev/null || true;; esac; }",
+            "command": "jq -r '.tool_response.filePath // .tool_input.file_path' | { read -r f; case \"$f\" in */src/*.ts|*/src/*.tsx) cd \"$CLAUDE_PROJECT_DIR\" && corepack pnpm exec eslint --fix \"$f\" 2>/dev/null || true;; esac; }",
             "timeout": 60,
             "statusMessage": "eslint --fix"
           }

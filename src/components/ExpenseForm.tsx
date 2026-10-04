@@ -1,17 +1,15 @@
 "use client";
 
-import { useActionState, useRef, useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { createExpenseAction, scanReceiptAction } from "@/lib/actions";
 import { compressReceipt } from "@/lib/image/compress";
 import { EXPENSE_CATEGORIES } from "@/lib/expenses/categories";
 import { FieldError } from "@/components/FieldError";
+import { useFormSubmit } from "@/components/useFormSubmit";
 import { todayIso } from "@/lib/today";
-import type { ActionResult } from "@/lib/logbook/types";
-
-const initial: ActionResult = { ok: true };
 
 export function ExpenseForm() {
-  const [state, action, pending] = useActionState(createExpenseAction, initial);
+  const { state, pending, onSubmit } = useFormSubmit(createExpenseAction, { onSuccess: resetForm });
   const errs = state.ok ? {} : (state.fieldErrors ?? {});
 
   // Controlled OCR-target fields.
@@ -22,6 +20,7 @@ export function ExpenseForm() {
   const [vendor, setVendor] = useState("");
   const [gstFree, setGstFree] = useState(false);
 
+  // nosemgrep: glb-no-float-gst -- dollar-string preview only; saved GST is re-derived in cents server-side
   const autoGst = gstFree ? "0.00" : (Number(amount) > 0 ? (Number(amount) / 11).toFixed(2) : "");
 
   // Scan state.
@@ -29,6 +28,19 @@ export function ExpenseForm() {
   const [hasFile, setHasFile] = useState(false);
   const [scanning, startScan] = useTransition();
   const [scanMsg, setScanMsg] = useState<string | null>(null);
+
+  /** Clears every field after a successful add so the next save can't duplicate it. */
+  function resetForm(form: HTMLFormElement) {
+    form.reset(); // uncontrolled fields: notes, receipt file
+    setDate(todayIso());
+    setCategory(EXPENSE_CATEGORIES[0].code);
+    setAmount("");
+    setGst("");
+    setVendor("");
+    setGstFree(false);
+    setHasFile(false);
+    setScanMsg(null);
+  }
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -84,7 +96,7 @@ export function ExpenseForm() {
   }
 
   return (
-    <form action={action} className="flex flex-wrap items-end gap-3 border rounded p-4">
+    <form method="post" onSubmit={onSubmit} className="flex flex-wrap items-end gap-3 border rounded p-4">
       <label className="flex flex-col gap-1">
         <span className="text-sm">Date</span>
         <input name="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className="border rounded px-2 py-1" />
