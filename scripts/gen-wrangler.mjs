@@ -31,10 +31,12 @@ if (!src.includes(PLACEHOLDER)) {
   process.exit(1);
 }
 
-if (existsSync(OUT)) {
+// "wx" = create-only, atomically: fails with EEXIST rather than overwrite.
+try {
+  writeFileSync(OUT, src.replaceAll(PLACEHOLDER, id), { flag: "wx" });
+} catch (e) {
+  if (e.code !== "EEXIST") throw e;
   console.error(`gen-wrangler: ${OUT} already exists; refusing to overwrite it.`);
   process.exit(1);
 }
-
-writeFileSync(OUT, src.replaceAll(PLACEHOLDER, id));
 console.log(`gen-wrangler: wrote ${OUT} with D1 id from D1_DATABASE_ID.`);
