@@ -58,6 +58,15 @@ export function ExpenseForm() {
       try {
         file = await compressReceipt(original);
       } catch {
+        if (original.type === "image/heic") {
+          // Chrome/Firefox can't decode HEIC; the server still accepts it, so
+          // keep the original for saving and fall back to manual entry.
+          setHasFile(true);
+          setScanMsg("This browser can't scan HEIC photos — enter details manually; the photo will still be saved.");
+          return;
+        }
+        // Clear the real input too, or submit would still upload the bad file.
+        if (fileRef.current) fileRef.current.value = "";
         setHasFile(false);
         setScanMsg("Couldn't read that image — pick another receipt.");
         return;
@@ -135,7 +144,7 @@ export function ExpenseForm() {
       <button type="button" onClick={() => fileRef.current?.click()} disabled={scanning} className="rounded border px-3 py-2 disabled:opacity-50">
         {scanning ? "Scanning…" : hasFile ? "📷 Rescan receipt" : "📷 Scan receipt"}
       </button>
-      <button type="submit" disabled={pending} className="rounded bg-black text-white px-4 py-2 disabled:opacity-50">
+      <button type="submit" disabled={pending || scanning} className="rounded bg-black text-white px-4 py-2 disabled:opacity-50">
         {pending ? "Adding…" : "Add expense"}
       </button>
       {scanMsg ? <p className="w-full text-sm text-gray-600">{scanMsg}</p> : null}

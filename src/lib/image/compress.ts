@@ -34,6 +34,9 @@ function encode(img: HTMLImageElement, maxEdge: number, quality: number): Promis
   canvas.height = h;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas not available.");
+  // JPEG has no alpha: paint white first or transparent PNG/WebP areas turn black.
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, w, h);
   ctx.drawImage(img, 0, 0, w, h);
   return new Promise((resolve, reject) => {
     canvas.toBlob(
