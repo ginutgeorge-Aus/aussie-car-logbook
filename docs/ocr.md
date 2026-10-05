@@ -27,8 +27,10 @@ and never auto-saves.
 
 1. Tap **Scan receipt** → take a photo or pick one from the library.
 2. The browser downscales it and re-encodes it as JPEG (~150 KB, `src/lib/image/compress.ts`).
-   HEIC/PNG become JPEG here, so every photo is scannable and the multi-MB camera
-   original never leaves the phone.
+   PNG/WebP (and HEIC on Safari) become JPEG here, so the multi-MB camera original
+   never leaves the phone. **Exception:** Chrome/Firefox can't decode HEIC, so the
+   original HEIC is kept and saved as-is, scanning is skipped, and the form asks
+   for manual entry. (iPhone Safari already hands the page a JPEG.)
 3. `scanReceiptAction` sends it to the model as a base64 data URI (`image_url`
    content part, `src/lib/ocr/model.ts`) and pre-fills the form.
 
