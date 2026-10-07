@@ -12,10 +12,11 @@ const ABN_WEIGHTS = [10, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19];
 /**
  * Checks an 11-digit ABN against the official ATO checksum: subtract 1 from the
  * first digit, weight each digit (10,1,3,5,7,9,11,13,15,17,19), and the sum must
- * be divisible by 89. Input must be digits only (strip spaces first).
+ * be divisible by 89. Input must be digits only (strip spaces first). The ATO
+ * never issues an ABN starting with 0, so a leading zero is rejected outright.
  */
 export function isValidAbn(digits: string): boolean {
-  if (!/^\d{11}$/.test(digits)) return false;
+  if (!/^[1-9]\d{10}$/.test(digits)) return false;
   const sum = ABN_WEIGHTS.reduce((acc, w, i) => {
     const d = Number(digits[i]) - (i === 0 ? 1 : 0);
     return acc + d * w;

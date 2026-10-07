@@ -22,6 +22,10 @@ describe("isValidAbn", () => {
 });
 
 describe("formatAbn", () => {
+  it("rejects a leading zero even when the checksum passes", () => {
+    expect(isValidAbn("01300000000")).toBe(false);
+  });
+
   it("groups digits as XX XXX XXX XXX", () => {
     expect(formatAbn("51824753556")).toBe("51 824 753 556");
   });
