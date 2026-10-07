@@ -80,7 +80,15 @@ export function ExpenseForm() {
 
       const fd = new FormData();
       fd.set("receipt", file);
-      const res = await scanReceiptAction({ ok: false, error: "" }, fd);
+      let res: Awaited<ReturnType<typeof scanReceiptAction>>;
+      try {
+        res = await scanReceiptAction({ ok: false, error: "" }, fd);
+      } catch {
+        // Network drop or server throw: the photo is still attached, so the
+        // user can enter details by hand and save.
+        setScanMsg("Scan failed — enter details manually; the photo will still be saved.");
+        return;
+      }
       if (res.ok) {
         const v = res.value;
         if (v.dateISO) setDate(v.dateISO);

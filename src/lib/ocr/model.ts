@@ -18,9 +18,13 @@ export function buildOcrMessages(prompt: string, mimeType: string, bytes: Uint8A
   ];
 }
 
-/** Llama 3.2 needs a one-time "agree" per account (error 5016). See docs/ocr.md. */
+/**
+ * Llama 3.2 needs a one-time "agree" per account (error 5016). See docs/ocr.md.
+ * Matches only the 5016 code or Cloudflare's licence phrasing, so unrelated
+ * errors that happen to contain "agree" are not masked as a licence problem.
+ */
 export function toOcrError(e: unknown): unknown {
-  return /\b5016\b|\bagree\b/i.test(String(e)) ? new OcrLicenceError(String(e)) : e;
+  return /\b5016\b|submit the prompt 'agree'/i.test(String(e)) ? new OcrLicenceError(String(e)) : e;
 }
 
 /** `response` is usually JSON text; some model versions return it parsed. */

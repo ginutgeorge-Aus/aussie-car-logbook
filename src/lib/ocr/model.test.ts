@@ -17,6 +17,16 @@ describe("toOcrError", () => {
     expect(toOcrError(e)).toBeInstanceOf(OcrLicenceError);
   });
 
+  it("maps the licence phrasing without the code to OcrLicenceError", () => {
+    const e = new Error("Prior to using this model, you must submit the prompt 'agree'");
+    expect(toOcrError(e)).toBeInstanceOf(OcrLicenceError);
+  });
+
+  it("does not treat an unrelated error mentioning 'agree' as a licence error", () => {
+    const e = new Error("totals do not agree with line items");
+    expect(toOcrError(e)).toBe(e);
+  });
+
   it("passes other errors through unchanged", () => {
     const e = new Error("network down");
     expect(toOcrError(e)).toBe(e);
