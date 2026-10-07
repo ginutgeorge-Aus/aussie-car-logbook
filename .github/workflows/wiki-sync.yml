@@ -11,9 +11,8 @@ on:
   # Allow a manual re-sync from the Actions tab.
   workflow_dispatch:
 
-# Needed to push to the <repo>.wiki.git repository via GITHUB_TOKEN.
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: wiki-sync
@@ -22,6 +21,9 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    # Needed to push to the <repo>.wiki.git repository via GITHUB_TOKEN.
+    permissions:
+      contents: write
     steps:
       - name: Checkout repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
