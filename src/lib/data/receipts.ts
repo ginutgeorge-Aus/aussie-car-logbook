@@ -1,4 +1,5 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { receiptName, type ReceiptMeta } from "@/lib/expenses/receipt-key";
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 
@@ -27,10 +28,10 @@ export function assertReceiptFile(file: File): void {
   }
 }
 
-export async function putReceipt(vehicleId: number, file: File): Promise<string> {
+export async function putReceipt(vehicleId: number, file: File, meta?: ReceiptMeta): Promise<string> {
   assertReceiptFile(file);
   const ext = ALLOWED_TYPES[file.type];
-  const key = `receipts/${vehicleId}/${crypto.randomUUID()}.${ext}`;
+  const key = `receipts/${vehicleId}/${receiptName(meta, ext, crypto.randomUUID())}`;
   const b = await bucket();
   await b.put(key, await file.arrayBuffer(), { httpMetadata: { contentType: file.type } });
   return key;
