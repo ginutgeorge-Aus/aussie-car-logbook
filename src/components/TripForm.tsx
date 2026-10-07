@@ -1,42 +1,39 @@
 "use client";
 
+import { useState } from "react";
 import { createTripAction } from "@/lib/actions";
-import { FieldError } from "@/components/FieldError";
+import { FormError } from "@/components/FieldError";
+import { TripFields } from "@/components/TripFields";
 import { useFormSubmit } from "@/components/useFormSubmit";
+import { PlusIcon } from "@/components/icons";
+import { btnPrimary, cardCls, eyebrowCls } from "@/components/ui";
+import { todayIso } from "@/lib/today";
 
+/** "Log a trip" card. Resets after a successful add and confirms with a status line. */
 export function TripForm() {
-  const { state, pending, onSubmit } = useFormSubmit(createTripAction, { onSuccess: (form) => form.reset() });
+  const [added, setAdded] = useState(false);
+  const { state, pending, onSubmit } = useFormSubmit(createTripAction, {
+    onSuccess: (form) => {
+      form.reset();
+      setAdded(true);
+    },
+  });
   const errs = state.ok ? {} : (state.fieldErrors ?? {});
 
   return (
-    <form method="post" onSubmit={onSubmit} className="flex flex-wrap items-end gap-3 border rounded p-4">
-      <label className="flex flex-col gap-1">
-        <span className="text-sm">Date</span>
-        <input name="date" type="date" className="border rounded px-2 py-1" />
-        <FieldError message={errs.date} />
-      </label>
-      <label className="flex flex-col gap-1">
-        <span className="text-sm">Odo start</span>
-        <input name="odoStart" type="number" min="0" className="border rounded px-2 py-1 w-28" />
-        <FieldError message={errs.odoStart} />
-      </label>
-      <label className="flex flex-col gap-1">
-        <span className="text-sm">Odo end</span>
-        <input name="odoEnd" type="number" min="0" className="border rounded px-2 py-1 w-28" />
-        <FieldError message={errs.odoEnd} />
-      </label>
-      <label className="flex flex-col gap-1">
-        <span className="text-sm">Purpose</span>
-        <input name="purpose" className="border rounded px-2 py-1" />
-      </label>
-      <label className="flex items-center gap-2">
-        <input name="isBusiness" type="checkbox" />
-        <span className="text-sm">Business</span>
-      </label>
-      <button type="submit" disabled={pending} className="rounded bg-black text-white px-4 py-2 disabled:opacity-50">
-        {pending ? "Adding…" : "Add trip"}
-      </button>
-      {!state.ok && state.error ? <p className="w-full text-sm text-red-600">{state.error}</p> : null}
-    </form>
+    <section id="add-trip" aria-labelledby="add-trip-h" className={`${cardCls} scroll-mt-24 p-4 md:p-5`}>
+      <h2 id="add-trip-h" className={`${eyebrowCls} mb-3`}>Log a trip</h2>
+      <form method="post" onSubmit={onSubmit} onInput={() => setAdded(false)} className="flex flex-col gap-3">
+        <TripFields defaultDate={todayIso()} errs={errs} />
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="submit" disabled={pending} className={`${btnPrimary} w-full md:w-auto`}>
+            <PlusIcon size={18} />
+            {pending ? "Adding…" : "Add trip"}
+          </button>
+          <p role="status" className="text-sm text-success">{added && !pending ? "Trip added." : ""}</p>
+        </div>
+        <FormError message={!state.ok ? state.error : null} />
+      </form>
+    </section>
   );
 }
