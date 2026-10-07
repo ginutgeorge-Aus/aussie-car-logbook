@@ -13,6 +13,8 @@ import { runReceiptOcr } from "@/lib/data/ocr";
 import { OcrLicenceError } from "@/lib/ocr/model";
 import { parseOcrResult } from "@/lib/ocr/parse";
 import type { OcrActionResult } from "@/lib/ocr/types";
+import { parseSettingsForm } from "@/lib/settings/parse";
+import { updateSettings } from "@/lib/data/settings";
 
 /** Revalidates every page that reads trips, expenses or the vehicle. */
 function revalidateAll(listPath: string): void {
@@ -41,6 +43,19 @@ export async function saveVehicleAction(_prev: ActionResult, fd: FormData): Prom
     return failure(e);
   }
   revalidateAll("/vehicle");
+  return { ok: true, saved: true };
+}
+
+/** Saves the GST-registered flag and ABN; revalidates every page that reads settings. */
+export async function saveSettingsAction(_prev: ActionResult, fd: FormData): Promise<ActionResult> {
+  const parsed = parseSettingsForm(fd);
+  if (!parsed.ok) return { ok: false, fieldErrors: parsed.fieldErrors };
+  try {
+    await updateSettings(parsed.value);
+  } catch (e) {
+    return failure(e);
+  }
+  revalidateAll("/settings");
   return { ok: true, saved: true };
 }
 
