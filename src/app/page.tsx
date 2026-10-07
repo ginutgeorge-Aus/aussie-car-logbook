@@ -74,7 +74,7 @@ export default async function Home() {
   const fyChip = `FY ${fyShort(fyLabel)}`;
 
   return (
-    <main className={`${pageCls} grid gap-4.5 md:gap-5 md:grid-cols-[repeat(auto-fit,minmax(320px,1fr))] content-start`}>
+    <main className={`${pageCls} grid gap-4.5 md:gap-5 md:grid-cols-2 content-start`}>
       {/* Phone-only top row: car + FY chip. */}
       <div className="flex items-center justify-between md:hidden">
         <Link href="/vehicle" className="flex min-h-11 items-center gap-2 text-[15px] font-medium text-ink">
@@ -85,8 +85,8 @@ export default async function Home() {
       </div>
 
       <section aria-label="Business use" className={`${cardCls} flex flex-col items-center gap-1.5 px-5 pt-5 pb-4.5 md:p-6`}>
-        <div className="hidden md:flex self-stretch justify-between text-[13px] text-muted">
-          <Link href="/vehicle" className="hover:text-ink">{carName}</Link>
+        <div className="hidden md:flex self-stretch items-center justify-between text-[13px] text-muted">
+          <Link href="/vehicle" className="-my-3 flex min-h-11 items-center hover:text-ink">{carName}</Link>
           <span className="font-mono">{fyChip}</span>
         </div>
         <div className="md:mt-2">
@@ -113,16 +113,20 @@ export default async function Home() {
         <p className="col-span-3 md:col-span-2 text-xs text-muted">
           Estimates for FY {fyLabel}. See Reports for the full breakdown.
         </p>
-        <Link href="/expenses#add-expense" className={`${btnSecondary} hidden md:flex md:col-span-2 min-h-12`}>
-          <CameraIcon size={18} />
-          Scan a receipt
-        </Link>
+        <div className="hidden md:block md:col-span-2">
+          <Link href="/expenses#add-expense" className={`${btnSecondary} w-full min-h-12`}>
+            <CameraIcon size={18} />
+            Scan a receipt
+          </Link>
+        </div>
       </section>
 
-      <Link href="/trips#add-trip" className={`${btnPrimary} md:hidden min-h-14 rounded-[14px] text-[17px]`}>
-        <PlusIcon size={22} />
-        Log a trip
-      </Link>
+      <div className="md:hidden">
+        <Link href="/trips#add-trip" className={`${btnPrimary} w-full min-h-14 rounded-[14px] text-[17px]`}>
+          <PlusIcon size={22} />
+          Log a trip
+        </Link>
+      </div>
 
       <section aria-labelledby="recent-h" className="md:col-span-full md:rounded-2xl md:border md:border-line md:bg-surface md:py-2">
         <div className="flex items-center justify-between md:px-5">

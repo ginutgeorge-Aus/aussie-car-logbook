@@ -38,7 +38,7 @@ export function AppNav() {
   return (
     <>
       <header className="no-print hidden md:flex flex-wrap items-center gap-x-6 gap-y-2 px-8 min-h-16 border-b border-line bg-nav">
-        <Link href="/" className="font-mono text-base font-semibold tracking-wide pr-4 text-ink">
+        <Link href="/" className="flex min-h-11 items-center font-mono text-base font-semibold tracking-wide pr-4 text-ink">
           GINOO / LOGBOOK
         </Link>
         <nav aria-label="Main" className="flex flex-wrap gap-1 grow">
