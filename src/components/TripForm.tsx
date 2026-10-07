@@ -30,7 +30,7 @@ export function TripForm() {
             <PlusIcon size={18} />
             {pending ? "Adding…" : "Add trip"}
           </button>
-          <p role="status" className="text-sm text-success">{added && !pending ? "Trip added." : ""}</p>
+          <p role="status" className="text-sm text-success">{added && state.ok && !pending ? "Trip added." : ""}</p>
         </div>
         <FormError message={!state.ok ? state.error : null} />
       </form>

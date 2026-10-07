@@ -172,7 +172,7 @@ export function ExpenseForm() {
             <PlusIcon size={18} />
             {pending ? "Adding…" : "Add expense"}
           </button>
-          <p role="status" className="text-sm text-success">{added && !pending ? "Expense added." : ""}</p>
+          <p role="status" className="text-sm text-success">{added && state.ok && !pending ? "Expense added." : ""}</p>
         </div>
         <FormError message={!state.ok ? state.error : null} />
       </form>
