@@ -34,8 +34,11 @@ export const cardCls = "rounded-2xl border border-line bg-surface";
 /** Uppercase section eyebrow, as in the mockups ("RECENT"). */
 export const eyebrowCls = "text-[13px] font-medium uppercase tracking-[0.06em] text-muted";
 
+/** Page container without a max width (pair with your own `max-w-*`). */
+export const pageBase = "w-full mx-auto px-5 md:px-8 pt-5 md:pt-7";
+
 /** Page container: phone gutter 20px, desktop 32px, 1200px max. */
-export const pageCls = "w-full max-w-[1200px] mx-auto px-5 md:px-8 pt-5 md:pt-7";
+export const pageCls = `${pageBase} max-w-[1200px]`;
 
 /** Page title row: heading on the left, optional actions on the right. */
 export function PageHeader({ title, children }: { title: string; children?: React.ReactNode }) {
