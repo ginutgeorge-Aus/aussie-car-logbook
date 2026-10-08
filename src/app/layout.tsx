@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { manifestLinkProps } from "@/lib/pwa/manifest-link";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 
 const geistSans = Geist({
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
   title: "Ginoo's Log Book",
   description: "An Australian car logbook PWA for the ATO logbook method.",
   applicationName: "Ginoo's Log Book",
-  manifest: "/manifest.webmanifest",
+  // manifest: rendered manually in <head> with crossOrigin="use-credentials" (GLB-9)
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -39,6 +40,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <link {...manifestLinkProps} />
+      </head>
       <body className="min-h-full flex flex-col">
         {children}
         <ServiceWorkerRegister />
