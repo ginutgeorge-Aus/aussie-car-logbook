@@ -42,6 +42,7 @@ export default async function Home() {
   if (!vehicle) {
     return (
       <main className={pageCls}>
+        <h1 className="sr-only">Dashboard</h1>
         <p className="mb-6 font-mono text-sm font-semibold tracking-wide text-muted md:hidden">GINOO / LOGBOOK</p>
         <EmptyState
           title="Welcome to your log book"
@@ -75,6 +76,7 @@ export default async function Home() {
 
   return (
     <main className={`${pageCls} grid gap-4.5 md:gap-5 md:grid-cols-2 content-start`}>
+      <h1 className="sr-only">Dashboard</h1>
       {/* Phone-only top row: car + FY chip. */}
       <div className="flex items-center justify-between md:hidden">
         <Link href="/vehicle" className="flex min-h-11 items-center gap-2 text-[15px] font-medium text-ink">
