@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { tripKm, tripsToLegs, filterTripsByFy, fyBusinessPct } from "@/lib/logbook/compute";
+import { tripKm, tripsToLegs, filterTripsByFy, fyBusinessPct, currentOdometer, fyKmTotals } from "@/lib/logbook/compute";
 
 test("tripKm is odoEnd - odoStart", () => {
   expect(tripKm({ odoStart: 50000, odoEnd: 50040 })).toBe(40);
@@ -40,4 +40,20 @@ test("fyBusinessPct = rounded business% over FY trips", () => {
 
 test("fyBusinessPct with no FY trips is 0 (no divide-by-zero)", () => {
   expect(fyBusinessPct([], "2024-25")).toBe(0);
+});
+
+test("currentOdometer is the highest trip odoEnd, else the opening odometer", () => {
+  expect(currentOdometer([{ odoEnd: 84300 }, { odoEnd: 84312 }], 80000)).toBe(84312);
+  expect(currentOdometer([], 80000)).toBe(80000);
+  expect(currentOdometer([], null)).toBeNull();
+  expect(currentOdometer([{ odoEnd: 100 }], 500)).toBe(500);
+});
+
+test("fyKmTotals sums business and total km within the FY", () => {
+  const trips = [
+    { date: "2024-07-02", odoStart: 0, odoEnd: 40, isBusiness: true },
+    { date: "2024-08-02", odoStart: 40, odoEnd: 60, isBusiness: false },
+    { date: "2024-06-30", odoStart: 0, odoEnd: 999, isBusiness: true }, // FY 2023-24
+  ];
+  expect(fyKmTotals(trips, "2024-25")).toEqual({ businessKm: 40, totalKm: 60 });
 });
