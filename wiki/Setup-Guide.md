@@ -79,9 +79,11 @@ Open the new `wrangler.toml` file in any text editor and paste your
 ## Step 7 — Build and publish your app
 
 ```bash
-pnpm db:remote
 pnpm run deploy
 ```
+
+This sets up your database tables, then publishes the app. When it asks
+`Ok to proceed?` about migrations, press Enter.
 
 > Type `pnpm run deploy` exactly — `run` matters. Plain `pnpm deploy` runs a
 > different built-in command and stops with an `ERR_PNPM_INVALID_DEPLOY_TARGET`
@@ -142,5 +144,5 @@ start logging.
 ## Updating later (optional)
 
 When a new stable release comes out, download it, and from its folder run
-`pnpm db:remote` then `pnpm run deploy` again. **Your data stays put** — updates
+`pnpm run deploy` again (it applies any database updates first). **Your data stays put** — updates
 never wipe your trips or receipts. See [FAQ](FAQ) for backups.

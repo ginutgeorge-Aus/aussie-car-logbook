@@ -94,12 +94,11 @@ cp wrangler.toml.example wrangler.toml   # gitignored; never commit real IDs
 # edit wrangler.toml: set database_id (the id printed by `d1 create` above)
 ```
 
-**4. Apply migrations to the remote D1, then build + deploy:**
+**4. Build + deploy** (applies pending D1 migrations before publishing):
 
 ```bash
 pnpm cf-typegen        # generate CloudflareEnv types (optional but recommended)
-pnpm db:remote         # wrangler d1 migrations apply DB --remote
-pnpm run deploy        # opennextjs-cloudflare build && ... deploy
+pnpm run deploy        # build → wrangler d1 migrations apply DB --remote → deploy
 ```
 
 Use `pnpm preview` to run the built Worker locally before deploying.

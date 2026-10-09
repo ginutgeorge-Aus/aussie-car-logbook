@@ -1,13 +1,17 @@
 # Deploy from the Cloudflare dashboard (no-terminal-ish guide)
 
+> **Want push-to-deploy?** See [deploy-auto.md](deploy-auto.md) — Workers Builds
+> with a build secret for the D1 id (nothing committed, no private copy needed).
+> This guide is the manual / tag-based alternative.
+
 This walks you through deploying **Ginoo's Log Book** using the Cloudflare
 **dashboard UI** as much as possible, for people who'd rather not live in a
 terminal. The CLI path in [README.md](../README.md#deploy-to-cloudflare) is
-still the most robust — but this guide gets you there with only **one
-unavoidable terminal moment** (or zero, if you paste SQL by hand).
+still the most robust — but this guide gets you there with **zero terminal
+moments**.
 
 > **Honest heads-up.** Two things have no dashboard button today:
-> 1. **Database migrations** — but you can paste the SQL into the D1 console (pure UI, covered below).
+> 1. **Database migrations** — the deploy command applies them for you (Step 5); you only grant its token D1 access.
 > 2. **Bindings for a Git-connected build** — Cloudflare reads them from a `wrangler.toml` in your repo, and this project gitignores that file. You'll commit one to **your own private copy** (Step 4).
 >
 > Everything else is clicks.
@@ -51,21 +55,15 @@ names** (the code looks them up by name — don't rename them):
      tier. Free allowances are generous — 10 GB storage.)
 2. Name it `ginoos-log-book-receipts` → **Create bucket**.
 
-## Step 3 — Run the database migration (pure UI)
+## Step 3 — Database migrations (nothing to do)
 
-No dashboard "apply migrations" button exists, so paste the SQL by hand once:
+The deploy command in Step 5 applies every pending migration in
+`src/db/migrations/` before the new code goes live, and records what it ran so
+upgrades only apply new files.
 
-1. Open your GitHub copy → `src/db/migrations/0000_eminent_jackpot.sql`.
-2. Click **Raw**, select all, copy.
-3. Dashboard → **D1** → your `ginoos-log-book` database → **Console** tab.
-4. Paste the SQL → **Execute**. Tables are now created.
-
-**Optional — fake demo data:** repeat with `src/db/seed.sql` (fictional
-records, safe to load and safe to wipe later).
-
-> When a future release ships a **new** migration file (e.g. `0001_*.sql`),
-> paste that new file's SQL the same way. Only ever run migrations you
-> haven't run before.
+> **Don't paste migration SQL into the D1 Console.** Pasted tables aren't
+> recorded as applied, so the next deploy tries to create them again and
+> fails.
 
 ## Step 4 — Add `wrangler.toml` to your copy
 
@@ -104,13 +102,22 @@ don't wire them up by hand — the build picks them up from this file.
    - **Production branch / branch to build:** `release` (the tag-based branch
      above) — **not** `main`.
    - **Build command:** `npx opennextjs-cloudflare build`
-   - **Deploy command:** `npx opennextjs-cloudflare deploy`
+   - **Deploy command:**
+     `npx wrangler d1 migrations apply DB --remote && npx opennextjs-cloudflare deploy`
+     (migrations first, then the app).
    - (Leave the output/root defaults.)
+   - **API token:** the build token Cloudflare creates has no D1 access. Edit
+     it (under **API token** here, or later in **Settings → Build**) and add
+     **Account → D1 → Edit**, or the migration step fails with an auth error.
 4. **Save and Deploy.** Cloudflare builds in the cloud and publishes your
    Worker. First build takes a few minutes.
 
 When it finishes you get a public URL like
 `https://ginoos-log-book.<your-subdomain>.workers.dev`.
+
+**Optional — fake demo data:** now that the tables exist, open D1 → your
+database → **Console**, paste `src/db/seed.sql` (fictional records, safe to
+wipe later) → **Execute**.
 
 > **The one terminal escape hatch.** If the Git-connected build gives you
 > trouble, you can deploy from your laptop instead. From the project folder:
@@ -121,8 +128,8 @@ When it finishes you get a public URL like
 > `pnpm dlx wrangler`, which aborts on pnpm 12.) Clone into a path with **no
 > apostrophe or shell-special characters**, or the local OpenNext build fails
 > with `Expected ")" but found "s"`. See
-> [README.md](../README.md#deploy-to-cloudflare). Everything above (resources,
-> migrations) still stands.
+> [README.md](../README.md#deploy-to-cloudflare). Everything above (resources)
+> still stands, and `run deploy` applies migrations too.
 
 ---
 
@@ -174,7 +181,7 @@ serves is covered.
 > avoids this entirely.
 
 > **Demo exception.** For a throwaway *public* demo, **skip Step 6** and share
-> the `workers.dev` URL directly. Load the fake seed data (Step 3 optional),
+> the `workers.dev` URL directly. Load the fake seed data (optional, after Step 5),
 > and wipe the D1 database whenever you like. Don't put real data in an
 > ungated deployment.
 
@@ -193,7 +200,9 @@ serves is covered.
 | Symptom | Likely cause |
 |---------|--------------|
 | Build fails immediately | Build/deploy command typo — recheck Step 5. |
-| App loads but every page errors | Migration not run — redo Step 3 (D1 Console). |
+| Deploy fails at `migrations apply` with an auth error | Build token lacks **D1 Edit** — Step 5. |
+| Deploy fails with `table ... already exists` | SQL was pasted by hand earlier — see [deploy-auto.md](deploy-auto.md#when-something-breaks) for the one-time fix. |
+| App loads but every page errors | Migrations didn't run — check the deploy log for the `migrations apply` step. |
 | "binding not found" in logs | `wrangler.toml` missing or `database_id` wrong — Step 4. |
 | Receipt upload fails | R2 bucket name mismatch — must be `ginoos-log-book-receipts`. |
 | OCR does nothing | Workers AI binding `AI` missing — it's in `wrangler.toml.example`. |
