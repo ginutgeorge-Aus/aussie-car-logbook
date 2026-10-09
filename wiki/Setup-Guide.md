@@ -134,8 +134,11 @@ code to your address; only your email can actually get in.
 **Add to Home Screen** → **Add**. Open it from the home screen. You'll sign in
 once more, because the installed app keeps its own login separate from Safari.
 
-**Android / desktop Chrome or Edge:** sign in, then click the **install icon**
-in the address bar (or menu → **Install Ginoo's Log Book**).
+**Android (Chrome):** sign in, then tap **⋮ More** → **Install app** (older
+versions: **Add to Home screen**) → **Install**.
+
+**Desktop Chrome or Edge:** sign in, then click the **install icon** in the
+address bar (or menu → **Install Ginoo's Log Book**).
 
 > The installed app asks you to sign in again whenever your Cloudflare Access
 > session expires. You can lengthen it in Zero Trust → Access → your app →
