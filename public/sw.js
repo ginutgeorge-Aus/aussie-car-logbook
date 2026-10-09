@@ -2,7 +2,7 @@
 // Goal: installable PWA + graceful offline shell. It never caches API responses,
 // mutations, or receipt images — a tax app must not show stale financial data.
 
-const CACHE = "glb-v1";
+const CACHE = "glb-v2";
 const PRECACHE = ["/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 const OFFLINE_HTML = `<!doctype html><html lang="en"><head><meta charset="utf-8">

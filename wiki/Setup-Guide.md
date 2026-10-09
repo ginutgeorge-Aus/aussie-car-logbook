@@ -130,9 +130,19 @@ code to your address; only your email can actually get in.
 
 ## Step 9 — Put it on your phone
 
-1. On your phone, open your app's web address (sign in when asked).
-2. In the browser menu, tap **Add to Home Screen**.
-3. It now behaves like a normal app icon.
+**iPhone:** open your app in **Safari** and sign in, then tap **Share** →
+**Add to Home Screen** → **Add**. Open it from the home screen. You'll sign in
+once more, because the installed app keeps its own login separate from Safari.
+
+**Android (Chrome):** sign in, then tap **⋮ More** → **Install app** (older
+versions: **Add to Home screen**) → **Install**.
+
+**Desktop Chrome or Edge:** sign in, then click the **install icon** in the
+address bar (or menu → **Install Ginoo's Log Book**).
+
+> The installed app asks you to sign in again whenever your Cloudflare Access
+> session expires. You can lengthen it in Zero Trust → Access → your app →
+> **Session duration**.
 
 **Done!** Head to **[Using the App](Using-the-App)** to add your car and
 start logging.
