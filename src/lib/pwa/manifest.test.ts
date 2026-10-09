@@ -8,7 +8,8 @@ const manifest = JSON.parse(readFileSync(pub("manifest.webmanifest"), "utf8"));
 /** Width/height from a PNG's IHDR chunk (bytes 16-23, big-endian). */
 function pngSize(file: string): [number, number] {
   const b = readFileSync(file);
-  return [b.readUInt32BE(16), b.readUInt32BE(20)];
+  const v = new DataView(b.buffer, b.byteOffset, b.byteLength);
+  return [v.getUint32(16), v.getUint32(20)];
 }
 
 describe("manifest.webmanifest", () => {
