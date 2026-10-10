@@ -4,11 +4,11 @@ import { listTrips } from "@/lib/data/trip";
 import { listExpenses } from "@/lib/data/expense";
 import { getSettings } from "@/lib/data/settings";
 import { listLogbookPeriods } from "@/lib/data/logbookPeriod";
-import { filterTripsByFy, resolveBusinessUse } from "@/lib/logbook/compute";
-import { gstCredit, annualDeduction, financialYear } from "@/lib/tax";
+import { filterTripsByFy } from "@/lib/logbook/compute";
+import { financialYear, formatBusinessPct } from "@/lib/tax";
+import { buildFyReport } from "@/lib/reports/build";
 import { centsToDollars } from "@/lib/logbook/parse";
 import { todayIso } from "@/lib/today";
-import type { ExpenseCategory } from "@/lib/tax/types";
 
 export const dynamic = "force-dynamic";
 
@@ -33,17 +33,13 @@ export default async function Home() {
     listLogbookPeriods(),
   ]);
   const fyLabel = financialYear(todayIso()).label;
-  const { ratio, source } = resolveBusinessUse({ trips, periods, fyLabel });
-  const pct = Math.round(ratio * 100);
-  const fyExpenses = filterTripsByFy(expenses, fyLabel).map((e) => ({
-    amountInclCents: e.amountInclCents,
-    gstCents: e.gstCents,
-    dateISO: e.date,
-    category: e.category as ExpenseCategory,
-  }));
-  const fyTotalCents = fyExpenses.reduce((s, e) => s + e.amountInclCents, 0);
-  const gstCreditCents = gstCredit(fyExpenses, ratio);
-  const deductionCents = annualDeduction(fyExpenses, ratio, settings.gstRegistered);
+  // Same figures as /reports: one rounding, GST credit only when registered, depreciation included.
+  const report = buildFyReport({ trips, expenses, vehicle, settings, logbookPeriods: periods, fyLabel });
+  const source = report.businessUseSource;
+  const pct = formatBusinessPct(report.businessPctBps);
+  const fyTotalCents = filterTripsByFy(expenses, fyLabel).reduce((s, e) => s + e.amountInclCents, 0);
+  const gstCreditCents = report.bas.totalGstCreditCents;
+  const deductionCents = report.annual.totalDeductionCents;
 
   return (
     <main className="w-full max-w-3xl mx-auto p-8">
@@ -78,7 +74,7 @@ export default async function Home() {
             <p className="text-2xl font-semibold">${centsToDollars(deductionCents)}</p>
           </div>
         </div>
-        <p className="mt-2 text-xs text-zinc-400">Estimate only — full reports come later.</p>
+        <p className="mt-2 text-xs text-zinc-400">Estimate only — same figures as Reports, which has the breakdown.</p>
       </section>
       <div className="flex gap-3 flex-wrap">
         <Link href="/trips" className="rounded bg-black text-white px-4 py-2">Manage trips</Link>

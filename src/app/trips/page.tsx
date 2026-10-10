@@ -2,8 +2,8 @@ import Link from "next/link";
 import { getVehicle } from "@/lib/data/vehicle";
 import { listTrips } from "@/lib/data/trip";
 import { listLogbookPeriods } from "@/lib/data/logbookPeriod";
-import { filterTripsByFy, logbookPeriodBusinessPct, resolveBusinessUse } from "@/lib/logbook/compute";
-import { financialYear, logbookValidity } from "@/lib/tax";
+import { filterTripsByFy, logbookPeriodBusinessPctBps, resolveBusinessUse } from "@/lib/logbook/compute";
+import { businessPctBps, financialYear, formatBusinessPct, fyLabelOr, logbookValidity } from "@/lib/tax";
 import { todayIso } from "@/lib/today";
 import { FySwitcher } from "@/components/FySwitcher";
 import { TripForm } from "@/components/TripForm";
@@ -27,12 +27,12 @@ export default async function TripsPage({ searchParams }: PageProps<"/trips">) {
   const [trips, periods] = await Promise.all([listTrips(), listLogbookPeriods()]);
   const currentFy = financialYear(todayIso()).label;
   const sp = await searchParams;
-  const activeFy = typeof sp.fy === "string" ? sp.fy : currentFy;
+  const activeFy = fyLabelOr(sp.fy, currentFy);
 
   const fyLabels = Array.from(new Set([currentFy, ...trips.map((t) => financialYear(t.date).label)])).sort().reverse();
   const fyTrips = filterTripsByFy(trips, activeFy);
   const businessUse = resolveBusinessUse({ trips, periods, fyLabel: activeFy });
-  const pct = Math.round(businessUse.ratio * 100);
+  const pct = formatBusinessPct(businessPctBps(businessUse.ratio));
   const periodViews = periods.map((p) => {
     const { firstFy, lastFy } = logbookValidity(p.startDate);
     return {
@@ -40,7 +40,10 @@ export default async function TripsPage({ searchParams }: PageProps<"/trips">) {
       startDate: p.startDate,
       endDate: p.endDate,
       validity: `FY ${firstFy} to ${lastFy}`,
-      businessPct: logbookPeriodBusinessPct(trips, p),
+      businessPct: (() => {
+        const bps = logbookPeriodBusinessPctBps(trips, p);
+        return bps === null ? null : formatBusinessPct(bps);
+      })(),
     };
   });
 

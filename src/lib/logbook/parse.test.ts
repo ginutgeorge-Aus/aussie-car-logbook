@@ -18,6 +18,16 @@ test("dollarsToCents rejects negative / non-numeric", () => {
   expect(() => dollarsToCents("abc")).toThrow(RangeError);
 });
 
+test("dollarsToCents accepts only plain decimals", () => {
+  for (const bad of ["1e3", "0x10", "0b1", "Infinity", "", " ", "1,000", "+5", "1.2.3", "12abc"]) {
+    expect(() => dollarsToCents(bad), bad).toThrow(RangeError);
+  }
+  expect(dollarsToCents("0.1")).toBe(10);
+  expect(dollarsToCents(".5")).toBe(50);
+  expect(dollarsToCents("007.10")).toBe(710);
+  expect(dollarsToCents("1.005")).toBe(101); // half-up on the 3rd decimal, no float error
+});
+
 test("centsToDollars formats", () => {
   expect(centsToDollars(1250)).toBe("12.50");
   expect(centsToDollars(0)).toBe("0.00");
