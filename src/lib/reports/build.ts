@@ -1,19 +1,20 @@
 import {
-  businessPct,
   financialYear,
   fyQuarters,
   gstCredit,
   annualDeduction,
   depreciationForFy,
 } from "@/lib/tax";
-import { tripsToLegs, filterTripsByFy } from "@/lib/logbook/compute";
-import type { TripRow, VehicleRow } from "@/lib/logbook/types";
+import { resolveBusinessUse, type BusinessUseSource } from "@/lib/logbook/compute";
+import type { LogbookPeriodRow, TripRow, VehicleRow } from "@/lib/logbook/types";
 import type { ExpenseRow } from "@/lib/data/expense";
 import type { ExpenseCategory, ExpenseInput } from "@/lib/tax/types";
 
 export type FyReport = {
   fyLabel: string;
   businessPct: number;
+  /** Where `businessPct` came from: a valid logbook period, or the FY-trips fallback. */
+  businessUseSource: BusinessUseSource;
   bas: {
     quarters: Array<{ quarter: 1 | 2 | 3 | 4; label: string; gstCreditCents: number }>;
     totalGstCreditCents: number;
@@ -36,17 +37,24 @@ function toExpenseInput(e: ExpenseRow): ExpenseInput {
   };
 }
 
+/**
+ * Builds the BAS (quarterly GST credit) and annual income-tax deduction report
+ * for one FY. Business use comes from the most recent valid logbook period
+ * (ATO logbook method), falling back to the FY's own trips with a notice when
+ * no valid logbook exists (see `resolveBusinessUse`).
+ */
 export function buildFyReport(input: {
   trips: TripRow[];
   expenses: ExpenseRow[];
   vehicle: VehicleRow | null;
   settings: { gstRegistered: boolean };
+  logbookPeriods: LogbookPeriodRow[];
   fyLabel: string;
 }): FyReport {
-  const { trips, expenses, vehicle, settings, fyLabel } = input;
-  const notices: string[] = [];
-
-  const ratio = businessPct(tripsToLegs(filterTripsByFy(trips, fyLabel)));
+  const { trips, expenses, vehicle, settings, logbookPeriods, fyLabel } = input;
+  const businessUse = resolveBusinessUse({ trips, periods: logbookPeriods, fyLabel });
+  const notices: string[] = [...businessUse.notices];
+  const ratio = businessUse.ratio;
   const fyExpenses = expenses.filter((e) => financialYear(e.date).label === fyLabel);
 
   const quarters = fyQuarters(fyLabel).map((q) => {
@@ -91,6 +99,7 @@ export function buildFyReport(input: {
   return {
     fyLabel,
     businessPct: ratio,
+    businessUseSource: businessUse.source,
     bas: { quarters, totalGstCreditCents },
     annual: {
       runningCostsDeductionCents,

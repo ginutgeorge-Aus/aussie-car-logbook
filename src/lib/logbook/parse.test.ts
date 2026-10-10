@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { dollarsToCents, centsToDollars, parseVehicleForm, parseTripForm } from "@/lib/logbook/parse";
+import { dollarsToCents, centsToDollars, parseVehicleForm, parseTripForm, parseLogbookPeriodForm } from "@/lib/logbook/parse";
 
 function fd(obj: Record<string, string>): FormData {
   const f = new FormData();
@@ -58,4 +58,32 @@ test("parseTripForm errors when date missing", () => {
   const r = parseTripForm(fd({ date: "", odoStart: "1", odoEnd: "2" }));
   expect(r.ok).toBe(false);
   if (!r.ok) expect(r.fieldErrors.date).toBeDefined();
+});
+
+
+test("parseLogbookPeriodForm accepts a 12-week period", () => {
+  expect(parseLogbookPeriodForm(fd({ startDate: "2024-07-01", endDate: "2024-09-22" }))).toEqual({
+    ok: true,
+    value: { startDate: "2024-07-01", endDate: "2024-09-22" },
+  });
+});
+
+test("parseLogbookPeriodForm rejects a period under 12 weeks", () => {
+  const r = parseLogbookPeriodForm(fd({ startDate: "2024-07-01", endDate: "2024-09-21" }));
+  expect(r.ok).toBe(false);
+  if (!r.ok) expect(r.fieldErrors.endDate).toMatch(/12 continuous weeks/);
+});
+
+test("parseLogbookPeriodForm rejects missing, invalid and reversed dates", () => {
+  const missing = parseLogbookPeriodForm(fd({ startDate: "", endDate: "" }));
+  expect(missing.ok).toBe(false);
+  if (!missing.ok) {
+    expect(missing.fieldErrors.startDate).toBeDefined();
+    expect(missing.fieldErrors.endDate).toBeDefined();
+  }
+  const invalid = parseLogbookPeriodForm(fd({ startDate: "2024-02-30", endDate: "2024-13-01" }));
+  expect(invalid.ok).toBe(false);
+  const reversed = parseLogbookPeriodForm(fd({ startDate: "2024-12-01", endDate: "2024-07-01" }));
+  expect(reversed.ok).toBe(false);
+  if (!reversed.ok) expect(reversed.fieldErrors.endDate).toMatch(/after/);
 });
