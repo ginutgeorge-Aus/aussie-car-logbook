@@ -115,8 +115,9 @@ don't wire them up by hand — the build picks them up from this file.
 When it finishes you get a public URL like
 `https://ginoos-log-book.<your-subdomain>.workers.dev`.
 
-**Optional — fake demo data:** now that the tables exist, open D1 → your
-database → **Console**, paste `src/db/seed.sql` (fictional records, safe to
+**Optional — fake demo data:** now that the tables exist, open
+`src/db/seed.sql` in your GitHub copy, click **Raw** and copy its contents. Then
+open D1 → your database → **Console**, paste the SQL (fictional records, safe to
 wipe later) → **Execute**.
 
 > **The one terminal escape hatch.** If the Git-connected build gives you

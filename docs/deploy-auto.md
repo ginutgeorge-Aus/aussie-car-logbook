@@ -9,8 +9,10 @@ This improves on the manual [deploy-ui.md](deploy-ui.md) guide in one way:
 - **No `wrangler.toml` committed.** The D1 database id is stored as a Workers
   Builds **secret** (`D1_DATABASE_ID`) and injected into a generated
   `wrangler.toml` at build time by [`scripts/gen-wrangler.mjs`](../scripts/gen-wrangler.mjs).
-  The id never enters git — so you can connect the **public upstream repo
-  directly**, no private copy required.
+  The id never enters git — so your copy of the repo can be a **public fork**;
+  no private copy required. It must be a fork (or import) **under your own
+  GitHub account**: you push the `release` branch and install the Workers Builds
+  GitHub App on it, which needs write/admin access you don't have on upstream.
 
 > **Respects the tag-based release model.** `release` is a pointer you move to a
 > stable **tag** when you want to ship (see [CLAUDE.md](../CLAUDE.md) "Git /
@@ -40,7 +42,7 @@ git push -u origin release
 ## Step 2 — Connect the repo
 
 1. Dashboard → **Workers & Pages** → **Create** → **Import a repository**.
-2. Authorize GitHub, pick the repo (public upstream is fine — no id is committed).
+2. Authorize GitHub, pick **your fork** (public is fine — no id is committed).
 
 ## Step 3 — Add the build secret
 
@@ -87,7 +89,7 @@ of [deploy-ui.md](deploy-ui.md#step-6--lock-it-down-with-cloudflare-access-requi
 ```bash
 git tag v1.1.0 <commit-on-main>      # tag the stable point
 git push --tags
-git push origin v1.1.0:release       # fast-forward release → Workers Builds deploys
+git push origin v1.1.0^{commit}:release  # fast-forward release → Workers Builds deploys
 ```
 
 The push is rejected unless `release` fast-forwards to the tag, so it can't
@@ -102,8 +104,9 @@ records each applied migration in D1 (`d1_migrations` table) and only runs new
 ones, so every deploy is safe to repeat. Drizzle migrations here are
 forward-only and non-destructive.
 
-Before a **major** upgrade, take a restore point: D1 Time Travel keeps 30 days
-of point-in-time history (`wrangler d1 time-travel info ginoos-log-book`).
+Before a **major** upgrade, take a restore point: D1 Time Travel keeps 7 days
+of point-in-time history on the Free plan, 30 days on Workers Paid
+(`wrangler d1 time-travel info ginoos-log-book`).
 
 > **Don't paste migration SQL into the D1 Console.** It creates the tables
 > without recording them in `d1_migrations`, so the next deploy tries to create
