@@ -12,9 +12,29 @@ export function businessPct(trips: TripLeg[]): number {
   return business / total;
 }
 
-/** Business-use percentage for a set of trip legs, rounded to a whole number. */
+/**
+ * Rounding authority for business use: integer basis points (business % x 100),
+ * i.e. the percentage rounded to 2 decimal places. Reports display this value
+ * and compute every dollar figure from `bps / 10000`, so shown % and $ agree.
+ *
+ * @param ratio raw business-use ratio (0..1).
+ */
+export function businessPctBps(ratio: number): number {
+  return Math.round(ratio * 10000);
+}
+
+/**
+ * Formats basis points as a percentage string with 2 decimals (no "%" sign).
+ *
+ * @param bps business use in basis points, e.g. 6667 -> "66.67".
+ */
+export function formatBusinessPct(bps: number): string {
+  return (bps / 100).toFixed(2);
+}
+
+/** Business-use percentage for a set of trip legs, rounded to 2 decimal places. */
 export function businessPctRounded(trips: TripLeg[]): number {
-  return Math.round(businessPct(trips) * 100);
+  return businessPctBps(businessPct(trips)) / 100;
 }
 
 /** ATO logbook method: the logbook must cover at least 12 continuous weeks. */

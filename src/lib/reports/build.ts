@@ -5,6 +5,7 @@ import {
   annualDeduction,
   depreciationForFy,
   carPurchaseGstCents,
+  businessPctBps,
 } from "@/lib/tax";
 import { resolveBusinessUse, type BusinessUseSource } from "@/lib/logbook/compute";
 import type { LogbookPeriodRow, TripRow, VehicleRow } from "@/lib/logbook/types";
@@ -13,6 +14,9 @@ import type { ExpenseCategory, ExpenseInput } from "@/lib/tax/types";
 
 export type FyReport = {
   fyLabel: string;
+  /** Business use in basis points (% to 2 dp) — the displayed value. */
+  businessPctBps: number;
+  /** `businessPctBps / 10000`: the ratio every dollar figure is computed from. */
   businessPct: number;
   /** Where `businessPct` came from: a valid logbook period, or the FY-trips fallback. */
   businessUseSource: BusinessUseSource;
@@ -26,7 +30,9 @@ export type FyReport = {
     runningCostsDeductionCents: number;
     depreciationDeductionCents: number;
     totalDeductionCents: number;
-    byCategory: Array<{ category: ExpenseCategory; totalInclCents: number }>;
+    /** FY expense totals per category, on the same GST basis as the deduction (see `categoryBasis`). */
+    byCategory: Array<{ category: ExpenseCategory; totalCents: number }>;
+    categoryBasis: "ex-gst" | "gst-inclusive";
   };
   notices: string[];
 };
@@ -78,7 +84,9 @@ function carPurchaseCredit(input: {
 
 /**
  * Builds the BAS (quarterly GST credit) and annual income-tax deduction report
- * for one FY. Business use comes from the most recent valid logbook period
+ * for one FY. Business use is rounded once, to basis points (% to 2 dp), and
+ * every dollar figure uses that rounded ratio. BAS credits are 0 unless
+ * GST-registered; 'depreciation' expense rows are excluded (computed instead). Business use comes from the most recent valid logbook period
  * (ATO logbook method), falling back to the FY's own trips with a notice when
  * no valid logbook exists (see `resolveBusinessUse`).
  */
@@ -93,8 +101,17 @@ export function buildFyReport(input: {
   const { trips, expenses, vehicle, settings, logbookPeriods, fyLabel } = input;
   const businessUse = resolveBusinessUse({ trips, periods: logbookPeriods, fyLabel });
   const notices: string[] = [...businessUse.notices];
-  const ratio = businessUse.ratio;
-  const fyExpenses = expenses.filter((e) => financialYear(e.date).label === fyLabel);
+  // Single rounding: % to 2 dp; all dollars use the same rounded ratio that is displayed.
+  const bps = businessPctBps(businessUse.ratio);
+  const ratio = bps / 10000;
+  const inFy = expenses.filter((e) => financialYear(e.date).label === fyLabel);
+  // Depreciation is computed from the vehicle; a 'depreciation' expense row would double count.
+  const fyExpenses = inFy.filter((e) => e.category !== "depreciation");
+  if (fyExpenses.length < inFy.length) {
+    notices.push(
+      "Expenses recorded under the 'depreciation' category were excluded — car depreciation is calculated from the vehicle's purchase details.",
+    );
+  }
 
   const purchase = carPurchaseCredit({ vehicle, gstRegistered: settings.gstRegistered, fyLabel, ratio });
   if (purchase.notice) notices.push(purchase.notice);
@@ -105,7 +122,10 @@ export function buildFyReport(input: {
     return {
       quarter: q.quarter,
       label: q.label,
-      gstCreditCents: gstCredit(inQ.map(toExpenseInput), ratio) + (purchaseInQ ? purchase.creditCents : 0),
+      // No GST credits at all unless GST-registered.
+      gstCreditCents: settings.gstRegistered
+        ? gstCredit(inQ.map(toExpenseInput), ratio) + (purchaseInQ ? purchase.creditCents : 0)
+        : 0,
     };
   });
   const totalGstCreditCents = quarters.reduce((s, q) => s + q.gstCreditCents, 0);
@@ -134,12 +154,14 @@ export function buildFyReport(input: {
   const byCategoryMap = new Map<ExpenseCategory, number>();
   for (const e of fyExpenses) {
     const cat = e.category as ExpenseCategory;
-    byCategoryMap.set(cat, (byCategoryMap.get(cat) ?? 0) + e.amountInclCents);
+    const amount = settings.gstRegistered ? e.amountInclCents - e.gstCents : e.amountInclCents;
+    byCategoryMap.set(cat, (byCategoryMap.get(cat) ?? 0) + amount);
   }
-  const byCategory = Array.from(byCategoryMap, ([category, totalInclCents]) => ({ category, totalInclCents }));
+  const byCategory = Array.from(byCategoryMap, ([category, totalCents]) => ({ category, totalCents }));
 
   return {
     fyLabel,
+    businessPctBps: bps,
     businessPct: ratio,
     businessUseSource: businessUse.source,
     bas: { quarters, totalGstCreditCents, purchaseGstCreditCents: purchase.creditCents },
@@ -148,6 +170,7 @@ export function buildFyReport(input: {
       depreciationDeductionCents,
       totalDeductionCents: runningCostsDeductionCents + depreciationDeductionCents,
       byCategory,
+      categoryBasis: settings.gstRegistered ? "ex-gst" : "gst-inclusive",
     },
     notices,
   };
