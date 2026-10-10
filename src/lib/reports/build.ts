@@ -4,6 +4,7 @@ import {
   gstCredit,
   annualDeduction,
   depreciationForFy,
+  carPurchaseGstCents,
 } from "@/lib/tax";
 import { resolveBusinessUse, type BusinessUseSource } from "@/lib/logbook/compute";
 import type { LogbookPeriodRow, TripRow, VehicleRow } from "@/lib/logbook/types";
@@ -18,6 +19,8 @@ export type FyReport = {
   bas: {
     quarters: Array<{ quarter: 1 | 2 | 3 | 4; label: string; gstCreditCents: number }>;
     totalGstCreditCents: number;
+    /** Business share of the capped car-purchase GST credit (already inside its quarter). */
+    purchaseGstCreditCents: number;
   };
   annual: {
     runningCostsDeductionCents: number;
@@ -35,6 +38,42 @@ function toExpenseInput(e: ExpenseRow): ExpenseInput {
     dateISO: e.date,
     category: e.category as ExpenseCategory,
   };
+}
+
+/**
+ * Report warning for a purchase FY with no ATO car limit configured.
+ *
+ * @param purchaseFy FY label of the car purchase.
+ * @param omitted what was left out because of it, e.g. "Depreciation is omitted".
+ */
+function missingCarLimitNotice(purchaseFy: string, omitted: string): string {
+  return `No ATO car limit for FY ${purchaseFy} is configured — ${omitted}. Add it to src/lib/tax/depreciation.ts from the ATO.`;
+}
+
+/**
+ * Business share of the car-purchase GST credit for the report FY: claimed only
+ * when GST-registered and only in the FY of purchase, capped at 1/11 of that
+ * FY's car limit, then multiplied by the business-use ratio.
+ *
+ * @returns the credit (cents), the purchase date that places it in a BAS
+ *   quarter (null when none is claimed), and a notice when the car limit is missing.
+ */
+function carPurchaseCredit(input: {
+  vehicle: VehicleRow | null;
+  gstRegistered: boolean;
+  fyLabel: string;
+  ratio: number;
+}): { creditCents: number; dateISO: string | null; notice: string | null } {
+  const { vehicle, gstRegistered, fyLabel, ratio } = input;
+  const none = { creditCents: 0, dateISO: null, notice: null };
+  if (!gstRegistered || !vehicle?.purchaseDate || vehicle.purchaseCostCents == null) return none;
+  if (financialYear(vehicle.purchaseDate).label !== fyLabel) return none;
+  try {
+    const gst = carPurchaseGstCents({ purchaseCostCents: vehicle.purchaseCostCents, purchaseDateISO: vehicle.purchaseDate });
+    return { creditCents: Math.round(gst * ratio), dateISO: vehicle.purchaseDate, notice: null };
+  } catch {
+    return { ...none, notice: missingCarLimitNotice(fyLabel, "the car purchase GST credit is omitted from the BAS") };
+  }
 }
 
 /**
@@ -57,12 +96,16 @@ export function buildFyReport(input: {
   const ratio = businessUse.ratio;
   const fyExpenses = expenses.filter((e) => financialYear(e.date).label === fyLabel);
 
+  const purchase = carPurchaseCredit({ vehicle, gstRegistered: settings.gstRegistered, fyLabel, ratio });
+  if (purchase.notice) notices.push(purchase.notice);
+
   const quarters = fyQuarters(fyLabel).map((q) => {
     const inQ = fyExpenses.filter((e) => e.date >= q.startISO && e.date <= q.endISO);
+    const purchaseInQ = purchase.dateISO !== null && purchase.dateISO >= q.startISO && purchase.dateISO <= q.endISO;
     return {
       quarter: q.quarter,
       label: q.label,
-      gstCreditCents: gstCredit(inQ.map(toExpenseInput), ratio),
+      gstCreditCents: gstCredit(inQ.map(toExpenseInput), ratio) + (purchaseInQ ? purchase.creditCents : 0),
     };
   });
   const totalGstCreditCents = quarters.reduce((s, q) => s + q.gstCreditCents, 0);
@@ -80,12 +123,11 @@ export function buildFyReport(input: {
         purchaseCostCents: vehicle.purchaseCostCents,
         purchaseDateISO: vehicle.purchaseDate,
         fyLabel,
+        gstRegistered: settings.gstRegistered,
       });
       depreciationDeductionCents = Math.round(decline * ratio);
     } catch {
-      notices.push(
-        `No car cost limit configured for the purchase year — depreciation omitted from FY ${fyLabel}. Update src/lib/tax/depreciation.ts.`,
-      );
+      notices.push(missingCarLimitNotice(financialYear(vehicle.purchaseDate).label, "Depreciation is omitted"));
     }
   }
 
@@ -100,7 +142,7 @@ export function buildFyReport(input: {
     fyLabel,
     businessPct: ratio,
     businessUseSource: businessUse.source,
-    bas: { quarters, totalGstCreditCents },
+    bas: { quarters, totalGstCreditCents, purchaseGstCreditCents: purchase.creditCents },
     annual: {
       runningCostsDeductionCents,
       depreciationDeductionCents,

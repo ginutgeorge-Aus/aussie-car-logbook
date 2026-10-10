@@ -44,9 +44,9 @@ describe("buildFyReport", () => {
 
     // running costs GST-excl at 100%: 11000 - 1000 = 10000.
     expect(r.annual.runningCostsDeductionCents).toBe(10000);
-    // depreciation year 1 full = 4000000 * 0.25 = 1000000, at 100% business.
-    expect(r.annual.depreciationDeductionCents).toBe(1000000);
-    expect(r.annual.totalDeductionCents).toBe(1010000);
+    // GST-registered: base = 4000000 - 363636 (1/11 GST) = 3636364; year 1 = 3636364 * 0.25 = 909091.
+    expect(r.annual.depreciationDeductionCents).toBe(909091);
+    expect(r.annual.totalDeductionCents).toBe(919091);
     expect(r.notices).toHaveLength(1); // only the "no valid logbook" fallback notice
     expect(r.notices[0]).toMatch(/No valid logbook/);
   });
@@ -59,13 +59,13 @@ describe("buildFyReport", () => {
     };
     const r = buildFyReport({ trips, expenses: [], vehicle, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2099-00" });
     expect(r.annual.depreciationDeductionCents).toBe(0);
-    expect(r.notices.some((n) => /car cost limit/.test(n))).toBe(true);
+    expect(r.notices.some((n) => /car limit/.test(n))).toBe(true);
   });
 
   it("omits depreciation with no vehicle and no depreciation notice", () => {
     const r = buildFyReport({ trips: [], expenses: [], vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25" });
     expect(r.annual.depreciationDeductionCents).toBe(0);
-    expect(r.notices.some((n) => /car cost limit/.test(n))).toBe(false);
+    expect(r.notices.some((n) => /car limit/.test(n))).toBe(false);
   });
 
   it("excludes expenses outside the target FY from every figure", () => {
@@ -121,5 +121,55 @@ describe("buildFyReport", () => {
     expect(r.businessPct).toBe(1);
     expect(r.businessUseSource).toEqual({ kind: "fy-trips" });
     expect(r.notices[0]).toMatch(/estimated from all trips recorded in FY 2024-25/);
+  });
+
+  describe("car purchase GST credit", () => {
+    const vehicle: VehicleRow = {
+      id: 1, make: "Toyota", model: "Corolla", rego: null,
+      odoOpen: 0, odoClose: null, purchaseDate: "2025-11-20", purchaseCostCents: 7500000,
+    };
+    // 80% business in FY 2025-26.
+    const trips = [
+      trip({ id: 1, date: "2025-12-01", odoStart: 0, odoEnd: 800, isBusiness: true }),
+      trip({ id: 2, date: "2025-12-02", odoStart: 800, odoEnd: 1000, isBusiness: false }),
+    ];
+
+    it("adds the capped, business-share purchase credit to the purchase quarter's BAS", () => {
+      const r = buildFyReport({ trips, expenses: [], vehicle, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2025-26" });
+      // capped credit 633400 (1/11 x $69,674) x 0.8 = 506720, in Q2 (Oct-Dec).
+      expect(r.bas.quarters[1].gstCreditCents).toBe(506720);
+      expect(r.bas.quarters[0].gstCreditCents).toBe(0);
+      expect(r.bas.totalGstCreditCents).toBe(506720);
+      expect(r.bas.purchaseGstCreditCents).toBe(506720);
+    });
+
+    it("claims no purchase credit when not GST-registered", () => {
+      const r = buildFyReport({ trips, expenses: [], vehicle, settings: { gstRegistered: false }, logbookPeriods: [], fyLabel: "2025-26" });
+      expect(r.bas.totalGstCreditCents).toBe(0);
+      expect(r.bas.purchaseGstCreditCents).toBe(0);
+    });
+
+    it("claims the purchase credit only in the purchase FY", () => {
+      const later = [trip({ id: 3, date: "2026-08-01", odoStart: 1000, odoEnd: 1100, isBusiness: true })];
+      const r = buildFyReport({ trips: [...trips, ...later], expenses: [], vehicle, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2026-27" });
+      expect(r.bas.purchaseGstCreditCents).toBe(0);
+      expect(r.bas.totalGstCreditCents).toBe(0);
+    });
+
+    it("depreciates on the GST-exclusive cost when GST-registered", () => {
+      const r = buildFyReport({ trips, expenses: [], vehicle, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2025-26" });
+      // base 7500000 - 633400 = 6866600; 223 days held (20 Nov - 30 Jun).
+      const decline = Math.round(6866600 * (223 / 365) * 0.25);
+      expect(r.annual.depreciationDeductionCents).toBe(Math.round(decline * 0.8));
+    });
+
+    it("warns and omits depreciation and purchase credit for an FY with no published car limit", () => {
+      const future: VehicleRow = { ...vehicle, purchaseDate: "2027-08-01" };
+      const futureTrips = [trip({ id: 4, date: "2027-08-02", odoStart: 0, odoEnd: 100, isBusiness: true })];
+      const r = buildFyReport({ trips: futureTrips, expenses: [], vehicle: future, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2027-28" });
+      expect(r.annual.depreciationDeductionCents).toBe(0);
+      expect(r.bas.purchaseGstCreditCents).toBe(0);
+      expect(r.notices.some((n) => /car limit for FY 2027-28/.test(n))).toBe(true);
+    });
   });
 });
