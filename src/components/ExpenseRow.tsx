@@ -1,14 +1,12 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState } from "react";
 import { deleteExpenseAction, updateExpenseAction } from "@/lib/actions";
 import { EXPENSE_CATEGORIES } from "@/lib/expenses/categories";
 import { centsToDollars } from "@/lib/logbook/parse";
 import { FieldError } from "@/components/FieldError";
-import type { ActionResult } from "@/lib/logbook/types";
+import { useFormSubmit } from "@/components/useFormSubmit";
 import type { ExpenseRow as ExpenseRowType } from "@/lib/data/expense";
-
-const initial: ActionResult = { ok: true };
 
 function label(code: string): string {
   return EXPENSE_CATEGORIES.find((c) => c.code === code)?.label ?? code;
@@ -16,8 +14,12 @@ function label(code: string): string {
 
 export function ExpenseRow({ expense }: { expense: ExpenseRowType }) {
   const [editing, setEditing] = useState(false);
-  const updateForId = updateExpenseAction.bind(null, expense.id);
-  const [state, action, pending] = useActionState(updateForId, initial);
+  const { state, pending, onSubmit } = useFormSubmit(updateExpenseAction.bind(null, expense.id), {
+    onSuccess: () => setEditing(false),
+  });
+  const del = useFormSubmit(deleteExpenseAction, {
+    confirmMessage: `Delete this ${label(expense.category).toLowerCase()} expense from ${expense.date}?`,
+  });
   const errs = state.ok ? {} : (state.fieldErrors ?? {});
   const fid = `edit-exp-${expense.id}`;
 
@@ -36,10 +38,13 @@ export function ExpenseRow({ expense }: { expense: ExpenseRowType }) {
         </td>
         <td className="py-2 flex gap-3">
           <button type="button" onClick={() => setEditing(true)} className="text-sm underline">Edit</button>
-          <form action={deleteExpenseAction}>
+          <form method="post" onSubmit={del.onSubmit}>
             <input type="hidden" name="id" value={expense.id} />
-            <button type="submit" className="text-sm text-red-600 underline">Delete</button>
+            <button type="submit" disabled={del.pending} className="text-sm text-red-600 underline disabled:opacity-50">
+              {del.pending ? "Deleting…" : "Delete"}
+            </button>
           </form>
+          {!del.state.ok && del.state.error ? <p className="text-sm text-red-600">{del.state.error}</p> : null}
         </td>
       </tr>
     );
@@ -72,11 +77,12 @@ export function ExpenseRow({ expense }: { expense: ExpenseRowType }) {
         <input name="receipt" type="file" accept="image/*" form={fid} className="text-xs w-28" />
       </td>
       <td className="py-2">
-        <form id={fid} action={action} className="flex gap-3">
+        <form id={fid} method="post" onSubmit={onSubmit} className="flex gap-3">
           <input type="hidden" name="notes" value={expense.notes ?? ""} />
           <button type="submit" disabled={pending} className="text-sm underline disabled:opacity-50">{pending ? "Saving…" : "Save"}</button>
           <button type="button" onClick={() => setEditing(false)} className="text-sm underline">Cancel</button>
         </form>
+        {!state.ok && state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
       </td>
     </tr>
   );

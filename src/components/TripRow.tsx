@@ -1,17 +1,18 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState } from "react";
 import { deleteTripAction, updateTripAction } from "@/lib/actions";
 import { tripKm } from "@/lib/logbook/compute";
 import { FieldError } from "@/components/FieldError";
-import type { ActionResult, TripRow as TripRowType } from "@/lib/logbook/types";
-
-const initial: ActionResult = { ok: true };
+import { useFormSubmit } from "@/components/useFormSubmit";
+import type { TripRow as TripRowType } from "@/lib/logbook/types";
 
 export function TripRow({ trip }: { trip: TripRowType }) {
   const [editing, setEditing] = useState(false);
-  const updateForId = updateTripAction.bind(null, trip.id);
-  const [state, action, pending] = useActionState(updateForId, initial);
+  const { state, pending, onSubmit } = useFormSubmit(updateTripAction.bind(null, trip.id), {
+    onSuccess: () => setEditing(false),
+  });
+  const del = useFormSubmit(deleteTripAction, { confirmMessage: `Delete the trip on ${trip.date}?` });
   const errs = state.ok ? {} : (state.fieldErrors ?? {});
 
   if (!editing) {
@@ -23,10 +24,13 @@ export function TripRow({ trip }: { trip: TripRowType }) {
         <td className="py-2 pr-4">{trip.purpose ?? ""}</td>
         <td className="py-2 flex gap-3">
           <button type="button" onClick={() => setEditing(true)} className="text-sm underline">Edit</button>
-          <form action={deleteTripAction}>
+          <form method="post" onSubmit={del.onSubmit}>
             <input type="hidden" name="id" value={trip.id} />
-            <button type="submit" className="text-sm text-red-600 underline">Delete</button>
+            <button type="submit" disabled={del.pending} className="text-sm text-red-600 underline disabled:opacity-50">
+              {del.pending ? "Deleting…" : "Delete"}
+            </button>
           </form>
+          {!del.state.ok && del.state.error ? <p className="text-sm text-red-600">{del.state.error}</p> : null}
         </td>
       </tr>
     );
@@ -55,10 +59,11 @@ export function TripRow({ trip }: { trip: TripRowType }) {
         <input name="purpose" form={`edit-${trip.id}`} defaultValue={trip.purpose ?? ""} className="border rounded px-2 py-1" />
       </td>
       <td className="py-2">
-        <form id={`edit-${trip.id}`} action={action} className="flex gap-3">
+        <form id={`edit-${trip.id}`} method="post" onSubmit={onSubmit} className="flex gap-3">
           <button type="submit" disabled={pending} className="text-sm underline disabled:opacity-50">{pending ? "Saving…" : "Save"}</button>
           <button type="button" onClick={() => setEditing(false)} className="text-sm underline">Cancel</button>
         </form>
+        {!state.ok && state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
       </td>
     </tr>
   );

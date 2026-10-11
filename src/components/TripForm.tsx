@@ -1,18 +1,15 @@
 "use client";
 
-import { useActionState } from "react";
 import { createTripAction } from "@/lib/actions";
 import { FieldError } from "@/components/FieldError";
-import type { ActionResult } from "@/lib/logbook/types";
-
-const initial: ActionResult = { ok: true };
+import { useFormSubmit } from "@/components/useFormSubmit";
 
 export function TripForm() {
-  const [state, action, pending] = useActionState(createTripAction, initial);
+  const { state, pending, onSubmit } = useFormSubmit(createTripAction, { onSuccess: (form) => form.reset() });
   const errs = state.ok ? {} : (state.fieldErrors ?? {});
 
   return (
-    <form action={action} className="flex flex-wrap items-end gap-3 border rounded p-4">
+    <form method="post" onSubmit={onSubmit} className="flex flex-wrap items-end gap-3 border rounded p-4">
       <label className="flex flex-col gap-1">
         <span className="text-sm">Date</span>
         <input name="date" type="date" className="border rounded px-2 py-1" />
@@ -39,6 +36,7 @@ export function TripForm() {
       <button type="submit" disabled={pending} className="rounded bg-black text-white px-4 py-2 disabled:opacity-50">
         {pending ? "Adding…" : "Add trip"}
       </button>
+      {!state.ok && state.error ? <p className="w-full text-sm text-red-600">{state.error}</p> : null}
     </form>
   );
 }

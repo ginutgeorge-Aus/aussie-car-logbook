@@ -26,6 +26,8 @@ corepack pnpm dev        # http://localhost:3000
 |---------|---------|
 | `corepack pnpm test`  | Vitest — the tax-engine correctness gate |
 | `corepack pnpm build` | Production build **and** the typecheck gate |
+| `corepack pnpm lint`  | ESLint |
+| `corepack pnpm knip`  | Unused files / exports / dependencies |
 | `corepack pnpm exec tsc --noEmit` | Typecheck only |
 
 ## Making a change
@@ -34,7 +36,7 @@ corepack pnpm dev        # http://localhost:3000
 2. Keep money as **integer cents** and dates as **ISO `YYYY-MM-DD`** everywhere
    except the UI edge. See *Domain rules* in `CLAUDE.md`.
 3. Add or update tests. For tax logic, write the failing test first.
-4. Run `corepack pnpm test` and `corepack pnpm build` locally.
+4. Run `corepack pnpm lint`, `corepack pnpm knip`, `corepack pnpm test` and `corepack pnpm build` locally.
 5. Open a PR. CI (**Test + Build**), **CodeQL**, and **gitleaks** must pass; the
    PR template checklist must be satisfied. Squash-merge only.
 
@@ -51,3 +53,7 @@ Found a vulnerability? Do **not** open a public issue — see [SECURITY.md](SECU
 [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`,
 `chore:`, `docs:`, `test:`, `refactor:`. Keep the subject ≤ 50 chars; explain
 *why* in the body when it isn't obvious.
+
+## Code of Conduct
+
+By participating you agree to the [Code of Conduct](CODE_OF_CONDUCT.md).

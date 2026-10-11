@@ -33,7 +33,7 @@ Dispatches one implementer per task + spec reviewer + code quality reviewer.
 ```
 /verification-before-completion
 ```
-Run: `npm run build && npm run lint && npm test -- --no-coverage`
+Run: `corepack pnpm lint && corepack pnpm knip && corepack pnpm test` (CI runs the build)
 
 ### 6. Commit
 ```
@@ -51,5 +51,5 @@ Choose: direct merge, PR, or cleanup.
 
 - Branch naming: `feat/<slug>` for features, `fix/<slug>` for bugs
 - Multi-file changes → branch + PR (never direct push main)
-- Schema changes → push to prod DB before tagging release
-- Encrypted fields: encrypt after Zod, decrypt after DB fetch
+- Schema changes → `drizzle-kit generate`, forward-only migration, users apply on upgrade
+- Tax/money changes → run the `accounting-guard` agent before merge
