@@ -55,29 +55,33 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
         </div>
       )}
 
-      <section className="mt-6">
-        <h3 className="font-medium mb-2">BAS — GST credit by quarter</h3>
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b text-zinc-500">
-              <th className="py-2 pr-4">Quarter</th>
-              <th className="py-2">GST credit</th>
-            </tr>
-          </thead>
-          <tbody>
-            {report.bas.quarters.map((q) => (
-              <tr key={q.quarter} className="border-b">
-                <td className="py-2 pr-4">{q.label}</td>
-                <td className="py-2">${centsToDollars(q.gstCreditCents)}</td>
+      {settings.gstRegistered ? (
+        <section className="mt-6">
+          <h3 className="font-medium mb-2">BAS — GST credit by quarter</h3>
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b text-zinc-500">
+                <th className="py-2 pr-4">Quarter</th>
+                <th className="py-2">GST credit</th>
               </tr>
-            ))}
-            <tr className="font-semibold">
-              <td className="py-2 pr-4">FY total</td>
-              <td className="py-2">${centsToDollars(report.bas.totalGstCreditCents)}</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
+            </thead>
+            <tbody>
+              {report.bas.quarters.map((q) => (
+                <tr key={q.quarter} className="border-b">
+                  <td className="py-2 pr-4">{q.label}</td>
+                  <td className="py-2">${centsToDollars(q.gstCreditCents)}</td>
+                </tr>
+              ))}
+              <tr className="font-semibold">
+                <td className="py-2 pr-4">FY total</td>
+                <td className="py-2">${centsToDollars(report.bas.totalGstCreditCents)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      ) : (
+        <p className="mt-6 text-sm text-zinc-600">Not GST-registered — no BAS credits</p>
+      )}
 
       <section className="mt-8">
         <h3 className="font-medium mb-2">Annual income-tax deduction</h3>

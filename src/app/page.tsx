@@ -58,10 +58,14 @@ export default async function Home() {
             <p className="text-xs text-zinc-500">Total expenses</p>
             <p className="text-2xl font-semibold">${centsToDollars(fyTotalCents)}</p>
           </div>
-          <div>
-            <p className="text-xs text-zinc-500">GST credit (BAS)</p>
-            <p className="text-2xl font-semibold">${centsToDollars(gstCreditCents)}</p>
-          </div>
+          {settings.gstRegistered ? (
+            <div>
+              <p className="text-xs text-zinc-500">GST credit (BAS)</p>
+              <p className="text-2xl font-semibold">${centsToDollars(gstCreditCents)}</p>
+            </div>
+          ) : (
+            <p className="text-sm text-zinc-500 self-center">Not GST-registered — no BAS credits</p>
+          )}
           <div>
             <p className="text-xs text-zinc-500">Income-tax deduction</p>
             <p className="text-2xl font-semibold">${centsToDollars(deductionCents)}</p>
@@ -73,6 +77,7 @@ export default async function Home() {
         <Link href="/trips" className="rounded bg-black text-white px-4 py-2">Manage trips</Link>
         <Link href="/expenses" className="rounded bg-black text-white px-4 py-2">Manage expenses</Link>
         <Link href="/reports" className="rounded bg-black text-white px-4 py-2">Reports</Link>
+        <Link href="/settings" className="rounded border px-4 py-2">Settings</Link>
       </div>
     </main>
   );
