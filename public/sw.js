@@ -9,7 +9,7 @@ const OFFLINE_HTML = `<!doctype html><html lang="en"><head><meta charset="utf-8"
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Offline — Ginoo's Log Book</title>
 <style>body{font-family:system-ui,sans-serif;margin:0;min-height:100vh;display:flex;
-align-items:center;justify-content:center;background:#15803d;color:#fff;text-align:center;padding:2rem}
+align-items:center;justify-content:center;background:#0f1113;color:#edeff2;text-align:center;padding:2rem}
 h1{font-size:1.25rem;margin:0 0 .5rem}p{opacity:.85;margin:0}</style></head>
 <body><div><h1>You're offline</h1><p>Reconnect to view your log book.</p></div></body></html>`;
 
