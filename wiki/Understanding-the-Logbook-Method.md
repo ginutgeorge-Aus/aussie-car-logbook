@@ -36,10 +36,15 @@ The ATO doesn't make you log *every* trip *forever*. Instead:
 - You start a new 12-week logbook if things change (new job, new car, big
   change in how you use the car), or when the 5 years are up.
 
-**How this app helps:** log your trips during your 12-week period (odometer
-start/end, and tick which are business). The app calculates the business-use %
-straight from those trips. Keep your logbook honest and complete — the
-odometer readings are your evidence.
+**How this app helps:** on the **Trips** page, add a **logbook period** (the
+start and end date of your 12-week logbook — the app won't accept anything
+shorter than 12 weeks), then log your trips during it (odometer start/end, and
+tick which are business). The app calculates the business-use % from the trips
+inside that period and uses it for the financial year the logbook starts in and
+the next 4 years — even years where you log no trips. If you have more than
+one valid logbook, the most recent one wins. If no valid logbook covers a year,
+the app falls back to that year's own trips and the report says so. Keep your
+logbook honest and complete — the odometer readings are your evidence.
 
 > 💡 You still record your **total** kilometres for the full year (usually
 > odometer at 1 July and 30 June), because your *claim* applies the percentage
