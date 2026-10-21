@@ -10,15 +10,37 @@ import { putReceipt, assertReceiptFile } from "@/lib/data/receipts";
 import { createExpense, updateExpense, deleteExpense } from "@/lib/data/expense";
 import { getVehicle } from "@/lib/data/vehicle";
 import { runReceiptOcr } from "@/lib/data/ocr";
+import { OcrLicenceError } from "@/lib/ocr/model";
 import { parseOcrResult } from "@/lib/ocr/parse";
 import type { OcrActionResult } from "@/lib/ocr/types";
+
+/** Revalidates every page that reads trips, expenses or the vehicle. */
+function revalidateAll(listPath: string): void {
+  revalidatePath(listPath);
+  revalidatePath("/");
+  revalidatePath("/reports");
+}
+
+/** Normalises a thrown error into a failed ActionResult. */
+function failure(e: unknown): ActionResult {
+  return { ok: false, error: e instanceof Error ? e.message : "Something went wrong." };
+}
+
+/** Reads the row id posted by a delete form, or null if it is not an integer. */
+function idFrom(fd: FormData): number | null {
+  const id = Number(fd.get("id"));
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
 
 export async function saveVehicleAction(_prev: ActionResult, fd: FormData): Promise<ActionResult> {
   const parsed = parseVehicleForm(fd);
   if (!parsed.ok) return { ok: false, fieldErrors: parsed.fieldErrors };
-  await upsertVehicle(parsed.value);
-  revalidatePath("/");
-  revalidatePath("/vehicle");
+  try {
+    await upsertVehicle(parsed.value);
+  } catch (e) {
+    return failure(e);
+  }
+  revalidateAll("/vehicle");
   return { ok: true, saved: true };
 }
 
@@ -28,10 +50,9 @@ export async function createTripAction(_prev: ActionResult, fd: FormData): Promi
   try {
     await createTrip(parsed.value);
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failure(e);
   }
-  revalidatePath("/trips");
-  revalidatePath("/");
+  revalidateAll("/trips");
   return { ok: true };
 }
 
@@ -41,20 +62,22 @@ export async function updateTripAction(id: number, _prev: ActionResult, fd: Form
   try {
     await updateTrip(id, parsed.value);
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failure(e);
   }
-  revalidatePath("/trips");
-  revalidatePath("/");
+  revalidateAll("/trips");
   return { ok: true };
 }
 
-export async function deleteTripAction(fd: FormData): Promise<void> {
-  const id = Number(fd.get("id"));
-  if (Number.isInteger(id)) {
+export async function deleteTripAction(_prev: ActionResult, fd: FormData): Promise<ActionResult> {
+  const id = idFrom(fd);
+  if (id === null) return { ok: false, error: "Invalid trip." };
+  try {
     await deleteTrip(id);
-    revalidatePath("/trips");
-    revalidatePath("/");
+  } catch (e) {
+    return failure(e);
   }
+  revalidateAll("/trips");
+  return { ok: true };
 }
 
 function fileFrom(fd: FormData): File | null {
@@ -71,14 +94,17 @@ export async function createExpenseAction(_prev: ActionResult, fd: FormData): Pr
     if (file) {
       const vehicle = await getVehicle();
       if (!vehicle) return { ok: false, error: "No vehicle set up yet." };
-      receiptKey = await putReceipt(vehicle.id, file);
+      receiptKey = await putReceipt(vehicle.id, file, {
+        date: parsed.value.date,
+        category: parsed.value.category,
+        amountInclCents: parsed.value.amountInclCents,
+      });
     }
     await createExpense(parsed.value, receiptKey);
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failure(e);
   }
-  revalidatePath("/expenses");
-  revalidatePath("/");
+  revalidateAll("/expenses");
   return { ok: true };
 }
 
@@ -91,24 +117,30 @@ export async function updateExpenseAction(id: number, _prev: ActionResult, fd: F
     if (file) {
       const vehicle = await getVehicle();
       if (!vehicle) return { ok: false, error: "No vehicle set up yet." };
-      receiptKey = await putReceipt(vehicle.id, file);
+      receiptKey = await putReceipt(vehicle.id, file, {
+        date: parsed.value.date,
+        category: parsed.value.category,
+        amountInclCents: parsed.value.amountInclCents,
+      });
     }
     await updateExpense(id, parsed.value, receiptKey);
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failure(e);
   }
-  revalidatePath("/expenses");
-  revalidatePath("/");
+  revalidateAll("/expenses");
   return { ok: true };
 }
 
-export async function deleteExpenseAction(fd: FormData): Promise<void> {
-  const id = Number(fd.get("id"));
-  if (Number.isInteger(id)) {
+export async function deleteExpenseAction(_prev: ActionResult, fd: FormData): Promise<ActionResult> {
+  const id = idFrom(fd);
+  if (id === null) return { ok: false, error: "Invalid expense." };
+  try {
     await deleteExpense(id);
-    revalidatePath("/expenses");
-    revalidatePath("/");
+  } catch (e) {
+    return failure(e);
   }
+  revalidateAll("/expenses");
+  return { ok: true };
 }
 
 export async function scanReceiptAction(
@@ -122,13 +154,14 @@ export async function scanReceiptAction(
   } catch (e) {
     return { ok: false, error: (e as Error).message };
   }
-  if (file.type === "image/heic") {
-    return { ok: false, error: "Scan isn't available for HEIC images — enter details manually." };
-  }
   try {
     const raw = await runReceiptOcr(file);
     return { ok: true, value: parseOcrResult(raw) };
-  } catch {
+  } catch (e) {
+    console.error("scanReceiptAction: OCR failed", e);
+    if (e instanceof OcrLicenceError) {
+      return { ok: false, error: "Receipt scanning needs one-time setup (accept the Llama licence) — see docs/ocr.md." };
+    }
     return { ok: false, error: "Couldn't read the receipt. Enter details manually." };
   }
 }
