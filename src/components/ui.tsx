@@ -23,7 +23,7 @@ export const btnDanger =
 
 /** Text input / select, 44px tall, 16px text (stops iOS zoom-on-focus). */
 export const inputCls =
-  "min-h-11 w-full rounded-lg border border-line bg-bg px-3 text-base text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:opacity-60";
+  "min-h-11 w-full rounded-lg border border-line bg-bg px-3 text-base text-ink placeholder:text-muted focus:border-accent-ink focus:outline-none focus:ring-2 focus:ring-accent-ink disabled:opacity-60";
 
 /** Field label text. */
 export const labelCls = "text-sm font-medium text-muted";
