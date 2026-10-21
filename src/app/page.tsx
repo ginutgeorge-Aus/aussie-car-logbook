@@ -32,8 +32,9 @@ export default async function Home() {
     getSettings(),
     listLogbookPeriods(),
   ]);
-  const fyLabel = financialYear(todayIso()).label;
-  const { ratio, source } = resolveBusinessUse({ trips, periods, fyLabel });
+  const today = todayIso();
+  const fyLabel = financialYear(today).label;
+  const { ratio, source } = resolveBusinessUse({ trips, periods, fyLabel, today });
   const pct = Math.round(ratio * 100);
   const fyExpenses = filterTripsByFy(expenses, fyLabel).map((e) => ({
     amountInclCents: e.amountInclCents,
