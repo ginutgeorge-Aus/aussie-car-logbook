@@ -1,56 +1,66 @@
 "use client";
 
 import { saveVehicleAction } from "@/lib/actions";
-import { FieldError } from "@/components/FieldError";
+import { FieldError, FormError } from "@/components/FieldError";
 import { useFormSubmit } from "@/components/useFormSubmit";
+import { btnPrimary, inputCls, labelCls } from "@/components/ui";
 import { centsToDollars } from "@/lib/logbook/parse";
 import type { VehicleRow } from "@/lib/logbook/types";
 
+/** Vehicle details form (make, model, rego, opening odometer, purchase). Keeps input on error. */
 export function VehicleForm({ vehicle }: { vehicle: VehicleRow | null }) {
   const { state, pending, onSubmit } = useFormSubmit(saveVehicleAction);
   const errs = state.ok ? {} : (state.fieldErrors ?? {});
 
   return (
-    <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4 max-w-md">
-      <label className="flex flex-col gap-1">
-        <span>Make</span>
-        <input name="make" defaultValue={vehicle?.make ?? ""} className="border rounded px-2 py-1" />
-        <FieldError message={errs.make} />
-      </label>
-      <label className="flex flex-col gap-1">
-        <span>Model</span>
-        <input name="model" defaultValue={vehicle?.model ?? ""} className="border rounded px-2 py-1" />
-        <FieldError message={errs.model} />
-      </label>
-      <label className="flex flex-col gap-1">
-        <span>Rego</span>
-        <input name="rego" defaultValue={vehicle?.rego ?? ""} className="border rounded px-2 py-1" />
-      </label>
-      <label className="flex flex-col gap-1">
-        <span>Opening odometer (km)</span>
-        <input name="odoOpen" type="number" min="0" defaultValue={vehicle?.odoOpen ?? ""} className="border rounded px-2 py-1" />
-        <FieldError message={errs.odoOpen} />
-      </label>
-      <label className="flex flex-col gap-1">
-        <span>Purchase date (optional)</span>
-        <input name="purchaseDate" type="date" defaultValue={vehicle?.purchaseDate ?? ""} className="border rounded px-2 py-1" />
-      </label>
-      <label className="flex flex-col gap-1">
-        <span>Purchase cost $ (optional)</span>
-        <input
-          name="purchaseCost"
-          type="text"
-          inputMode="decimal"
-          defaultValue={vehicle?.purchaseCostCents != null ? centsToDollars(vehicle.purchaseCostCents) : ""}
-          className="border rounded px-2 py-1"
-        />
-        <FieldError message={errs.purchaseCost} />
-      </label>
-      <button type="submit" disabled={pending} className="rounded bg-black text-white px-4 py-2 disabled:opacity-50">
-        {pending ? "Saving…" : "Save vehicle"}
-      </button>
-      {state.ok && state.saved && !pending ? <p className="text-sm text-green-600">Saved.</p> : null}
-      {!state.ok && state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
+    <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4">
+      <div className="grid grid-cols-2 gap-3">
+        <label className="flex flex-col gap-1.5">
+          <span className={labelCls}>Make</span>
+          <input name="make" defaultValue={vehicle?.make ?? ""} autoComplete="off" className={inputCls} />
+          <FieldError message={errs.make} />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className={labelCls}>Model</span>
+          <input name="model" defaultValue={vehicle?.model ?? ""} autoComplete="off" className={inputCls} />
+          <FieldError message={errs.model} />
+        </label>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <label className="flex flex-col gap-1.5">
+          <span className={labelCls}>Rego</span>
+          <input name="rego" defaultValue={vehicle?.rego ?? ""} autoComplete="off" autoCapitalize="characters" className={`${inputCls} font-mono`} />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className={labelCls}>Opening odometer (km)</span>
+          <input name="odoOpen" type="number" min="0" inputMode="numeric" defaultValue={vehicle?.odoOpen ?? ""} className={`${inputCls} font-mono`} />
+          <FieldError message={errs.odoOpen} />
+        </label>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <label className="flex flex-col gap-1.5">
+          <span className={labelCls}>Purchase date (optional)</span>
+          <input name="purchaseDate" type="date" defaultValue={vehicle?.purchaseDate ?? ""} className={inputCls} />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className={labelCls}>Purchase cost $ (optional)</span>
+          <input
+            name="purchaseCost"
+            type="text"
+            inputMode="decimal"
+            defaultValue={vehicle?.purchaseCostCents != null ? centsToDollars(vehicle.purchaseCostCents) : ""}
+            className={`${inputCls} font-mono`}
+          />
+          <FieldError message={errs.purchaseCost} />
+        </label>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="submit" disabled={pending} className={`${btnPrimary} w-full md:w-auto`}>
+          {pending ? "Saving…" : "Save vehicle"}
+        </button>
+        <p role="status" className="text-sm text-success">{state.ok && state.saved && !pending ? "Saved." : ""}</p>
+      </div>
+      <FormError message={!state.ok ? state.error : null} />
     </form>
   );
 }

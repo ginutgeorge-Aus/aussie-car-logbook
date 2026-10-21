@@ -133,3 +133,25 @@ export function logbookFyLabels(periods: LogbookPeriodRow[], currentFy: string):
   }
   return [...labels].sort((a, b) => b.localeCompare(a));
 }
+
+/**
+ * Latest known odometer reading: the highest trip `odoEnd`, never below the
+ * vehicle's opening odometer. Null when neither is known.
+ */
+export function currentOdometer(trips: Pick<TripRow, "odoEnd">[], odoOpen: number | null): number | null {
+  return trips.reduce<number | null>((max, t) => (max === null || t.odoEnd > max ? t.odoEnd : max), odoOpen);
+}
+
+/** Business and total km driven within one FY (display figures for the dashboard). */
+export function fyKmTotals(
+  trips: Pick<TripRow, "date" | "odoStart" | "odoEnd" | "isBusiness">[],
+  fyLabel: string,
+): { businessKm: number; totalKm: number } {
+  let businessKm = 0;
+  let totalKm = 0;
+  for (const leg of tripsToLegs(filterTripsByFy(trips, fyLabel))) {
+    totalKm += leg.km;
+    if (leg.isBusiness) businessKm += leg.km;
+  }
+  return { businessKm, totalKm };
+}

@@ -1,8 +1,8 @@
 import { expect, test } from "vitest";
-import { tripKm, tripsToLegs, filterTripsByFy, resolveBusinessUse, logbookPeriodBusinessPctBps, logbookFyLabels } from "@/lib/logbook/compute";
+import { tripKm, tripsToLegs, filterTripsByFy, resolveBusinessUse, logbookPeriodBusinessPctBps, logbookFyLabels, currentOdometer, fyKmTotals } from "@/lib/logbook/compute";
+import type { LogbookPeriodRow, TripRow } from "@/lib/logbook/types";
 
 const TODAY = "2099-01-01";
-import type { LogbookPeriodRow, TripRow } from "@/lib/logbook/types";
 
 test("tripKm is odoEnd - odoStart", () => {
   expect(tripKm({ odoStart: 50000, odoEnd: 50040 })).toBe(40);
@@ -124,4 +124,20 @@ test("resolveBusinessUse accepts a logbook period on its last day", () => {
 test("logbookFyLabels lists each period's valid FYs up to the current FY", () => {
   const short = period({ id: 2, startDate: "2023-08-01", endDate: "2023-08-10" });
   expect(logbookFyLabels([period({}), short], "2026-27")).toEqual(["2026-27", "2025-26", "2024-25"]);
+});
+
+test("currentOdometer is the highest trip odoEnd, else the opening odometer", () => {
+  expect(currentOdometer([{ odoEnd: 84300 }, { odoEnd: 84312 }], 80000)).toBe(84312);
+  expect(currentOdometer([], 80000)).toBe(80000);
+  expect(currentOdometer([], null)).toBeNull();
+  expect(currentOdometer([{ odoEnd: 100 }], 500)).toBe(500);
+});
+
+test("fyKmTotals sums business and total km within the FY", () => {
+  const trips = [
+    { date: "2024-07-02", odoStart: 0, odoEnd: 40, isBusiness: true },
+    { date: "2024-08-02", odoStart: 40, odoEnd: 60, isBusiness: false },
+    { date: "2024-06-30", odoStart: 0, odoEnd: 999, isBusiness: true }, // FY 2023-24
+  ];
+  expect(fyKmTotals(trips, "2024-25")).toEqual({ businessKm: 40, totalKm: 60 });
 });

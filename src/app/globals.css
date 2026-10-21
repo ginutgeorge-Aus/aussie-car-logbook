@@ -1,37 +1,125 @@
 @import "tailwindcss";
 
+/*
+ * "Odometer" design tokens (GLB-8). Dark is the default; a light variant of the
+ * same palette kicks in for prefers-color-scheme: light (sunlight in a car) and
+ * for print. Amber is a fill colour in both themes; as text it uses
+ * --accent-ink, which is darkened on light backgrounds to keep AA contrast.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+  --bg: #0f1113;
+  --surface: #181b1f;
+  --nav: #15181b;
+  --line: #2a2f35;
+  --rule: #22262b;
+  --ink: #edeff2;
+  --muted: #a3abb5;
+  --nav-ink: #c4cad2;
+  --accent: #f5a524;
+  --accent-hover: #ffc15c;
+  --on-accent: #1a1300;
+  --accent-ink: #f5a524;
+  --private: #5a636e;
+  --danger: #f87171;
+  --success: #4ade80;
+  --notice-bg: #2a2110;
+
+  /* Height of the mobile tab bar, excluding the home-indicator inset. */
+  --tabbar-h: 64px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    color-scheme: light;
+    --bg: #f4f5f7;
+    --surface: #ffffff;
+    --nav: #ffffff;
+    --line: #d3d8de;
+    --rule: #e5e8ec;
+    --ink: #14171a;
+    --muted: #555d67;
+    --nav-ink: #3b424a;
+    --accent-hover: #e0951a;
+    --accent-ink: #9a5b00;
+    --private: #8a929c;
+    --danger: #b42318;
+    --success: #15803d;
+    --notice-bg: #fff6e5;
   }
 }
 
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-nav: var(--nav);
+  --color-line: var(--line);
+  --color-rule: var(--rule);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-nav-ink: var(--nav-ink);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-on-accent: var(--on-accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-private: var(--private);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-notice: var(--notice-bg);
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Native date/number pickers follow the theme. */
+input,
+select,
+textarea {
+  color-scheme: inherit;
+}
+
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Main content clears the fixed mobile tab bar + home indicator. */
+@utility pb-tabbar {
+  padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 24px);
 }
 
 @media print {
+  :root {
+    color-scheme: light;
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --nav: #ffffff;
+    --line: #c8ced5;
+    --rule: #e0e4e8;
+    --ink: #000000;
+    --muted: #444b53;
+    --nav-ink: #000000;
+    --accent-ink: #7a4700;
+    --private: #8a929c;
+    --danger: #b42318;
+    --success: #15803d;
+    --notice-bg: #ffffff;
+  }
   .no-print,
   .fy-switcher {
     display: none !important;
   }
   main {
     max-width: none;
-    padding: 0;
+    padding: 0 !important;
   }
 }

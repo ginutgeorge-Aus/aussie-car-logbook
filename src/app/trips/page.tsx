@@ -1,28 +1,22 @@
-import Link from "next/link";
 import { getVehicle } from "@/lib/data/vehicle";
 import { listTrips } from "@/lib/data/trip";
 import { listLogbookPeriods } from "@/lib/data/logbookPeriod";
-import { filterTripsByFy, logbookFyLabels, logbookPeriodBusinessPctBps, resolveBusinessUse } from "@/lib/logbook/compute";
+import { filterTripsByFy, fyKmTotals, logbookFyLabels, logbookPeriodBusinessPctBps, resolveBusinessUse } from "@/lib/logbook/compute";
 import { businessPctBps, financialYear, formatBusinessPct, fyLabelOr, logbookValidity } from "@/lib/tax";
 import { todayIso } from "@/lib/today";
+import { formatKm } from "@/lib/format";
 import { FySwitcher } from "@/components/FySwitcher";
 import { TripForm } from "@/components/TripForm";
 import { TripRow } from "@/components/TripRow";
 import { LogbookPeriodForm, LogbookPeriodItem } from "@/components/LogbookPeriods";
+import { EmptyState, NeedsVehicle, PageHeader, cardCls, eyebrowCls, pageCls } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
-/** Trips page: FY business use (logbook-based), logbook periods, and the FY trip list. */
+/** Trips: FY switcher, business use (logbook-based), logbook periods, add form, and trips as cards (phone) / table (desktop). */
 export default async function TripsPage({ searchParams }: PageProps<"/trips">) {
   const vehicle = await getVehicle();
-  if (!vehicle) {
-    return (
-      <main className="w-full max-w-3xl mx-auto p-8 text-center">
-        <p className="mb-4 text-zinc-600">Set up your car first.</p>
-        <Link href="/vehicle" className="rounded bg-black text-white px-4 py-2">Set up your car</Link>
-      </main>
-    );
-  }
+  if (!vehicle) return <NeedsVehicle />;
 
   const [trips, periods] = await Promise.all([listTrips(), listLogbookPeriods()]);
   const today = todayIso();
@@ -32,6 +26,7 @@ export default async function TripsPage({ searchParams }: PageProps<"/trips">) {
 
   const fyLabels = Array.from(new Set([currentFy, ...trips.map((t) => financialYear(t.date).label), ...logbookFyLabels(periods, currentFy)])).sort((a, b) => b.localeCompare(a));
   const fyTrips = filterTripsByFy(trips, activeFy);
+  const km = fyKmTotals(trips, activeFy);
   const businessUse = resolveBusinessUse({ trips, periods, fyLabel: activeFy, today });
   const pct = formatBusinessPct(businessPctBps(businessUse.ratio));
   const periodViews = periods.map((p) => {
@@ -49,51 +44,66 @@ export default async function TripsPage({ searchParams }: PageProps<"/trips">) {
   });
 
   return (
-    <main className="w-full max-w-3xl mx-auto p-8">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">Trips</h1>
-        <Link href="/" className="text-sm underline">Dashboard</Link>
+    <main className={`${pageCls} flex flex-col gap-5`}>
+      <div>
+        <PageHeader title="Trips" />
+        <FySwitcher fyLabels={fyLabels} active={activeFy} basePath="/trips" />
       </div>
-      <FySwitcher fyLabels={fyLabels} active={activeFy} basePath="/trips" />
-      <p className="mt-4 text-sm text-zinc-600">Business use — FY {activeFy}: <span className="font-semibold">{pct}%</span></p>
-      <p className="mb-4 text-xs text-zinc-500">
-        {businessUse.source.kind === "logbook"
-          ? `From logbook period ${businessUse.source.startDate} to ${businessUse.source.endDate}.`
-          : `No valid logbook period covers FY ${activeFy} — estimated from this FY's trips.`}
-      </p>
 
-      <section className="mb-6">
-        <h2 className="font-medium mb-1">Logbook periods</h2>
-        <p className="mb-2 text-xs text-zinc-500">
+      <div>
+        <p className="text-[15px] text-muted">
+          Business use FY {activeFy}:{" "}
+          <span className="font-mono text-lg font-semibold text-accent-ink">{pct}%</span>
+        </p>
+        <p className="mt-1 text-sm text-muted">
+          {businessUse.source.kind === "logbook"
+            ? `From logbook period ${businessUse.source.startDate} to ${businessUse.source.endDate}.`
+            : `No valid logbook period covers FY ${activeFy} — estimated from this FY's trips.`}
+          <span className="font-mono"> · FY trips {formatKm(km.businessKm)} of {formatKm(km.totalKm)} km business</span>
+        </p>
+      </div>
+
+      <section aria-label="Logbook periods" className="flex flex-col gap-2">
+        <h2 className={eyebrowCls}>Logbook periods</h2>
+        <p className="text-sm text-muted">
           Keep a logbook for at least 12 continuous weeks. It sets your business-use % for the FY it starts in and the
           next 4 FYs.
         </p>
         <LogbookPeriodForm />
         {periodViews.length > 0 && (
-          <ul className="mt-2">
+          <ul className={`${cardCls} px-4`}>
             {periodViews.map((p) => <LogbookPeriodItem key={p.id} period={p} />)}
           </ul>
         )}
       </section>
 
       <TripForm />
+
       {fyTrips.length === 0 ? (
-        <p className="mt-6 text-zinc-600">No trips in FY {activeFy} yet.</p>
+        <EmptyState title={`No trips in FY ${activeFy} yet`} body="Log a trip above — start and end odometer, and whether it was for work." />
       ) : (
-        <table className="mt-6 w-full text-left">
-          <thead>
-            <tr className="border-b text-sm text-zinc-500">
-              <th className="py-2 pr-4">Date</th>
-              <th className="py-2 pr-4">Distance</th>
-              <th className="py-2 pr-4">Type</th>
-              <th className="py-2 pr-4">Purpose</th>
-              <th className="py-2"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {fyTrips.map((t) => <TripRow key={t.id} trip={t} />)}
-          </tbody>
-        </table>
+        <section aria-label={`Trips FY ${activeFy}`}>
+          <ul className="md:hidden">
+            {fyTrips.map((t) => <TripRow key={t.id} trip={t} variant="card" />)}
+          </ul>
+          <div className={`${cardCls} hidden md:block overflow-x-auto py-2`}>
+            <table className="w-full min-w-170 border-collapse text-[15px]">
+              <thead>
+                <tr className="text-left text-xs uppercase tracking-[0.05em] text-muted">
+                  <th className="border-b border-line px-5 py-2.5 font-medium">Date</th>
+                  <th className="border-b border-line px-3 py-2.5 font-medium">Purpose</th>
+                  <th className="border-b border-line px-3 py-2.5 font-medium">Odometer</th>
+                  <th className="border-b border-line px-3 py-2.5 font-medium text-right">km</th>
+                  <th className="border-b border-line px-3 py-2.5 font-medium">Type</th>
+                  <th className="border-b border-line px-3 py-2.5 font-medium"><span className="sr-only">Actions</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {fyTrips.map((t) => <TripRow key={t.id} trip={t} variant="row" />)}
+              </tbody>
+            </table>
+          </div>
+        </section>
       )}
     </main>
   );
