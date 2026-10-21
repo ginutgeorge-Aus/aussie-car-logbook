@@ -39,7 +39,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
 
   const fyLabels = Array.from(
     new Set([currentFy, ...trips.map((t) => financialYear(t.date).label), ...expenses.map((e) => financialYear(e.date).label), ...logbookFyLabels(logbookPeriods, currentFy)]),
-  ).sort().reverse();
+  ).sort((a, b) => b.localeCompare(a));
 
   const report = buildFyReport({ trips, expenses, vehicle, settings, logbookPeriods, fyLabel: activeFy, today });
 
