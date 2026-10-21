@@ -178,6 +178,7 @@ describe("buildFyReport", () => {
       const first = Math.round(4080000 * (223 / 365) * 0.25);
       const decline = Math.round((4080000 - first) * 0.25);
       expect(r.annual.depreciationDeductionCents).toBe(Math.round(decline * 0.5));
+      expect(r.notices.some((n) => /^Purchase year FY 2025-26 .*all trips recorded in FY 2025-26/.test(n))).toBe(true);
     });
 
     it("shows no depreciation or car-limit notice for an FY before the purchase", () => {

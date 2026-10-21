@@ -122,8 +122,16 @@ export function buildFyReport(input: {
     try {
       // The cost base drops by the credit claimed in the purchase FY, at that FY's business share.
       const purchaseFy = financialYear(vehicle.purchaseDate).label;
-      const purchaseRatio =
-        purchaseFy === fyLabel ? ratio : resolveBusinessUse({ trips, periods: logbookPeriods, fyLabel: purchaseFy, today }).ratio;
+      let purchaseRatio = ratio;
+      if (purchaseFy !== fyLabel) {
+        const purchaseUse = resolveBusinessUse({ trips, periods: logbookPeriods, fyLabel: purchaseFy, today });
+        purchaseRatio = purchaseUse.ratio;
+        if (settings.gstRegistered) {
+          notices.push(
+            ...purchaseUse.notices.map((n) => `Purchase year FY ${purchaseFy} (sets the GST taken off the depreciation base): ${n}`),
+          );
+        }
+      }
       const purchaseGstClaimedCents = settings.gstRegistered
         ? Math.round(
             carPurchaseGstCents({ purchaseCostCents: vehicle.purchaseCostCents, purchaseDateISO: vehicle.purchaseDate }) * purchaseRatio,
