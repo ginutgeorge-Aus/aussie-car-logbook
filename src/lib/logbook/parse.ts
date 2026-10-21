@@ -1,9 +1,24 @@
+import { LOGBOOK_MIN_DAYS, logbookPeriodDays } from "@/lib/tax";
 import type { ParseResult } from "@/lib/logbook/types";
 
+/** Plain non-negative decimal: digits with an optional fraction ("12", "12.5", ".5", "12."). */
+const DECIMAL_RE = /^(\d+\.?\d*|\.\d+)$/;
+
+/**
+ * Converts a dollar string to integer cents, rounding half-up on the third
+ * decimal. Only plain decimals are accepted — `Number()` forms such as "1e3",
+ * "0x10", "Infinity", signs, spaces or thousands separators throw. Parsing is
+ * done on the digits, so there is no floating-point error (1.005 -> 101).
+ *
+ * @throws RangeError for anything that is not a plain non-negative decimal.
+ */
 export function dollarsToCents(input: string): number {
-  const n = Number(input);
-  if (!Number.isFinite(n) || n < 0) throw new RangeError(`Invalid dollar amount: ${input}`);
-  return Math.round(n * 100);
+  if (!DECIMAL_RE.test(input)) throw new RangeError(`Invalid dollar amount: ${input}`);
+  const [whole, frac = ""] = input.split(".");
+  const padded = (frac + "000").slice(0, 3);
+  const cents = Number(whole || "0") * 100 + Number(padded.slice(0, 2)) + (Number(padded[2]) >= 5 ? 1 : 0);
+  if (!Number.isSafeInteger(cents)) throw new RangeError(`Invalid dollar amount: ${input}`);
+  return cents;
 }
 
 export function centsToDollars(cents: number): string {
@@ -79,4 +94,35 @@ export function parseTripForm(
 
   if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
   return { ok: true, value: { date, odoStart: odoStart as number, odoEnd: odoEnd as number, purpose, isBusiness } };
+}
+
+/**
+ * Whether `value` is a real calendar date in strict ISO `YYYY-MM-DD` form
+ * (rejects e.g. "2024-02-30" and "2024-13-01").
+ */
+function isIsoDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const d = new Date(value + "T00:00:00Z");
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
+}
+
+/**
+ * Parses the logbook-period form: start and end dates are required, must be
+ * real ISO dates, end must not precede start, and the period must cover at
+ * least 12 continuous weeks (ATO logbook method).
+ */
+export function parseLogbookPeriodForm(fd: FormData): ParseResult<{ startDate: string; endDate: string }> {
+  const errors: Record<string, string> = {};
+  const startDate = str(fd, "startDate");
+  const endDate = str(fd, "endDate");
+  if (!isIsoDate(startDate)) errors.startDate = "Enter a valid start date.";
+  if (!isIsoDate(endDate)) errors.endDate = "Enter a valid end date.";
+  if (!errors.startDate && !errors.endDate) {
+    if (endDate < startDate) errors.endDate = "End date must be on or after the start date.";
+    else if (logbookPeriodDays(startDate, endDate) < LOGBOOK_MIN_DAYS) {
+      errors.endDate = "A logbook period must cover at least 12 continuous weeks (84 days).";
+    }
+  }
+  if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
+  return { ok: true, value: { startDate, endDate } };
 }

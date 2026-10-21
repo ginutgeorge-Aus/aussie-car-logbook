@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import { AppNav } from "@/components/AppNav";
+import { manifestLinkProps } from "@/lib/pwa/manifest-link";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 
 const plexSans = IBM_Plex_Sans({
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
   title: "Ginoo's Log Book",
   description: "An Australian car logbook PWA for the ATO logbook method.",
   applicationName: "Ginoo's Log Book",
-  manifest: "/manifest.webmanifest",
+  // manifest: rendered manually in <head> with crossOrigin="use-credentials" (GLB-9)
   appleWebApp: {
     capable: true,
     // "default" keeps status-bar text legible in both themes (black-translucent forces white text).
@@ -48,6 +49,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${plexSans.variable} ${plexMono.variable} h-full antialiased`}>
+      <head>
+        <link {...manifestLinkProps} />
+      </head>
       <body className="min-h-full flex flex-col bg-bg text-ink font-sans pt-safe md:pt-0">
         <AppNav />
         <div className="flex-1 flex flex-col pb-tabbar md:pb-10">{children}</div>

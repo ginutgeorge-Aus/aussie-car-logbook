@@ -1,5 +1,5 @@
 import { expect, test, describe, it } from "vitest";
-import { financialYear, basQuarter, fyQuarters, daysHeldInFy } from "@/lib/tax/dates";
+import { financialYear, basQuarter, fyQuarters, daysHeldInFy, fyLabelOr } from "@/lib/tax/dates";
 
 test("July date is start of new FY", () => {
   expect(financialYear("2024-07-01")).toEqual({ startISO: "2024-07-01", endISO: "2025-06-30", label: "2024-25" });
@@ -39,4 +39,12 @@ describe("daysHeldInFy", () => {
   it("returns 0 when the date is after the FY end", () => {
     expect(daysHeldInFy("2026-01-01", "2024-25")).toBe(0);
   });
+});
+
+test("fyLabelOr keeps a well-formed FY label and falls back otherwise", () => {
+  expect(fyLabelOr("2024-25", "2026-27")).toBe("2024-25");
+  expect(fyLabelOr("1999-00", "2026-27")).toBe("1999-00");
+  for (const bad of ["abc", "2024-26", "2024-2", "2024-250", "", undefined, ["2024-25"]]) {
+    expect(fyLabelOr(bad, "2026-27")).toBe("2026-27");
+  }
 });

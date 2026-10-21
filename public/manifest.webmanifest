@@ -1,6 +1,7 @@
 {
   "name": "Ginoo's Log Book",
   "short_name": "Log Book",
+  "id": "/",
   "description": "Australian car logbook for the ATO logbook method — trips, expenses, receipts, and BAS + annual deduction reports.",
   "start_url": "/",
   "scope": "/",

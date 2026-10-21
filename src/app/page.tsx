@@ -3,11 +3,12 @@ import { getVehicle } from "@/lib/data/vehicle";
 import { listTrips } from "@/lib/data/trip";
 import { listExpenses } from "@/lib/data/expense";
 import { getSettings } from "@/lib/data/settings";
-import { currentOdometer, fyBusinessPct, fyKmTotals, filterTripsByFy, tripsToLegs } from "@/lib/logbook/compute";
-import { businessPct, gstCredit, annualDeduction, financialYear } from "@/lib/tax";
+import { listLogbookPeriods } from "@/lib/data/logbookPeriod";
+import { currentOdometer, fyKmTotals, filterTripsByFy } from "@/lib/logbook/compute";
+import { financialYear } from "@/lib/tax";
+import { buildFyReport } from "@/lib/reports/build";
 import { formatKm, formatMoney, formatMoneyWhole, fyShort } from "@/lib/format";
 import { todayIso } from "@/lib/today";
-import type { ExpenseCategory } from "@/lib/tax/types";
 import { BusinessGauge } from "@/components/BusinessGauge";
 import { OdometerDigits } from "@/components/OdometerDigits";
 import { RecentTrips } from "@/components/TripList";
@@ -35,7 +36,7 @@ function Stat({ label, cents, highlight = false, className = "" }: { label: stri
   );
 }
 
-/** Dashboard: business-use gauge, odometer, FY estimates and recent trips (Odometer design). */
+/** Dashboard: business-use gauge (logbook-based), odometer, FY estimates and recent trips (Odometer design). */
 export default async function Home() {
   const vehicle = await getVehicle();
 
@@ -54,25 +55,31 @@ export default async function Home() {
     );
   }
 
-  const [trips, expenses, settings] = await Promise.all([listTrips(), listExpenses(), getSettings()]);
-  const fyLabel = financialYear(todayIso()).label;
-  const pct = fyBusinessPct(trips, fyLabel);
+  const [trips, expenses, settings, periods] = await Promise.all([
+    listTrips(),
+    listExpenses(),
+    getSettings(),
+    listLogbookPeriods(),
+  ]);
+  const today = todayIso();
+  const fyLabel = financialYear(today).label;
+  // Same figures as /reports: one rounding, GST credit only when registered, depreciation included.
+  const report = buildFyReport({ trips, expenses, vehicle, settings, logbookPeriods: periods, fyLabel, today });
+  const source = report.businessUseSource;
   const km = fyKmTotals(trips, fyLabel);
   const odo = currentOdometer(trips, vehicle.odoOpen);
-
-  const ratio = businessPct(tripsToLegs(filterTripsByFy(trips, fyLabel)));
-  const fyExpenses = filterTripsByFy(expenses, fyLabel).map((e) => ({
-    amountInclCents: e.amountInclCents,
-    gstCents: e.gstCents,
-    dateISO: e.date,
-    category: e.category as ExpenseCategory,
-  }));
-  const fyTotalCents = fyExpenses.reduce((s, e) => s + e.amountInclCents, 0);
-  const gstCreditCents = gstCredit(fyExpenses, ratio);
-  const deductionCents = annualDeduction(fyExpenses, ratio, settings.gstRegistered);
+  const fyTotalCents = filterTripsByFy(expenses, fyLabel).reduce((s, e) => s + e.amountInclCents, 0);
+  const gstCreditCents = report.bas.totalGstCreditCents;
+  const deductionCents = report.annual.totalDeductionCents;
   const recent = trips.slice(0, 5);
   const carName = `${vehicle.make} ${vehicle.model}${vehicle.rego ? ` · ${vehicle.rego}` : ""}`;
   const fyChip = `FY ${fyShort(fyLabel)}`;
+  const gaugeCaption =
+    source.kind === "logbook"
+      ? `business use · logbook ${source.startDate} to ${source.endDate}`
+      : km.totalKm > 0
+        ? `business use · no logbook yet, estimated from ${formatKm(km.businessKm)} of ${formatKm(km.totalKm)} km`
+        : "business use this year · no trips yet";
 
   return (
     <main className={`${pageCls} grid gap-4.5 md:gap-5 md:grid-cols-2 content-start`}>
@@ -92,14 +99,7 @@ export default async function Home() {
           <span className="font-mono">{fyChip}</span>
         </div>
         <div className="md:mt-2">
-          <BusinessGauge
-            pct={pct}
-            caption={
-              km.totalKm > 0
-                ? `business use · ${formatKm(km.businessKm)} of ${formatKm(km.totalKm)} km`
-                : "business use this year · no trips yet"
-            }
-          />
+          <BusinessGauge pct={report.businessPctBps / 100} caption={gaugeCaption} />
         </div>
         {odo != null ? (
           <div className="mt-2.5 md:mt-3.5">
@@ -110,10 +110,16 @@ export default async function Home() {
 
       <section aria-label={`Estimates FY ${fyLabel}`} className="grid grid-cols-3 md:grid-cols-2 gap-2.5 md:gap-3 content-start">
         <Stat label="Expenses" cents={fyTotalCents} />
-        <Stat label="GST credit" cents={gstCreditCents} />
+        {settings.gstRegistered ? (
+          <Stat label="GST credit" cents={gstCreditCents} />
+        ) : (
+          <p className="flex items-center rounded-xl md:rounded-[14px] border border-line bg-surface p-3 md:p-4.5 text-xs text-muted">
+            Not GST-registered — no BAS credits
+          </p>
+        )}
         <Stat label="Deduction" cents={deductionCents} highlight className="md:col-span-2" />
         <p className="col-span-3 md:col-span-2 text-xs text-muted">
-          Estimates for FY {fyLabel}. See Reports for the full breakdown.
+          Estimates for FY {fyLabel} — same figures as Reports, which has the breakdown.
         </p>
         <div className="hidden md:block md:col-span-2">
           <Link href="/expenses#add-expense" className={`${btnSecondary} w-full min-h-12`}>
