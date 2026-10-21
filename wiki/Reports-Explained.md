@@ -15,7 +15,10 @@ sections below. (Australian financial year = **1 July to 30 June**.)
 
 The page shows your **business-use %** for the chosen year (from your trips —
 see [Understanding the Logbook Method](Understanding-the-Logbook-Method)).
-This percentage drives every dollar figure below it.
+This percentage drives the claimable figures below it (BAS GST credits and the
+deduction). It's shown to 2 decimal places (e.g. 66.67%), and each of those
+figures is worked out from exactly that shown percentage, so you can check the
+maths yourself. The **category totals** are before this percentage is applied.
 
 ---
 
@@ -42,7 +45,7 @@ receipts, then multiplies by your business-use %.
 So when you lodge each quarterly BAS, read the GST credit off the matching
 row.
 
-> 💡 Not GST-registered? You can ignore the BAS section — you don't claim GST
+> 💡 Not GST-registered? The BAS section shows $0 — you don't claim GST
 > credits, and instead your deduction is based on the full (GST-inclusive)
 > amounts.
 
@@ -65,7 +68,8 @@ This is the figure for your **tax return**. It has two parts:
 ### Expenses by category
 
 Below the totals, there's a breakdown of your expenses by category (fuel,
-rego, insurance, …) at the GST-inclusive amount — handy for checking nothing's
+rego, insurance, …) on the same basis as your deduction: **GST-exclusive** if
+you're GST-registered, GST-inclusive if not — handy for checking nothing's
 missing or miscategorised.
 
 ---

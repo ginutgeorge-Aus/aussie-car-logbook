@@ -11,6 +11,14 @@ export type TripRow = {
   isBusiness: boolean;
 };
 
+/** A logbook period (the ≥12-week window the ATO logbook method is based on). */
+export type LogbookPeriodRow = {
+  id: number;
+  vehicleId: number;
+  startDate: string;
+  endDate: string;
+};
+
 export type VehicleRow = {
   id: number;
   make: string;
