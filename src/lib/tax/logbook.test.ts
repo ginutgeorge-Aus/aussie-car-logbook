@@ -2,6 +2,8 @@ import { expect, test } from "vitest";
 import {
   businessPct,
   businessPctRounded,
+  businessPctBps,
+  formatBusinessPct,
   LOGBOOK_MIN_DAYS,
   logbookPeriodDays,
   logbookValidity,
@@ -17,8 +19,15 @@ const trips = [
 test("business ratio is businessKm/totalKm", () => {
   expect(businessPct(trips)).toBeCloseTo(200 / 300, 10);
 });
-test("rounded percentage", () => {
-  expect(businessPctRounded(trips)).toBe(67);
+test("rounded percentage is % to 2 decimal places", () => {
+  expect(businessPctRounded(trips)).toBe(66.67);
+});
+test("businessPctBps is the single rounding authority (basis points)", () => {
+  expect(businessPctBps(2 / 3)).toBe(6667);
+  expect(businessPctBps(1)).toBe(10000);
+  expect(businessPctBps(0)).toBe(0);
+  expect(formatBusinessPct(6667)).toBe("66.67");
+  expect(formatBusinessPct(10000)).toBe("100.00");
 });
 test("no trips -> 0, no divide-by-zero", () => {
   expect(businessPct([])).toBe(0);

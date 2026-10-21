@@ -3,6 +3,7 @@
 import { createLogbookPeriodAction, deleteLogbookPeriodAction } from "@/lib/actions";
 import { FieldError } from "@/components/FieldError";
 import { useFormSubmit } from "@/components/useFormSubmit";
+import { btnDanger, btnPrimary, cardCls, inputCls, labelCls } from "@/components/ui";
 
 export type LogbookPeriodView = {
   id: number;
@@ -10,8 +11,8 @@ export type LogbookPeriodView = {
   endDate: string;
   /** e.g. "FY 2024-25 to 2028-29". */
   validity: string;
-  /** Business-use % from trips inside the period, or null when it has none. */
-  businessPct: number | null;
+  /** Business-use % (2 dp, e.g. "66.67") from trips inside the period, or null when it has none. */
+  businessPct: string | null;
 };
 
 /** Form to add a logbook period (start/end date, validated as ≥12 weeks on the server). */
@@ -20,21 +21,21 @@ export function LogbookPeriodForm() {
   const errs = state.ok ? {} : (state.fieldErrors ?? {});
 
   return (
-    <form method="post" onSubmit={onSubmit} className="flex flex-wrap items-end gap-3 border rounded p-4">
+    <form method="post" onSubmit={onSubmit} className={`${cardCls} flex flex-wrap items-end gap-3 p-4`}>
       <label className="flex flex-col gap-1">
-        <span className="text-sm">Logbook start</span>
-        <input name="startDate" type="date" className="border rounded px-2 py-1" />
+        <span className={labelCls}>Logbook start</span>
+        <input name="startDate" type="date" className={inputCls} />
         <FieldError message={errs.startDate} />
       </label>
       <label className="flex flex-col gap-1">
-        <span className="text-sm">Logbook end</span>
-        <input name="endDate" type="date" className="border rounded px-2 py-1" />
+        <span className={labelCls}>Logbook end</span>
+        <input name="endDate" type="date" className={inputCls} />
         <FieldError message={errs.endDate} />
       </label>
-      <button type="submit" disabled={pending} className="rounded bg-black text-white px-4 py-2 disabled:opacity-50">
+      <button type="submit" disabled={pending} className={btnPrimary}>
         {pending ? "Adding…" : "Add logbook period"}
       </button>
-      {!state.ok && state.error ? <p className="w-full text-sm text-red-600">{state.error}</p> : null}
+      {!state.ok && state.error ? <p className="w-full text-sm text-danger">{state.error}</p> : null}
     </form>
   );
 }
@@ -46,19 +47,19 @@ export function LogbookPeriodItem({ period }: { period: LogbookPeriodView }) {
   });
 
   return (
-    <li className="flex flex-wrap items-center gap-3 border-b py-2 text-sm">
-      <span>{period.startDate} to {period.endDate}</span>
-      <span className="text-zinc-600">Valid {period.validity}</span>
-      <span className="text-zinc-600">
+    <li className="flex flex-wrap items-center gap-3 border-b border-line py-2 text-sm last:border-b-0">
+      <span className="font-mono">{period.startDate} to {period.endDate}</span>
+      <span className="text-muted">Valid {period.validity}</span>
+      <span className="text-muted">
         {period.businessPct === null ? "No trips recorded yet" : `Business use ${period.businessPct}%`}
       </span>
       <form method="post" onSubmit={del.onSubmit}>
         <input type="hidden" name="id" value={period.id} />
-        <button type="submit" disabled={del.pending} className="text-red-600 underline disabled:opacity-50">
+        <button type="submit" disabled={del.pending} className={btnDanger}>
           {del.pending ? "Deleting…" : "Delete"}
         </button>
       </form>
-      {!del.state.ok && del.state.error ? <p className="w-full text-red-600">{del.state.error}</p> : null}
+      {!del.state.ok && del.state.error ? <p className="w-full text-danger">{del.state.error}</p> : null}
     </li>
   );
 }
