@@ -234,9 +234,10 @@ describe("buildFyReport", () => {
     it("excludes 'depreciation' expense rows from every claim, with a notice", () => {
       const expenses = [
         expense({ id: 1, category: "fuel", amountInclCents: 11000, gstCents: 1000 }),
-        expense({ id: 2, category: "depreciation", amountInclCents: 500000, gstCents: 0 }),
+        expense({ id: 2, category: "depreciation", amountInclCents: 500000, gstCents: 45455 }),
       ];
       const r = buildFyReport({ trips: [trip({})], expenses, vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25", today: TODAY });
+      expect(r.bas.totalGstCreditCents).toBe(1000); // fuel only; the depreciation row's GST is not claimed
       expect(r.annual.runningCostsDeductionCents).toBe(10000);
       expect(r.annual.byCategory.map((c) => c.category)).toEqual(["fuel"]);
       expect(r.notices.some((n) => /depreciation.*excluded/i.test(n))).toBe(true);

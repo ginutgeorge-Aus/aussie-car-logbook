@@ -15,9 +15,10 @@ sections below. (Australian financial year = **1 July to 30 June**.)
 
 The page shows your **business-use %** for the chosen year (from your trips —
 see [Understanding the Logbook Method](Understanding-the-Logbook-Method)).
-This percentage drives every dollar figure below it. It's shown to 2 decimal
-places (e.g. 66.67%), and every dollar figure is worked out from exactly that
-shown percentage, so you can check the maths yourself.
+This percentage drives the claimable figures below it (BAS GST credits and the
+deduction). It's shown to 2 decimal places (e.g. 66.67%), and each of those
+figures is worked out from exactly that shown percentage, so you can check the
+maths yourself. The **category totals** are before this percentage is applied.
 
 ---
 

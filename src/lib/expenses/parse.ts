@@ -4,6 +4,9 @@ import { isExpenseCategory } from "@/lib/expenses/categories";
 import type { ExpenseCategory } from "@/lib/tax/types";
 import type { ParseResult } from "@/lib/logbook/types";
 
+/** Slack over 1/11 for invoices that round GST per line (ATO taxable-sale rounding rule). */
+const GST_LINE_ROUNDING_CENTS = 5;
+
 export type ExpenseInput = {
   date: string;
   category: ExpenseCategory;
@@ -53,8 +56,9 @@ export function parseExpenseForm(fd: FormData): ParseResult<ExpenseInput> {
         errors.gst = "Enter a valid GST amount.";
       }
     }
-    // GST is at most 1/11 of a GST-inclusive amount (rounded to the cent, as gstFromInclusive does).
-    if (!errors.gst && !errors.amountIncl && gstCents > gstFromInclusive(amountInclCents)) {
+    // GST is at most 1/11 of a GST-inclusive amount (rounded to the cent, as gstFromInclusive does),
+    // plus a few cents: the ATO rounding rule lets invoices round GST per line, which can sum higher.
+    if (!errors.gst && !errors.amountIncl && gstCents > gstFromInclusive(amountInclCents) + GST_LINE_ROUNDING_CENTS) {
       errors.gst = "GST can't be more than 1/11 of the amount.";
     }
   }
