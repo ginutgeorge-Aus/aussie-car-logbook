@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { parseVehicleForm, parseTripForm } from "@/lib/logbook/parse";
+import { parseVehicleForm, parseTripForm, parseLogbookPeriodForm } from "@/lib/logbook/parse";
+import { createLogbookPeriod, deleteLogbookPeriod } from "@/lib/data/logbookPeriod";
 import { upsertVehicle } from "@/lib/data/vehicle";
 import { createTrip, updateTrip, deleteTrip } from "@/lib/data/trip";
 import type { ActionResult } from "@/lib/logbook/types";
@@ -13,6 +14,8 @@ import { runReceiptOcr } from "@/lib/data/ocr";
 import { OcrLicenceError } from "@/lib/ocr/model";
 import { parseOcrResult } from "@/lib/ocr/parse";
 import type { OcrActionResult } from "@/lib/ocr/types";
+import { parseSettingsForm } from "@/lib/settings/parse";
+import { updateSettings } from "@/lib/data/settings";
 
 /** Revalidates every page that reads trips, expenses or the vehicle. */
 function revalidateAll(listPath: string): void {
@@ -41,6 +44,19 @@ export async function saveVehicleAction(_prev: ActionResult, fd: FormData): Prom
     return failure(e);
   }
   revalidateAll("/vehicle");
+  return { ok: true, saved: true };
+}
+
+/** Saves the GST-registered flag and ABN; revalidates every page that reads settings. */
+export async function saveSettingsAction(_prev: ActionResult, fd: FormData): Promise<ActionResult> {
+  const parsed = parseSettingsForm(fd);
+  if (!parsed.ok) return { ok: false, fieldErrors: parsed.fieldErrors };
+  try {
+    await updateSettings(parsed.value);
+  } catch (e) {
+    return failure(e);
+  }
+  revalidateAll("/settings");
   return { ok: true, saved: true };
 }
 
@@ -73,6 +89,32 @@ export async function deleteTripAction(_prev: ActionResult, fd: FormData): Promi
   if (id === null) return { ok: false, error: "Invalid trip." };
   try {
     await deleteTrip(id);
+  } catch (e) {
+    return failure(e);
+  }
+  revalidateAll("/trips");
+  return { ok: true };
+}
+
+/** Creates a logbook period (≥12 weeks) for the current vehicle. */
+export async function createLogbookPeriodAction(_prev: ActionResult, fd: FormData): Promise<ActionResult> {
+  const parsed = parseLogbookPeriodForm(fd);
+  if (!parsed.ok) return { ok: false, fieldErrors: parsed.fieldErrors };
+  try {
+    await createLogbookPeriod(parsed.value);
+  } catch (e) {
+    return failure(e);
+  }
+  revalidateAll("/trips");
+  return { ok: true };
+}
+
+/** Deletes the logbook period whose id is posted by the delete form. */
+export async function deleteLogbookPeriodAction(_prev: ActionResult, fd: FormData): Promise<ActionResult> {
+  const id = idFrom(fd);
+  if (id === null) return { ok: false, error: "Invalid logbook period." };
+  try {
+    await deleteLogbookPeriod(id);
   } catch (e) {
     return failure(e);
   }

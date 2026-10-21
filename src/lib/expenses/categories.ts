@@ -18,3 +18,12 @@ export const EXPENSE_CATEGORIES = [
 export function isExpenseCategory(v: string): v is ExpenseCategory {
   return EXPENSE_CATEGORIES.some((c) => c.code === v);
 }
+
+/**
+ * Friendly label for a stored category code (e.g. "rego" → "Registration").
+ * Covers the computed "depreciation" category too; unknown codes pass through.
+ */
+export function categoryLabel(code: string): string {
+  if (code === "depreciation") return "Depreciation";
+  return EXPENSE_CATEGORIES.find((c) => c.code === code)?.label ?? code;
+}
