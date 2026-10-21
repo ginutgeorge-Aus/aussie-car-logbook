@@ -20,7 +20,7 @@ your email. That's all — you don't need to add a website or a credit card.
 
 You need two free tools installed: **Node.js** and **pnpm**.
 
-- Install Node.js (LTS version) from **[nodejs.org](https://nodejs.org)**.
+- Install Node.js **22 or newer** (the LTS version is fine) from **[nodejs.org](https://nodejs.org)**.
 - Then turn on pnpm by opening a terminal and running:
 
   ```bash
