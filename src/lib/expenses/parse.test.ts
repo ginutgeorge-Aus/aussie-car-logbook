@@ -39,6 +39,9 @@ describe("parseExpenseForm", () => {
   });
 
   it("rejects a GST more than a few cents above 1/11 of the amount", () => {
+    // The slack never lets GST exceed the amount itself (ex-GST would go negative).
+    const tiny = parseExpenseForm(fd({ ...base, amountIncl: "0.03", gst: "0.04" }));
+    expect(tiny.ok).toBe(false);
     for (const gst of ["10.06", "999.00"]) {
       const r = parseExpenseForm(fd({ ...base, gst }));
       expect(r.ok).toBe(false);

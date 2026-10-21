@@ -58,7 +58,9 @@ export function parseExpenseForm(fd: FormData): ParseResult<ExpenseInput> {
     }
     // GST is at most 1/11 of a GST-inclusive amount (rounded to the cent, as gstFromInclusive does),
     // plus a few cents: the ATO rounding rule lets invoices round GST per line, which can sum higher.
-    if (!errors.gst && !errors.amountIncl && gstCents > gstFromInclusive(amountInclCents) + GST_LINE_ROUNDING_CENTS) {
+    // Never more than the amount itself, so the GST-exclusive amount can't go negative.
+    const maxGst = Math.min(gstFromInclusive(amountInclCents) + GST_LINE_ROUNDING_CENTS, amountInclCents);
+    if (!errors.gst && !errors.amountIncl && gstCents > maxGst) {
       errors.gst = "GST can't be more than 1/11 of the amount.";
     }
   }
