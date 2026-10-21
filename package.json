@@ -14,18 +14,21 @@
     "db:seed": "wrangler d1 execute DB --local --file src/db/seed.sql",
     "db:remote": "wrangler d1 migrations apply DB --remote",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "deploy": "opennextjs-cloudflare build && wrangler d1 migrations apply DB --remote && opennextjs-cloudflare deploy",
+    "gen:wrangler": "node scripts/gen-wrangler.mjs",
+    "ci:build": "node scripts/gen-wrangler.mjs && opennextjs-cloudflare build",
+    "ci:deploy": "wrangler d1 migrations apply DB --remote && OPEN_NEXT_DEPLOY=true wrangler deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",
-    "next": "16.3.8",
-    "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "next": "16.4.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260911.1",
-    "@opennextjs/cloudflare": "^1.20.8",
+    "@cloudflare/workers-types": "^5.20261016.1",
+    "@opennextjs/cloudflare": "^1.20.12",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -37,7 +40,10 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^5.0.0",
-    "wrangler": "^4.131.0"
+    "wrangler": "^4.151.0"
   },
-  "packageManager": "pnpm@12.4.1"
+  "packageManager": "pnpm@12.4.1",
+  "engines": {
+    "node": ">=22.0.0"
+  }
 }
