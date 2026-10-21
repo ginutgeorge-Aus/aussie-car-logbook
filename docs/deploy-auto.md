@@ -67,8 +67,12 @@ Secrets**):
     that reads it.
 - Root directory / output: defaults.
 - **API token:** the build token Cloudflare creates covers Workers, KV and R2
-  but **not D1**. Under **Settings → Build → API token**, edit the token and add
-  **Account → D1 → Edit**, or the migration step fails with an auth error.
+  but **not D1**. **Settings → Build → API token** only picks a token — it can't
+  change permissions. Go to **My Profile → API Tokens**, edit that token (or
+  create one) and add **Account → D1 → Edit**, then select it under
+  **Settings → Build → API token**. Without it the migration step fails with an
+  auth error. See Cloudflare's
+  [Workers Builds API token docs](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/#api-token).
 
 `account_id` is **not** needed in the config — Workers Builds deploys into the
 connected account automatically. `RECEIPTS` and `AI` bindings need no ids.
