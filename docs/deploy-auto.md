@@ -68,9 +68,11 @@ Secrets**):
 - Root directory / output: defaults.
 - **API token:** the build token Cloudflare creates covers Workers, KV and R2
   but **not D1**. **Settings → Build → API token** only picks a token — it can't
-  change permissions. Go to **My Profile → API Tokens**, edit that token (or
-  create one) and add **Account → D1 → Edit**, then select it under
-  **Settings → Build → API token**. Without it the migration step fails with an
+  change permissions. Go to **My Profile → API Tokens**, edit that token and
+  add **Account → D1 → Edit**, then select it under **Settings → Build → API
+  token**. If you create a new token instead, give it every permission the
+  generated build token has (Workers Scripts, KV, R2, etc.) **plus** D1 → Edit,
+  or the publish step fails. Without it the migration step fails with an
   auth error. See Cloudflare's
   [Workers Builds API token docs](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/#api-token).
 
