@@ -103,8 +103,9 @@ don't wire them up by hand — the build picks them up from this file.
      above) — **not** `main`.
    - **Build command:** `npx opennextjs-cloudflare build`
    - **Deploy command:**
-     `npx wrangler d1 migrations apply DB --remote && npx opennextjs-cloudflare deploy`
-     (migrations first, then the app).
+     `npx wrangler d1 migrations apply DB --remote && OPEN_NEXT_DEPLOY=true npx wrangler deploy`
+     (migrations first, then the app; plain `wrangler deploy` because
+     `opennextjs-cloudflare deploy` fails behind Cloudflare Access in CI).
    - (Leave the output/root defaults.)
    - **API token:** the build token Cloudflare creates has no D1 access. Edit
      it (under **API token** here, or later in **Settings → Build**) and add

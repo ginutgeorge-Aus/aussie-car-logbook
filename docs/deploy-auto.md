@@ -63,8 +63,12 @@ Secrets**):
   - use `run` — bare `pnpm ci:build` risks colliding with pnpm's `ci` builtin.
 - **Deploy command:** `pnpm run ci:deploy`
   - applies pending D1 migrations (`wrangler d1 migrations apply DB --remote`),
-    then `opennextjs-cloudflare deploy`. Schema always lands before the code
-    that reads it.
+    then `wrangler deploy`. Schema always lands before the code that reads it.
+  - not `opennextjs-cloudflare deploy`: it opens a remote-bindings proxy (for
+    `AI`) through your `workers.dev` URL, which Cloudflare Access blocks in
+    non-interactive CI. With no incremental cache configured, plain
+    `wrangler deploy` is equivalent (`OPEN_NEXT_DEPLOY=true` stops wrangler
+    handing back to OpenNext).
 - Root directory / output: defaults.
 - **API token:** the build token Cloudflare creates covers Workers, KV and R2
   but **not D1**. **Settings → Build → API token** only picks a token — it can't
