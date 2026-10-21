@@ -50,9 +50,10 @@ export function buildFyReport(input: {
   settings: { gstRegistered: boolean };
   logbookPeriods: LogbookPeriodRow[];
   fyLabel: string;
+  today: string;
 }): FyReport {
-  const { trips, expenses, vehicle, settings, logbookPeriods, fyLabel } = input;
-  const businessUse = resolveBusinessUse({ trips, periods: logbookPeriods, fyLabel });
+  const { trips, expenses, vehicle, settings, logbookPeriods, fyLabel, today } = input;
+  const businessUse = resolveBusinessUse({ trips, periods: logbookPeriods, fyLabel, today });
   const notices: string[] = [...businessUse.notices];
   const ratio = businessUse.ratio;
   const fyExpenses = expenses.filter((e) => financialYear(e.date).label === fyLabel);
