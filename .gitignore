@@ -52,3 +52,9 @@ wrangler.toml
 # keep example/template configs committable (no secrets in these)
 !.env.example
 !wrangler.toml.example
+
+# Claude Code config (local only)
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+.claude.local.md
