@@ -138,5 +138,5 @@ export function logbookFyLabels(periods: LogbookPeriodRow[], currentFy: string):
       if (label <= currentFy) labels.add(label);
     }
   }
-  return [...labels].sort().reverse();
+  return [...labels].sort((a, b) => b.localeCompare(a));
 }

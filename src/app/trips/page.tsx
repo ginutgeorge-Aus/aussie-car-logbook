@@ -30,7 +30,7 @@ export default async function TripsPage({ searchParams }: PageProps<"/trips">) {
   const sp = await searchParams;
   const activeFy = typeof sp.fy === "string" ? sp.fy : currentFy;
 
-  const fyLabels = Array.from(new Set([currentFy, ...trips.map((t) => financialYear(t.date).label), ...logbookFyLabels(periods, currentFy)])).sort().reverse();
+  const fyLabels = Array.from(new Set([currentFy, ...trips.map((t) => financialYear(t.date).label), ...logbookFyLabels(periods, currentFy)])).sort((a, b) => b.localeCompare(a));
   const fyTrips = filterTripsByFy(trips, activeFy);
   const businessUse = resolveBusinessUse({ trips, periods, fyLabel: activeFy, today });
   const pct = Math.round(businessUse.ratio * 100);
