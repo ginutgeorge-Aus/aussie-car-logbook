@@ -95,9 +95,9 @@ Tap **Reports**. Pick a financial year from the dropdown. You'll see:
 
 - Your **business-use %** for that year.
 - **BAS (GST credit)** — broken down by quarter, for your Business Activity
-  Statement. If you're GST-registered and bought the car in that year, the
-  quarter you bought it in also includes the car's GST credit (business share,
-  capped at 1/11 of the ATO car limit).
+  Statement. If you're GST-registered and entered the car's purchase date and
+  cost, the quarter you bought it in also includes the car's GST credit
+  (business share, capped at 1/11 of the ATO car limit).
 - **Annual income-tax deduction** — running costs + depreciation (business
   share), plus a breakdown by category.
 

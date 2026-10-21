@@ -7,6 +7,7 @@ import { listLogbookPeriods } from "@/lib/data/logbookPeriod";
 import { financialYear, formatBusinessPct, fyLabelOr } from "@/lib/tax";
 import { todayIso } from "@/lib/today";
 import { centsToDollars } from "@/lib/logbook/parse";
+import { logbookFyLabels } from "@/lib/logbook/compute";
 import { buildFyReport } from "@/lib/reports/build";
 import { FySwitcher } from "@/components/FySwitcher";
 import { PrintButton } from "./PrintButton";
@@ -31,15 +32,16 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
     getSettings(),
     listLogbookPeriods(),
   ]);
-  const currentFy = financialYear(todayIso()).label;
+  const today = todayIso();
+  const currentFy = financialYear(today).label;
   const sp = await searchParams;
   const activeFy = fyLabelOr(sp.fy, currentFy);
 
   const fyLabels = Array.from(
-    new Set([currentFy, ...trips.map((t) => financialYear(t.date).label), ...expenses.map((e) => financialYear(e.date).label)]),
+    new Set([currentFy, ...trips.map((t) => financialYear(t.date).label), ...expenses.map((e) => financialYear(e.date).label), ...logbookFyLabels(logbookPeriods, currentFy)]),
   ).sort().reverse();
 
-  const report = buildFyReport({ trips, expenses, vehicle, settings, logbookPeriods, fyLabel: activeFy });
+  const report = buildFyReport({ trips, expenses, vehicle, settings, logbookPeriods, fyLabel: activeFy, today });
 
   return (
     <main className="w-full max-w-3xl mx-auto p-8">

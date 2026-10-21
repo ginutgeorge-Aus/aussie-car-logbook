@@ -97,9 +97,10 @@ export function buildFyReport(input: {
   settings: { gstRegistered: boolean };
   logbookPeriods: LogbookPeriodRow[];
   fyLabel: string;
+  today: string;
 }): FyReport {
-  const { trips, expenses, vehicle, settings, logbookPeriods, fyLabel } = input;
-  const businessUse = resolveBusinessUse({ trips, periods: logbookPeriods, fyLabel });
+  const { trips, expenses, vehicle, settings, logbookPeriods, fyLabel, today } = input;
+  const businessUse = resolveBusinessUse({ trips, periods: logbookPeriods, fyLabel, today });
   const notices: string[] = [...businessUse.notices];
   // Single rounding: % to 2 dp; all dollars use the same rounded ratio that is displayed.
   const bps = businessPctBps(businessUse.ratio);
@@ -137,13 +138,22 @@ export function buildFyReport(input: {
   );
 
   let depreciationDeductionCents = 0;
-  if (vehicle?.purchaseDate && vehicle.purchaseCostCents != null) {
+  if (vehicle?.purchaseDate && vehicle.purchaseCostCents != null && financialYear(vehicle.purchaseDate).label <= fyLabel) {
     try {
+      // The cost base drops by the credit claimed in the purchase FY, at that FY's business share.
+      const purchaseFy = financialYear(vehicle.purchaseDate).label;
+      const purchaseRatio =
+        purchaseFy === fyLabel ? ratio : resolveBusinessUse({ trips, periods: logbookPeriods, fyLabel: purchaseFy, today }).ratio;
+      const purchaseGstClaimedCents = settings.gstRegistered
+        ? Math.round(
+            carPurchaseGstCents({ purchaseCostCents: vehicle.purchaseCostCents, purchaseDateISO: vehicle.purchaseDate }) * purchaseRatio,
+          )
+        : 0;
       const decline = depreciationForFy({
         purchaseCostCents: vehicle.purchaseCostCents,
         purchaseDateISO: vehicle.purchaseDate,
         fyLabel,
-        gstRegistered: settings.gstRegistered,
+        purchaseGstClaimedCents,
       });
       depreciationDeductionCents = Math.round(decline * ratio);
     } catch {

@@ -61,22 +61,23 @@ export const EFFECTIVE_LIFE_YEARS = 8;
 /**
  * Decline in value of the car for one FY (diminishing value, before business-use %).
  *
- * Cost base: the GST-inclusive purchase cost, reduced by the capped purchase GST
- * credit when GST-registered (it is recovered through the BAS), then capped at the
- * car limit for the purchase FY — the order in the ATO Guide to depreciating assets.
+ * Cost base: the GST-inclusive purchase cost, reduced by the purchase GST credit
+ * actually claimed on the BAS (the capped credit x purchase-FY business share;
+ * 0 when not GST-registered), then capped at the car limit for the purchase FY —
+ * the order in the ATO Guide to depreciating assets.
  *
  * @param input GST-inclusive purchase cost (cents), purchase date, target FY,
- *   GST registration, and optional effective life (default 8 years).
+ *   claimed purchase GST credit (cents), and optional effective life (default 8 years).
  * @throws Error when the purchase FY has no configured car limit.
  */
 export function depreciationForFy(input: {
   purchaseCostCents: number;
   purchaseDateISO: string;
   fyLabel: string;
-  gstRegistered: boolean;
+  purchaseGstClaimedCents: number;
   effectiveLifeYears?: number;
 }): number {
-  const { purchaseCostCents, purchaseDateISO, fyLabel, gstRegistered } = input;
+  const { purchaseCostCents, purchaseDateISO, fyLabel, purchaseGstClaimedCents } = input;
   const effectiveLifeYears = input.effectiveLifeYears ?? EFFECTIVE_LIFE_YEARS;
 
   const purchaseFy = financialYear(purchaseDateISO).label;
@@ -84,8 +85,7 @@ export function depreciationForFy(input: {
   const targetStartYear = Number(fyLabel.slice(0, 4));
   if (targetStartYear < purchaseStartYear) return 0;
 
-  const purchaseGst = gstRegistered ? carPurchaseGstCents({ purchaseCostCents, purchaseDateISO }) : 0;
-  let opening = Math.min(purchaseCostCents - purchaseGst, carLimitFor(purchaseFy));
+  let opening = Math.min(purchaseCostCents - purchaseGstClaimedCents, carLimitFor(purchaseFy));
   for (let sy = purchaseStartYear; sy <= targetStartYear; sy++) {
     const label = `${sy}-${String(sy + 1).slice(2)}`;
     const daysHeld = daysHeldInFy(purchaseDateISO, label);

@@ -3,6 +3,8 @@ import { buildFyReport } from "@/lib/reports/build";
 import type { LogbookPeriodRow, TripRow, VehicleRow } from "@/lib/logbook/types";
 import type { ExpenseRow } from "@/lib/data/expense";
 
+const TODAY = "2099-01-01";
+
 const trip = (over: Partial<TripRow>): TripRow => ({
   id: 1, vehicleId: 1, periodId: null, date: "2024-08-01",
   odoStart: 0, odoEnd: 100, purpose: null, isBusiness: true, ...over,
@@ -24,7 +26,7 @@ describe("buildFyReport", () => {
       expense({ id: 1, date: "2024-08-15", gstCents: 1000 }), // Q1
       expense({ id: 2, date: "2024-11-15", gstCents: 2000 }), // Q2
     ];
-    const r = buildFyReport({ trips, expenses, vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25" });
+    const r = buildFyReport({ trips, expenses, vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25", today: TODAY });
 
     expect(r.businessPct).toBe(0.8);
     expect(r.bas.quarters[0].gstCreditCents).toBe(800);  // 0.8 * 1000
@@ -40,7 +42,7 @@ describe("buildFyReport", () => {
       id: 1, make: "Toyota", model: "Corolla", rego: null,
       odoOpen: 0, odoClose: null, purchaseDate: "2024-07-01", purchaseCostCents: 4000000,
     };
-    const r = buildFyReport({ trips, expenses, vehicle, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25" });
+    const r = buildFyReport({ trips, expenses, vehicle, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25", today: TODAY });
 
     // running costs GST-excl at 100%: 11000 - 1000 = 10000.
     expect(r.annual.runningCostsDeductionCents).toBe(10000);
@@ -57,13 +59,13 @@ describe("buildFyReport", () => {
       id: 1, make: "Toyota", model: "Corolla", rego: null,
       odoOpen: 0, odoClose: null, purchaseDate: "2099-07-01", purchaseCostCents: 4000000,
     };
-    const r = buildFyReport({ trips, expenses: [], vehicle, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2099-00" });
+    const r = buildFyReport({ trips, expenses: [], vehicle, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2099-00", today: TODAY });
     expect(r.annual.depreciationDeductionCents).toBe(0);
     expect(r.notices.some((n) => /car limit/.test(n))).toBe(true);
   });
 
   it("omits depreciation with no vehicle and no depreciation notice", () => {
-    const r = buildFyReport({ trips: [], expenses: [], vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25" });
+    const r = buildFyReport({ trips: [], expenses: [], vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25", today: TODAY });
     expect(r.annual.depreciationDeductionCents).toBe(0);
     expect(r.notices.some((n) => /car limit/.test(n))).toBe(false);
   });
@@ -74,7 +76,7 @@ describe("buildFyReport", () => {
       expense({ id: 1, date: "2024-08-01", category: "fuel", amountInclCents: 11000, gstCents: 1000 }), // in FY 2024-25
       expense({ id: 2, date: "2024-05-01", category: "fuel", amountInclCents: 55000, gstCents: 5000 }), // FY 2023-24 — must be ignored
     ];
-    const r = buildFyReport({ trips, expenses, vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25" });
+    const r = buildFyReport({ trips, expenses, vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25", today: TODAY });
 
     expect(r.bas.totalGstCreditCents).toBe(1000); // only the in-FY $10 GST, not $50
     expect(r.annual.runningCostsDeductionCents).toBe(10000); // 11000 - 1000, out-of-FY excluded
@@ -88,7 +90,7 @@ describe("buildFyReport", () => {
       expense({ id: 2, date: "2024-09-01", category: "fuel", amountInclCents: 22000 }),
       expense({ id: 3, date: "2024-10-01", category: "rego", amountInclCents: 33000 }),
     ];
-    const r = buildFyReport({ trips, expenses, vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25" });
+    const r = buildFyReport({ trips, expenses, vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25", today: TODAY });
 
     expect(r.annual.byCategory).toEqual([
       { category: "fuel", totalCents: 31000 }, // ex-GST: (11000 - 1000) + (22000 - 1000)
@@ -104,7 +106,7 @@ describe("buildFyReport", () => {
     ];
     const logbookPeriods: LogbookPeriodRow[] = [{ id: 7, vehicleId: 1, startDate: "2024-08-01", endDate: "2024-10-31" }];
     const expenses = [expense({ id: 1, date: "2026-08-15", amountInclCents: 11000, gstCents: 1000 })];
-    const r = buildFyReport({ trips, expenses, vehicle: null, settings: { gstRegistered: true }, logbookPeriods, fyLabel: "2026-27" });
+    const r = buildFyReport({ trips, expenses, vehicle: null, settings: { gstRegistered: true }, logbookPeriods, fyLabel: "2026-27", today: TODAY });
 
     expect(r.businessPct).toBe(0.75);
     expect(r.businessUseSource).toEqual({
@@ -117,7 +119,7 @@ describe("buildFyReport", () => {
 
   it("falls back to FY trips with a notice when no logbook is valid", () => {
     const trips = [trip({ odoStart: 0, odoEnd: 100, isBusiness: true })];
-    const r = buildFyReport({ trips, expenses: [], vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25" });
+    const r = buildFyReport({ trips, expenses: [], vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25", today: TODAY });
     expect(r.businessPct).toBe(1);
     expect(r.businessUseSource).toEqual({ kind: "fy-trips" });
     expect(r.notices[0]).toMatch(/estimated from all trips recorded in FY 2024-25/);
@@ -135,7 +137,7 @@ describe("buildFyReport", () => {
     ];
 
     it("adds the capped, business-share purchase credit to the purchase quarter's BAS", () => {
-      const r = buildFyReport({ trips, expenses: [], vehicle, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2025-26" });
+      const r = buildFyReport({ trips, expenses: [], vehicle, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2025-26", today: TODAY });
       // capped credit 633400 (1/11 x $69,674) x 0.8 = 506720, in Q2 (Oct-Dec).
       expect(r.bas.quarters[1].gstCreditCents).toBe(506720);
       expect(r.bas.quarters[0].gstCreditCents).toBe(0);
@@ -144,29 +146,51 @@ describe("buildFyReport", () => {
     });
 
     it("claims no purchase credit when not GST-registered", () => {
-      const r = buildFyReport({ trips, expenses: [], vehicle, settings: { gstRegistered: false }, logbookPeriods: [], fyLabel: "2025-26" });
+      const r = buildFyReport({ trips, expenses: [], vehicle, settings: { gstRegistered: false }, logbookPeriods: [], fyLabel: "2025-26", today: TODAY });
       expect(r.bas.totalGstCreditCents).toBe(0);
       expect(r.bas.purchaseGstCreditCents).toBe(0);
     });
 
     it("claims the purchase credit only in the purchase FY", () => {
       const later = [trip({ id: 3, date: "2026-08-01", odoStart: 1000, odoEnd: 1100, isBusiness: true })];
-      const r = buildFyReport({ trips: [...trips, ...later], expenses: [], vehicle, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2026-27" });
+      const r = buildFyReport({ trips: [...trips, ...later], expenses: [], vehicle, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2026-27", today: TODAY });
       expect(r.bas.purchaseGstCreditCents).toBe(0);
       expect(r.bas.totalGstCreditCents).toBe(0);
     });
 
-    it("depreciates on the GST-exclusive cost when GST-registered", () => {
-      const r = buildFyReport({ trips, expenses: [], vehicle, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2025-26" });
-      // base 7500000 - 633400 = 6866600; 223 days held (20 Nov - 30 Jun).
-      const decline = Math.round(6866600 * (223 / 365) * 0.25);
+    it("reduces the depreciation cost by only the claimed purchase credit", () => {
+      const v: VehicleRow = { ...vehicle, purchaseCostCents: 4400000 };
+      const r = buildFyReport({ trips, expenses: [], vehicle: v, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2025-26", today: TODAY });
+      // credit 400000 x 0.8 = 320000 claimed; base 4400000 - 320000 = 4080000; 223 days held (20 Nov - 30 Jun).
+      const decline = Math.round(4080000 * (223 / 365) * 0.25);
+      expect(r.bas.purchaseGstCreditCents).toBe(320000);
       expect(r.annual.depreciationDeductionCents).toBe(Math.round(decline * 0.8));
+    });
+
+    it("keeps the purchase-FY claimed credit in later FYs' cost base", () => {
+      const v: VehicleRow = { ...vehicle, purchaseCostCents: 4400000 };
+      // 2026-27: 50% business, but the cost base still uses the 80% purchase-FY claim.
+      const later = [
+        trip({ id: 3, date: "2026-08-01", odoStart: 1000, odoEnd: 1100, isBusiness: true }),
+        trip({ id: 4, date: "2026-08-02", odoStart: 1100, odoEnd: 1200, isBusiness: false }),
+      ];
+      const r = buildFyReport({ trips: [...trips, ...later], expenses: [], vehicle: v, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2026-27", today: TODAY });
+      const first = Math.round(4080000 * (223 / 365) * 0.25);
+      const decline = Math.round((4080000 - first) * 0.25);
+      expect(r.annual.depreciationDeductionCents).toBe(Math.round(decline * 0.5));
+    });
+
+    it("shows no depreciation or car-limit notice for an FY before the purchase", () => {
+      const future: VehicleRow = { ...vehicle, purchaseDate: "2027-08-01" };
+      const r = buildFyReport({ trips, expenses: [], vehicle: future, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2025-26", today: TODAY });
+      expect(r.annual.depreciationDeductionCents).toBe(0);
+      expect(r.notices.some((n) => /car limit/.test(n))).toBe(false);
     });
 
     it("warns and omits depreciation and purchase credit for an FY with no published car limit", () => {
       const future: VehicleRow = { ...vehicle, purchaseDate: "2027-08-01" };
       const futureTrips = [trip({ id: 4, date: "2027-08-02", odoStart: 0, odoEnd: 100, isBusiness: true })];
-      const r = buildFyReport({ trips: futureTrips, expenses: [], vehicle: future, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2027-28" });
+      const r = buildFyReport({ trips: futureTrips, expenses: [], vehicle: future, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2027-28", today: TODAY });
       expect(r.annual.depreciationDeductionCents).toBe(0);
       expect(r.bas.purchaseGstCreditCents).toBe(0);
       expect(r.notices.some((n) => /car limit for FY 2027-28/.test(n))).toBe(true);
@@ -182,7 +206,7 @@ describe("buildFyReport", () => {
 
     it("computes dollars from the displayed % (2 dp), not the raw ratio", () => {
       const expenses = [expense({ id: 1, amountInclCents: 330000, gstCents: 30000 })];
-      const r = buildFyReport({ trips: thirds, expenses, vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25" });
+      const r = buildFyReport({ trips: thirds, expenses, vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25", today: TODAY });
       expect(r.businessPctBps).toBe(6667);
       expect(r.businessPct).toBe(0.6667);
       expect(r.bas.totalGstCreditCents).toBe(20001); // 30000 x 0.6667, not 20000 (raw 2/3)
@@ -191,7 +215,7 @@ describe("buildFyReport", () => {
 
     it("reports no BAS credit when not GST-registered", () => {
       const expenses = [expense({ id: 1, amountInclCents: 11000, gstCents: 1000 })];
-      const r = buildFyReport({ trips: [trip({})], expenses, vehicle: null, settings: { gstRegistered: false }, logbookPeriods: [], fyLabel: "2024-25" });
+      const r = buildFyReport({ trips: [trip({})], expenses, vehicle: null, settings: { gstRegistered: false }, logbookPeriods: [], fyLabel: "2024-25", today: TODAY });
       expect(r.bas.totalGstCreditCents).toBe(0);
       expect(r.bas.quarters.every((q) => q.gstCreditCents === 0)).toBe(true);
       expect(r.annual.runningCostsDeductionCents).toBe(11000); // GST-inclusive when not registered
@@ -199,10 +223,10 @@ describe("buildFyReport", () => {
 
     it("shows category totals on the same GST basis as the deduction", () => {
       const expenses = [expense({ id: 1, category: "fuel", amountInclCents: 11000, gstCents: 1000 })];
-      const reg = buildFyReport({ trips: [trip({})], expenses, vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25" });
+      const reg = buildFyReport({ trips: [trip({})], expenses, vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25", today: TODAY });
       expect(reg.annual.byCategory).toEqual([{ category: "fuel", totalCents: 10000 }]);
       expect(reg.annual.categoryBasis).toBe("ex-gst");
-      const unreg = buildFyReport({ trips: [trip({})], expenses, vehicle: null, settings: { gstRegistered: false }, logbookPeriods: [], fyLabel: "2024-25" });
+      const unreg = buildFyReport({ trips: [trip({})], expenses, vehicle: null, settings: { gstRegistered: false }, logbookPeriods: [], fyLabel: "2024-25", today: TODAY });
       expect(unreg.annual.byCategory).toEqual([{ category: "fuel", totalCents: 11000 }]);
       expect(unreg.annual.categoryBasis).toBe("gst-inclusive");
     });
@@ -212,7 +236,7 @@ describe("buildFyReport", () => {
         expense({ id: 1, category: "fuel", amountInclCents: 11000, gstCents: 1000 }),
         expense({ id: 2, category: "depreciation", amountInclCents: 500000, gstCents: 0 }),
       ];
-      const r = buildFyReport({ trips: [trip({})], expenses, vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25" });
+      const r = buildFyReport({ trips: [trip({})], expenses, vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25", today: TODAY });
       expect(r.annual.runningCostsDeductionCents).toBe(10000);
       expect(r.annual.byCategory.map((c) => c.category)).toEqual(["fuel"]);
       expect(r.notices.some((n) => /depreciation.*excluded/i.test(n))).toBe(true);

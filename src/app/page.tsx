@@ -32,9 +32,10 @@ export default async function Home() {
     getSettings(),
     listLogbookPeriods(),
   ]);
-  const fyLabel = financialYear(todayIso()).label;
+  const today = todayIso();
+  const fyLabel = financialYear(today).label;
   // Same figures as /reports: one rounding, GST credit only when registered, depreciation included.
-  const report = buildFyReport({ trips, expenses, vehicle, settings, logbookPeriods: periods, fyLabel });
+  const report = buildFyReport({ trips, expenses, vehicle, settings, logbookPeriods: periods, fyLabel, today });
   const source = report.businessUseSource;
   const pct = formatBusinessPct(report.businessPctBps);
   const fyTotalCents = filterTripsByFy(expenses, fyLabel).reduce((s, e) => s + e.amountInclCents, 0);

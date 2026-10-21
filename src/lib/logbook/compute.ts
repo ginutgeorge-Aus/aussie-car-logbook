@@ -66,21 +66,23 @@ export type BusinessUseSource =
  * Business-use ratio for an FY under the ATO logbook method.
  *
  * Uses the most recent logbook period (latest start date) that is at least
- * 12 continuous weeks long, valid for `fyLabel` (its first FY or one of the
- * following 4) and has trips recorded in it; the ratio is businessKm/totalKm
+ * 12 continuous weeks long, has ended (end date on or before `today`), is valid
+ * for `fyLabel` (its first FY or one of the following 4) and has trips recorded
+ * in it; the ratio is businessKm/totalKm
  * of that vehicle's trips dated within the period. A period with no trips is
- * skipped with a notice. Only when no valid logbook exists does it fall back to
+ * skipped with a notice, as is one still in progress. Only when no valid logbook exists does it fall back to
  * all trips recorded in the FY, with a notice saying so.
  *
- * @param input all trips, all logbook periods, and the target FY label.
+ * @param input all trips, all logbook periods, the target FY label and today's date (YYYY-MM-DD).
  * @returns the ratio (0..1), its source, and notices to show on the report.
  */
 export function resolveBusinessUse(input: {
   trips: Pick<TripRow, "vehicleId" | "date" | "odoStart" | "odoEnd" | "isBusiness">[];
   periods: LogbookPeriodRow[];
   fyLabel: string;
+  today: string;
 }): { ratio: number; source: BusinessUseSource; notices: string[] } {
-  const { trips, periods, fyLabel } = input;
+  const { trips, periods, fyLabel, today } = input;
   const notices: string[] = [];
 
   const candidates = periods
@@ -88,6 +90,10 @@ export function resolveBusinessUse(input: {
     .sort((a, b) => (a.startDate < b.startDate ? 1 : a.startDate > b.startDate ? -1 : b.id - a.id));
 
   for (const p of candidates) {
+    if (p.endDate > today) {
+      notices.push(`Logbook period ${p.startDate} to ${p.endDate} hasn't finished yet — it's used once it ends.`);
+      continue;
+    }
     const legs = logbookPeriodLegs(trips, p);
     if (legs.reduce((s, l) => s + l.km, 0) === 0) {
       notices.push(`Logbook period ${p.startDate} to ${p.endDate} has no trips recorded — it was ignored.`);
@@ -106,4 +112,24 @@ export function resolveBusinessUse(input: {
       "The ATO logbook method needs a logbook kept for at least 12 continuous weeks (valid for 5 years) — add one on the Trips page.",
   );
   return { ratio: businessPct(tripsToLegs(filterTripsByFy(trips, fyLabel))), source: { kind: "fy-trips" }, notices };
+}
+
+/**
+ * FY labels a logbook makes reportable: every FY each 12-week-plus period is
+ * valid for, up to and including `currentFy`, newest first.
+ *
+ * @param periods all logbook periods.
+ * @param currentFy the current FY label; later FYs are left out.
+ */
+export function logbookFyLabels(periods: LogbookPeriodRow[], currentFy: string): string[] {
+  const labels = new Set<string>();
+  for (const p of periods) {
+    if (logbookPeriodDays(p.startDate, p.endDate) < LOGBOOK_MIN_DAYS) continue;
+    const { firstFy, lastFy } = logbookValidity(p.startDate);
+    for (let y = Number(firstFy.slice(0, 4)); y <= Number(lastFy.slice(0, 4)); y++) {
+      const label = financialYear(`${y}-07-01`).label;
+      if (label <= currentFy) labels.add(label);
+    }
+  }
+  return [...labels].sort().reverse();
 }
