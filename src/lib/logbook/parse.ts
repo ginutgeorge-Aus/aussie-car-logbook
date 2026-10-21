@@ -1,3 +1,4 @@
+import { LOGBOOK_MIN_DAYS, logbookPeriodDays } from "@/lib/tax";
 import type { ParseResult } from "@/lib/logbook/types";
 
 export function dollarsToCents(input: string): number {
@@ -79,4 +80,35 @@ export function parseTripForm(
 
   if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
   return { ok: true, value: { date, odoStart: odoStart as number, odoEnd: odoEnd as number, purpose, isBusiness } };
+}
+
+/**
+ * Whether `value` is a real calendar date in strict ISO `YYYY-MM-DD` form
+ * (rejects e.g. "2024-02-30" and "2024-13-01").
+ */
+function isIsoDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const d = new Date(value + "T00:00:00Z");
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
+}
+
+/**
+ * Parses the logbook-period form: start and end dates are required, must be
+ * real ISO dates, end must not precede start, and the period must cover at
+ * least 12 continuous weeks (ATO logbook method).
+ */
+export function parseLogbookPeriodForm(fd: FormData): ParseResult<{ startDate: string; endDate: string }> {
+  const errors: Record<string, string> = {};
+  const startDate = str(fd, "startDate");
+  const endDate = str(fd, "endDate");
+  if (!isIsoDate(startDate)) errors.startDate = "Enter a valid start date.";
+  if (!isIsoDate(endDate)) errors.endDate = "Enter a valid end date.";
+  if (!errors.startDate && !errors.endDate) {
+    if (endDate < startDate) errors.endDate = "End date must be on or after the start date.";
+    else if (logbookPeriodDays(startDate, endDate) < LOGBOOK_MIN_DAYS) {
+      errors.endDate = "A logbook period must cover at least 12 continuous weeks (84 days).";
+    }
+  }
+  if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
+  return { ok: true, value: { startDate, endDate } };
 }

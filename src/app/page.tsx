@@ -3,14 +3,16 @@ import { getVehicle } from "@/lib/data/vehicle";
 import { listTrips } from "@/lib/data/trip";
 import { listExpenses } from "@/lib/data/expense";
 import { getSettings } from "@/lib/data/settings";
-import { fyBusinessPct, filterTripsByFy, tripsToLegs } from "@/lib/logbook/compute";
-import { businessPct, gstCredit, annualDeduction, financialYear } from "@/lib/tax";
+import { listLogbookPeriods } from "@/lib/data/logbookPeriod";
+import { filterTripsByFy, resolveBusinessUse } from "@/lib/logbook/compute";
+import { gstCredit, annualDeduction, financialYear } from "@/lib/tax";
 import { centsToDollars } from "@/lib/logbook/parse";
 import { todayIso } from "@/lib/today";
 import type { ExpenseCategory } from "@/lib/tax/types";
 
 export const dynamic = "force-dynamic";
 
+/** Dashboard: vehicle, current-FY business use (logbook-based) and running estimates. */
 export default async function Home() {
   const vehicle = await getVehicle();
 
@@ -24,11 +26,16 @@ export default async function Home() {
     );
   }
 
-  const [trips, expenses, settings] = await Promise.all([listTrips(), listExpenses(), getSettings()]);
-  const fyLabel = financialYear(todayIso()).label;
-  const pct = fyBusinessPct(trips, fyLabel);
-
-  const ratio = businessPct(tripsToLegs(filterTripsByFy(trips, fyLabel)));
+  const [trips, expenses, settings, periods] = await Promise.all([
+    listTrips(),
+    listExpenses(),
+    getSettings(),
+    listLogbookPeriods(),
+  ]);
+  const today = todayIso();
+  const fyLabel = financialYear(today).label;
+  const { ratio, source } = resolveBusinessUse({ trips, periods, fyLabel, today });
+  const pct = Math.round(ratio * 100);
   const fyExpenses = filterTripsByFy(expenses, fyLabel).map((e) => ({
     amountInclCents: e.amountInclCents,
     gstCents: e.gstCents,
@@ -50,6 +57,11 @@ export default async function Home() {
       <section className="rounded border p-4 mb-6">
         <p className="text-sm text-zinc-600">Business use — FY {fyLabel}</p>
         <p className="text-4xl font-semibold">{pct}%</p>
+        <p className="text-xs text-zinc-500">
+          {source.kind === "logbook"
+            ? `From logbook period ${source.startDate} to ${source.endDate}`
+            : "No valid logbook yet — estimated from this FY's trips"}
+        </p>
       </section>
       <section className="rounded border p-4 mb-6">
         <p className="text-sm text-zinc-600 mb-2">Estimates — FY {fyLabel}</p>
