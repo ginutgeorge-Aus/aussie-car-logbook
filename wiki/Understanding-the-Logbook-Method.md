@@ -67,8 +67,13 @@ The app works this out automatically **if** you entered your car's **purchase
 date and cost**. A few notes:
 
 - It uses the ATO's **diminishing value** method over an 8-year life.
-- The ATO sets a **car cost limit** each year — the most of the car's value
+- The ATO sets a **car limit** each year — the most of the car's value
   you can depreciate. The app applies this cap.
+- If you're **GST-registered**, the GST credit you actually claim on your BAS
+  for the car — capped at 1/11 of the car limit, then cut to your business-use %
+  in the year you bought it — comes off the value that's depreciated, so it
+  isn't claimed twice. The unclaimed (private) share of the GST stays in the
+  value.
 - If your reports show a note about depreciation being left out for a year,
   it means that year's cost limit hasn't been set in the app yet — see
   [Troubleshooting](Troubleshooting).

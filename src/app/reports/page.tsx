@@ -91,6 +91,12 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
             </tr>
           </tbody>
         </table>
+        {report.bas.purchaseGstCreditCents > 0 && (
+          <p className="mt-2 text-xs text-zinc-500">
+            Includes ${centsToDollars(report.bas.purchaseGstCreditCents)} GST credit on the car purchase (business share,
+            capped at 1/11 of the ATO car limit) in the quarter of purchase.
+          </p>
+        )}
       </section>
 
       <section className="mt-8">
