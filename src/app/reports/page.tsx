@@ -3,15 +3,18 @@ import { getVehicle } from "@/lib/data/vehicle";
 import { listTrips } from "@/lib/data/trip";
 import { listExpenses } from "@/lib/data/expense";
 import { getSettings } from "@/lib/data/settings";
-import { financialYear } from "@/lib/tax";
+import { listLogbookPeriods } from "@/lib/data/logbookPeriod";
+import { financialYear, formatBusinessPct, fyLabelOr } from "@/lib/tax";
 import { todayIso } from "@/lib/today";
 import { centsToDollars } from "@/lib/logbook/parse";
+import { logbookFyLabels } from "@/lib/logbook/compute";
 import { buildFyReport } from "@/lib/reports/build";
 import { FySwitcher } from "@/components/FySwitcher";
 import { PrintButton } from "./PrintButton";
 
 export const dynamic = "force-dynamic";
 
+/** Reports page: BAS GST credit by quarter and the annual deduction for the selected FY. */
 export default async function ReportsPage({ searchParams }: PageProps<"/reports">) {
   const vehicle = await getVehicle();
   if (!vehicle) {
@@ -23,16 +26,22 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
     );
   }
 
-  const [trips, expenses, settings] = await Promise.all([listTrips(), listExpenses(), getSettings()]);
-  const currentFy = financialYear(todayIso()).label;
+  const [trips, expenses, settings, logbookPeriods] = await Promise.all([
+    listTrips(),
+    listExpenses(),
+    getSettings(),
+    listLogbookPeriods(),
+  ]);
+  const today = todayIso();
+  const currentFy = financialYear(today).label;
   const sp = await searchParams;
-  const activeFy = typeof sp.fy === "string" ? sp.fy : currentFy;
+  const activeFy = fyLabelOr(sp.fy, currentFy);
 
   const fyLabels = Array.from(
-    new Set([currentFy, ...trips.map((t) => financialYear(t.date).label), ...expenses.map((e) => financialYear(e.date).label)]),
-  ).sort().reverse();
+    new Set([currentFy, ...trips.map((t) => financialYear(t.date).label), ...expenses.map((e) => financialYear(e.date).label), ...logbookFyLabels(logbookPeriods, currentFy)]),
+  ).sort((a, b) => b.localeCompare(a));
 
-  const report = buildFyReport({ trips, expenses, vehicle, settings, fyLabel: activeFy });
+  const report = buildFyReport({ trips, expenses, vehicle, settings, logbookPeriods, fyLabel: activeFy, today });
 
   return (
     <main className="w-full max-w-3xl mx-auto p-8">
@@ -47,7 +56,12 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
       <h2 className="mt-6 text-xl font-semibold">
         {vehicle.make} {vehicle.model} — FY {activeFy}
       </h2>
-      <p className="text-sm text-zinc-600">Business use: {Math.round(report.businessPct * 100)}%</p>
+      <p className="text-sm text-zinc-600">
+        Business use: {formatBusinessPct(report.businessPctBps)}%{" "}
+        {report.businessUseSource.kind === "logbook"
+          ? `(logbook period ${report.businessUseSource.startDate} to ${report.businessUseSource.endDate}, valid FY ${report.businessUseSource.firstFy} to ${report.businessUseSource.lastFy})`
+          : `(estimated from FY ${activeFy} trips — no valid logbook)`}
+      </p>
 
       {report.notices.length > 0 && (
         <div className="mt-4 rounded border border-amber-400 bg-amber-50 p-3 text-sm text-amber-800">
@@ -78,6 +92,12 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
               </tr>
             </tbody>
           </table>
+          {report.bas.purchaseGstCreditCents > 0 && (
+            <p className="mt-2 text-xs text-zinc-500">
+              Includes ${centsToDollars(report.bas.purchaseGstCreditCents)} GST credit on the car purchase (business share,
+              capped at 1/11 of the ATO car limit) in the quarter of purchase.
+            </p>
+          )}
         </section>
       ) : (
         <p className="mt-6 text-sm text-zinc-600">Not GST-registered — no BAS credits</p>
@@ -104,13 +124,13 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
 
         {report.annual.byCategory.length > 0 && (
           <>
-            <h4 className="mt-6 mb-2 text-sm font-medium text-zinc-600">Expenses by category (GST-inclusive)</h4>
+            <h4 className="mt-6 mb-2 text-sm font-medium text-zinc-600">Expenses by category ({report.annual.categoryBasis === "ex-gst" ? "GST-exclusive" : "GST-inclusive"})</h4>
             <table className="w-full text-left text-sm">
               <tbody>
                 {report.annual.byCategory.map((c) => (
                   <tr key={c.category} className="border-b">
                     <td className="py-2 pr-4 capitalize">{c.category}</td>
-                    <td className="py-2">${centsToDollars(c.totalInclCents)}</td>
+                    <td className="py-2">${centsToDollars(c.totalCents)}</td>
                   </tr>
                 ))}
               </tbody>

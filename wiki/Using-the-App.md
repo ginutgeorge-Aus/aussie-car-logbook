@@ -20,7 +20,7 @@ Tap **Set up your car** on the dashboard and fill in:
 | Rego | Your number plate | Optional |
 | Opening odometer | The km reading when you start logging | Yes |
 | Purchase date | When you bought the car | Optional* |
-| Purchase cost $ | What you paid | Optional* |
+| Purchase cost $ | What you paid, **including GST** | Optional* |
 
 \* **Purchase date and cost are needed for depreciation.** If you leave them
 out, your reports will still work but won't include the car's depreciation in
@@ -95,7 +95,10 @@ Tap **Reports**. Pick a financial year from the dropdown. You'll see:
 
 - Your **business-use %** for that year.
 - **BAS (GST credit)** — broken down by quarter, for your Business Activity
-  Statement. (Only shown if you're GST-registered — see Settings below.)
+  Statement. If you're GST-registered and entered the car's purchase date and
+  cost, the quarter you bought it in also includes the car's GST credit
+  (business share, capped at 1/11 of the ATO car limit). (Only shown if you're
+  GST-registered — see Settings below.)
 - **Annual income-tax deduction** — running costs + depreciation (business
   share), plus a breakdown by category.
 

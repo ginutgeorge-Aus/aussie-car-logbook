@@ -36,10 +36,15 @@ The ATO doesn't make you log *every* trip *forever*. Instead:
 - You start a new 12-week logbook if things change (new job, new car, big
   change in how you use the car), or when the 5 years are up.
 
-**How this app helps:** log your trips during your 12-week period (odometer
-start/end, and tick which are business). The app calculates the business-use %
-straight from those trips. Keep your logbook honest and complete — the
-odometer readings are your evidence.
+**How this app helps:** on the **Trips** page, add a **logbook period** (the
+start and end date of your 12-week logbook — the app won't accept anything
+shorter than 12 weeks), then log your trips during it (odometer start/end, and
+tick which are business). The app calculates the business-use % from the trips
+inside that period and uses it for the financial year the logbook starts in and
+the next 4 years — even years where you log no trips. If you have more than
+one valid logbook, the most recent one wins. If no valid logbook covers a year,
+the app falls back to that year's own trips and the report says so. Keep your
+logbook honest and complete — the odometer readings are your evidence.
 
 > 💡 You still record your **total** kilometres for the full year (usually
 > odometer at 1 July and 30 June), because your *claim* applies the percentage
@@ -62,8 +67,13 @@ The app works this out automatically **if** you entered your car's **purchase
 date and cost**. A few notes:
 
 - It uses the ATO's **diminishing value** method over an 8-year life.
-- The ATO sets a **car cost limit** each year — the most of the car's value
+- The ATO sets a **car limit** each year — the most of the car's value
   you can depreciate. The app applies this cap.
+- If you're **GST-registered**, the GST credit you actually claim on your BAS
+  for the car — capped at 1/11 of the car limit, then cut to your business-use %
+  in the year you bought it — comes off the value that's depreciated, so it
+  isn't claimed twice. The unclaimed (private) share of the GST stays in the
+  value.
 - If your reports show a note about depreciation being left out for a year,
   it means that year's cost limit hasn't been set in the app yet — see
   [Troubleshooting](Troubleshooting).
