@@ -2,8 +2,8 @@ import Link from "next/link";
 import { getVehicle } from "@/lib/data/vehicle";
 import { listTrips } from "@/lib/data/trip";
 import { listLogbookPeriods } from "@/lib/data/logbookPeriod";
-import { filterTripsByFy, logbookFyLabels, logbookPeriodBusinessPct, resolveBusinessUse } from "@/lib/logbook/compute";
-import { financialYear, logbookValidity } from "@/lib/tax";
+import { filterTripsByFy, logbookFyLabels, logbookPeriodBusinessPctBps, resolveBusinessUse } from "@/lib/logbook/compute";
+import { businessPctBps, financialYear, formatBusinessPct, fyLabelOr, logbookValidity } from "@/lib/tax";
 import { todayIso } from "@/lib/today";
 import { FySwitcher } from "@/components/FySwitcher";
 import { TripForm } from "@/components/TripForm";
@@ -28,12 +28,12 @@ export default async function TripsPage({ searchParams }: PageProps<"/trips">) {
   const today = todayIso();
   const currentFy = financialYear(today).label;
   const sp = await searchParams;
-  const activeFy = typeof sp.fy === "string" ? sp.fy : currentFy;
+  const activeFy = fyLabelOr(sp.fy, currentFy);
 
   const fyLabels = Array.from(new Set([currentFy, ...trips.map((t) => financialYear(t.date).label), ...logbookFyLabels(periods, currentFy)])).sort((a, b) => b.localeCompare(a));
   const fyTrips = filterTripsByFy(trips, activeFy);
   const businessUse = resolveBusinessUse({ trips, periods, fyLabel: activeFy, today });
-  const pct = Math.round(businessUse.ratio * 100);
+  const pct = formatBusinessPct(businessPctBps(businessUse.ratio));
   const periodViews = periods.map((p) => {
     const { firstFy, lastFy } = logbookValidity(p.startDate);
     return {
@@ -41,7 +41,10 @@ export default async function TripsPage({ searchParams }: PageProps<"/trips">) {
       startDate: p.startDate,
       endDate: p.endDate,
       validity: `FY ${firstFy} to ${lastFy}`,
-      businessPct: logbookPeriodBusinessPct(trips, p),
+      businessPct: (() => {
+        const bps = logbookPeriodBusinessPctBps(trips, p);
+        return bps === null ? null : formatBusinessPct(bps);
+      })(),
     };
   });
 

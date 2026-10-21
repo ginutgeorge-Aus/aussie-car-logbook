@@ -1,6 +1,6 @@
 import {
   businessPct,
-  businessPctRounded,
+  businessPctBps,
   financialYear,
   LOGBOOK_MIN_DAYS,
   logbookCoversFy,
@@ -26,13 +26,6 @@ export function filterTripsByFy<T extends { date: string }>(
   return trips.filter((t) => financialYear(t.date).label === fyLabel);
 }
 
-export function fyBusinessPct(
-  trips: Pick<TripRow, "date" | "odoStart" | "odoEnd" | "isBusiness">[],
-  fyLabel: string,
-): number {
-  return businessPctRounded(tripsToLegs(filterTripsByFy(trips, fyLabel)));
-}
-
 /**
  * Trip legs of the period's vehicle dated within the logbook period (inclusive).
  *
@@ -49,19 +42,19 @@ function logbookPeriodLegs(
 }
 
 /**
- * Rounded business-use % measured by one logbook period, or null when no
- * kilometres were recorded inside it.
+ * Business use measured by one logbook period, in basis points (see
+ * `businessPctBps`), or null when no kilometres were recorded inside it.
  *
  * @param trips all trips.
  * @param period the logbook period.
  */
-export function logbookPeriodBusinessPct(
+export function logbookPeriodBusinessPctBps(
   trips: Pick<TripRow, "vehicleId" | "date" | "odoStart" | "odoEnd" | "isBusiness">[],
   period: LogbookPeriodRow,
 ): number | null {
   const legs = logbookPeriodLegs(trips, period);
   if (legs.reduce((s, l) => s + l.km, 0) === 0) return null;
-  return businessPctRounded(legs);
+  return businessPctBps(businessPct(legs));
 }
 
 /** Where a report's business-use % came from. */

@@ -10,8 +10,8 @@ export type LogbookPeriodView = {
   endDate: string;
   /** e.g. "FY 2024-25 to 2028-29". */
   validity: string;
-  /** Business-use % from trips inside the period, or null when it has none. */
-  businessPct: number | null;
+  /** Business-use % (2 dp, e.g. "66.67") from trips inside the period, or null when it has none. */
+  businessPct: string | null;
 };
 
 /** Form to add a logbook period (start/end date, validated as ≥12 weeks on the server). */

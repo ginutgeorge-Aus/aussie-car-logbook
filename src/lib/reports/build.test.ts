@@ -80,7 +80,7 @@ describe("buildFyReport", () => {
 
     expect(r.bas.totalGstCreditCents).toBe(1000); // only the in-FY $10 GST, not $50
     expect(r.annual.runningCostsDeductionCents).toBe(10000); // 11000 - 1000, out-of-FY excluded
-    expect(r.annual.byCategory).toEqual([{ category: "fuel", totalInclCents: 11000 }]);
+    expect(r.annual.byCategory).toEqual([{ category: "fuel", totalCents: 10000 }]); // ex-GST
   });
 
   it("aggregates expense totals per category within the FY", () => {
@@ -93,8 +93,8 @@ describe("buildFyReport", () => {
     const r = buildFyReport({ trips, expenses, vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25", today: TODAY });
 
     expect(r.annual.byCategory).toEqual([
-      { category: "fuel", totalInclCents: 33000 }, // 11000 + 22000
-      { category: "rego", totalInclCents: 33000 },
+      { category: "fuel", totalCents: 31000 }, // ex-GST: (11000 - 1000) + (22000 - 1000)
+      { category: "rego", totalCents: 32000 }, // 33000 - 1000
     ]);
   });
 
@@ -195,6 +195,53 @@ describe("buildFyReport", () => {
       expect(r.annual.depreciationDeductionCents).toBe(0);
       expect(r.bas.purchaseGstCreditCents).toBe(0);
       expect(r.notices.some((n) => /car limit for FY 2027-28/.test(n))).toBe(true);
+    });
+  });
+
+  describe("rounding, GST registration and categories (GLB-6)", () => {
+    // 2/3 business: 200 of 300 km.
+    const thirds = [
+      trip({ id: 1, odoStart: 0, odoEnd: 200, isBusiness: true }),
+      trip({ id: 2, odoStart: 200, odoEnd: 300, isBusiness: false }),
+    ];
+
+    it("computes dollars from the displayed % (2 dp), not the raw ratio", () => {
+      const expenses = [expense({ id: 1, amountInclCents: 330000, gstCents: 30000 })];
+      const r = buildFyReport({ trips: thirds, expenses, vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25", today: TODAY });
+      expect(r.businessPctBps).toBe(6667);
+      expect(r.businessPct).toBe(0.6667);
+      expect(r.bas.totalGstCreditCents).toBe(20001); // 30000 x 0.6667, not 20000 (raw 2/3)
+      expect(r.annual.runningCostsDeductionCents).toBe(200010); // 300000 x 0.6667
+    });
+
+    it("reports no BAS credit when not GST-registered", () => {
+      const expenses = [expense({ id: 1, amountInclCents: 11000, gstCents: 1000 })];
+      const r = buildFyReport({ trips: [trip({})], expenses, vehicle: null, settings: { gstRegistered: false }, logbookPeriods: [], fyLabel: "2024-25", today: TODAY });
+      expect(r.bas.totalGstCreditCents).toBe(0);
+      expect(r.bas.quarters.every((q) => q.gstCreditCents === 0)).toBe(true);
+      expect(r.annual.runningCostsDeductionCents).toBe(11000); // GST-inclusive when not registered
+    });
+
+    it("shows category totals on the same GST basis as the deduction", () => {
+      const expenses = [expense({ id: 1, category: "fuel", amountInclCents: 11000, gstCents: 1000 })];
+      const reg = buildFyReport({ trips: [trip({})], expenses, vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25", today: TODAY });
+      expect(reg.annual.byCategory).toEqual([{ category: "fuel", totalCents: 10000 }]);
+      expect(reg.annual.categoryBasis).toBe("ex-gst");
+      const unreg = buildFyReport({ trips: [trip({})], expenses, vehicle: null, settings: { gstRegistered: false }, logbookPeriods: [], fyLabel: "2024-25", today: TODAY });
+      expect(unreg.annual.byCategory).toEqual([{ category: "fuel", totalCents: 11000 }]);
+      expect(unreg.annual.categoryBasis).toBe("gst-inclusive");
+    });
+
+    it("excludes 'depreciation' expense rows from every claim, with a notice", () => {
+      const expenses = [
+        expense({ id: 1, category: "fuel", amountInclCents: 11000, gstCents: 1000 }),
+        expense({ id: 2, category: "depreciation", amountInclCents: 500000, gstCents: 45455 }),
+      ];
+      const r = buildFyReport({ trips: [trip({})], expenses, vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25", today: TODAY });
+      expect(r.bas.totalGstCreditCents).toBe(1000); // fuel only; the depreciation row's GST is not claimed
+      expect(r.annual.runningCostsDeductionCents).toBe(10000);
+      expect(r.annual.byCategory.map((c) => c.category)).toEqual(["fuel"]);
+      expect(r.notices.some((n) => /depreciation.*excluded/i.test(n))).toBe(true);
     });
   });
 });

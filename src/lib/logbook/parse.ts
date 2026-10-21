@@ -1,10 +1,24 @@
 import { LOGBOOK_MIN_DAYS, logbookPeriodDays } from "@/lib/tax";
 import type { ParseResult } from "@/lib/logbook/types";
 
+/** Plain non-negative decimal: digits with an optional fraction ("12", "12.5", ".5", "12."). */
+const DECIMAL_RE = /^(\d+\.?\d*|\.\d+)$/;
+
+/**
+ * Converts a dollar string to integer cents, rounding half-up on the third
+ * decimal. Only plain decimals are accepted — `Number()` forms such as "1e3",
+ * "0x10", "Infinity", signs, spaces or thousands separators throw. Parsing is
+ * done on the digits, so there is no floating-point error (1.005 -> 101).
+ *
+ * @throws RangeError for anything that is not a plain non-negative decimal.
+ */
 export function dollarsToCents(input: string): number {
-  const n = Number(input);
-  if (!Number.isFinite(n) || n < 0) throw new RangeError(`Invalid dollar amount: ${input}`);
-  return Math.round(n * 100);
+  if (!DECIMAL_RE.test(input)) throw new RangeError(`Invalid dollar amount: ${input}`);
+  const [whole, frac = ""] = input.split(".");
+  const padded = (frac + "000").slice(0, 3);
+  const cents = Number(whole || "0") * 100 + Number(padded.slice(0, 2)) + (Number(padded[2]) >= 5 ? 1 : 0);
+  if (!Number.isSafeInteger(cents)) throw new RangeError(`Invalid dollar amount: ${input}`);
+  return cents;
 }
 
 export function centsToDollars(cents: number): string {

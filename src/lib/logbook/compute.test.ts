@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { tripKm, tripsToLegs, filterTripsByFy, fyBusinessPct, resolveBusinessUse, logbookPeriodBusinessPct, logbookFyLabels } from "@/lib/logbook/compute";
+import { tripKm, tripsToLegs, filterTripsByFy, resolveBusinessUse, logbookPeriodBusinessPctBps, logbookFyLabels } from "@/lib/logbook/compute";
 
 const TODAY = "2099-01-01";
 import type { LogbookPeriodRow, TripRow } from "@/lib/logbook/types";
@@ -31,20 +31,6 @@ test("filterTripsByFy keeps only trips in the FY", () => {
     { date: "2025-06-30" },
   ]);
 });
-
-test("fyBusinessPct = rounded business% over FY trips", () => {
-  const trips = [
-    { date: "2024-07-02", odoStart: 0, odoEnd: 40, isBusiness: true },
-    { date: "2024-07-03", odoStart: 40, odoEnd: 60, isBusiness: false },
-    { date: "2023-07-03", odoStart: 0, odoEnd: 999, isBusiness: false }, // other FY, excluded
-  ];
-  expect(fyBusinessPct(trips, "2024-25")).toBe(67); // 40/60
-});
-
-test("fyBusinessPct with no FY trips is 0 (no divide-by-zero)", () => {
-  expect(fyBusinessPct([], "2024-25")).toBe(0);
-});
-
 
 const t = (over: Partial<TripRow>): TripRow => ({
   id: 1, vehicleId: 1, periodId: null, date: "2024-08-01",
@@ -119,9 +105,9 @@ test("resolveBusinessUse falls back to FY trips when there is no logbook", () =>
   expect(r.notices[0]).toMatch(/all trips recorded in FY 2024-25/);
 });
 
-test("logbookPeriodBusinessPct is the rounded % inside the period, or null with no trips", () => {
-  expect(logbookPeriodBusinessPct(logbookTrips, period({}))).toBe(60);
-  expect(logbookPeriodBusinessPct(logbookTrips, period({ startDate: "2025-08-01", endDate: "2025-10-31" }))).toBeNull();
+test("logbookPeriodBusinessPctBps is the basis points inside the period, or null with no trips", () => {
+  expect(logbookPeriodBusinessPctBps(logbookTrips, period({}))).toBe(6000);
+  expect(logbookPeriodBusinessPctBps(logbookTrips, period({ startDate: "2025-08-01", endDate: "2025-10-31" }))).toBeNull();
 });
 
 test("resolveBusinessUse ignores a logbook period that hasn't ended yet, with a notice", () => {

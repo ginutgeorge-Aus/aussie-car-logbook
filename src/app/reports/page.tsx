@@ -4,7 +4,7 @@ import { listTrips } from "@/lib/data/trip";
 import { listExpenses } from "@/lib/data/expense";
 import { getSettings } from "@/lib/data/settings";
 import { listLogbookPeriods } from "@/lib/data/logbookPeriod";
-import { financialYear } from "@/lib/tax";
+import { financialYear, formatBusinessPct, fyLabelOr } from "@/lib/tax";
 import { todayIso } from "@/lib/today";
 import { centsToDollars } from "@/lib/logbook/parse";
 import { logbookFyLabels } from "@/lib/logbook/compute";
@@ -35,7 +35,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
   const today = todayIso();
   const currentFy = financialYear(today).label;
   const sp = await searchParams;
-  const activeFy = typeof sp.fy === "string" ? sp.fy : currentFy;
+  const activeFy = fyLabelOr(sp.fy, currentFy);
 
   const fyLabels = Array.from(
     new Set([currentFy, ...trips.map((t) => financialYear(t.date).label), ...expenses.map((e) => financialYear(e.date).label), ...logbookFyLabels(logbookPeriods, currentFy)]),
@@ -57,7 +57,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
         {vehicle.make} {vehicle.model} — FY {activeFy}
       </h2>
       <p className="text-sm text-zinc-600">
-        Business use: {Math.round(report.businessPct * 100)}%{" "}
+        Business use: {formatBusinessPct(report.businessPctBps)}%{" "}
         {report.businessUseSource.kind === "logbook"
           ? `(logbook period ${report.businessUseSource.startDate} to ${report.businessUseSource.endDate}, valid FY ${report.businessUseSource.firstFy} to ${report.businessUseSource.lastFy})`
           : `(estimated from FY ${activeFy} trips — no valid logbook)`}
@@ -120,13 +120,13 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
 
         {report.annual.byCategory.length > 0 && (
           <>
-            <h4 className="mt-6 mb-2 text-sm font-medium text-zinc-600">Expenses by category (GST-inclusive)</h4>
+            <h4 className="mt-6 mb-2 text-sm font-medium text-zinc-600">Expenses by category ({report.annual.categoryBasis === "ex-gst" ? "GST-exclusive" : "GST-inclusive"})</h4>
             <table className="w-full text-left text-sm">
               <tbody>
                 {report.annual.byCategory.map((c) => (
                   <tr key={c.category} className="border-b">
                     <td className="py-2 pr-4 capitalize">{c.category}</td>
-                    <td className="py-2">${centsToDollars(c.totalInclCents)}</td>
+                    <td className="py-2">${centsToDollars(c.totalCents)}</td>
                   </tr>
                 ))}
               </tbody>

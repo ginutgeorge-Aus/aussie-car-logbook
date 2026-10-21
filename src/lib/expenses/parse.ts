@@ -4,6 +4,9 @@ import { isExpenseCategory } from "@/lib/expenses/categories";
 import type { ExpenseCategory } from "@/lib/tax/types";
 import type { ParseResult } from "@/lib/logbook/types";
 
+/** Slack over 1/11 for invoices that round GST per line (ATO taxable-sale rounding rule). */
+const GST_LINE_ROUNDING_CENTS = 5;
+
 export type ExpenseInput = {
   date: string;
   category: ExpenseCategory;
@@ -17,6 +20,11 @@ function str(fd: FormData, key: string): string {
   return (fd.get(key) ?? "").toString().trim();
 }
 
+/**
+ * Parses the expense form: date, a user-enterable category, a positive amount
+ * and GST (defaults to 1/11 of the amount; 0 when GST-free; a typed GST must not
+ * exceed 1/11 of the amount).
+ */
 export function parseExpenseForm(fd: FormData): ParseResult<ExpenseInput> {
   const errors: Record<string, string> = {};
 
@@ -48,9 +56,12 @@ export function parseExpenseForm(fd: FormData): ParseResult<ExpenseInput> {
         errors.gst = "Enter a valid GST amount.";
       }
     }
-    if (!errors.gst && !errors.amountIncl) {
-      if (gstCents < 0) errors.gst = "GST cannot be negative.";
-      else if (gstCents > amountInclCents) gstCents = amountInclCents; // clamp
+    // GST is at most 1/11 of a GST-inclusive amount (rounded to the cent, as gstFromInclusive does),
+    // plus a few cents: the ATO rounding rule lets invoices round GST per line, which can sum higher.
+    // Never more than the amount itself, so the GST-exclusive amount can't go negative.
+    const maxGst = Math.min(gstFromInclusive(amountInclCents) + GST_LINE_ROUNDING_CENTS, amountInclCents);
+    if (!errors.gst && !errors.amountIncl && gstCents > maxGst) {
+      errors.gst = "GST can't be more than 1/11 of the amount.";
     }
   }
 
