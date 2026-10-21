@@ -59,3 +59,17 @@ export function daysHeldInFy(dateISO: string, fyLabel: string): number {
   const end = new Date(fyEndISO + "T00:00:00Z").getTime();
   return Math.round((end - start) / 86400000) + 1; // inclusive
 }
+
+/**
+ * Returns `raw` when it is a well-formed FY label ("YYYY-YY" where the second
+ * part is the following year), otherwise `fallback`. Used to validate `?fy=`.
+ *
+ * @param raw untrusted value, e.g. a search param.
+ * @param fallback label to use when `raw` is not a valid FY label.
+ */
+export function fyLabelOr(raw: unknown, fallback: string): string {
+  if (typeof raw !== "string") return fallback;
+  const m = /^(\d{4})-(\d{2})$/.exec(raw);
+  if (!m) return fallback;
+  return (Number(m[1]) + 1) % 100 === Number(m[2]) ? raw : fallback;
+}

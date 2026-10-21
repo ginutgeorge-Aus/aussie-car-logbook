@@ -20,7 +20,7 @@ Tap **Set up your car** on the dashboard and fill in:
 | Rego | Your number plate | Optional |
 | Opening odometer | The km reading when you start logging | Yes |
 | Purchase date | When you bought the car | Optional* |
-| Purchase cost $ | What you paid | Optional* |
+| Purchase cost $ | What you paid, **including GST** | Optional* |
 
 \* **Purchase date and cost are needed for depreciation.** If you leave them
 out, your reports will still work but won't include the car's depreciation in
@@ -95,7 +95,10 @@ Tap **Reports**. Pick a financial year from the dropdown. You'll see:
 
 - Your **business-use %** for that year.
 - **BAS (GST credit)** — broken down by quarter, for your Business Activity
-  Statement.
+  Statement. If you're GST-registered and entered the car's purchase date and
+  cost, the quarter you bought it in also includes the car's GST credit
+  (business share, capped at 1/11 of the ATO car limit). (Only shown if you're
+  GST-registered — see Settings below.)
 - **Annual income-tax deduction** — running costs + depreciation (business
   share), plus a breakdown by category.
 
@@ -103,6 +106,20 @@ Use the **Print** button to save a clean copy (or print to PDF) for your
 records or your accountant.
 
 Full detail: **[Reports Explained](Reports-Explained)**.
+
+---
+
+## 5. Settings
+
+Tap **Settings** on the dashboard.
+
+| Setting | What it does |
+|---------|--------------|
+| Registered for GST | **On** (the default): you claim GST credits on your BAS, and deductions use GST-exclusive amounts. **Off**: the BAS credit is hidden on the dashboard and in Reports, and deductions use the full receipt amount. |
+| ABN | Optional. Type it with or without spaces; it's checked against the ATO's ABN check digits. Leave blank to clear it. |
+| Financial year | Fixed to July–June (the Australian financial year). Not editable. |
+
+Tap **Save settings**.
 
 ---
 

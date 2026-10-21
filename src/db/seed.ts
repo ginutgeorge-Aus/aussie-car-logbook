@@ -1,6 +1,6 @@
 // Fake sample data for local dev/demo. No real personal or tax data.
 export const seedSql = `
-INSERT INTO settings (fy_start_month, gst_registered, abn) VALUES (7, 1, '00 000 000 000');
+INSERT INTO settings (fy_start_month, gst_registered, abn) VALUES (7, 1, NULL);
 INSERT INTO vehicle (make, model, rego, odo_open, purchase_date, purchase_cost_cents)
   VALUES ('Toyota', 'Corolla', 'ABC123', 50000, '2023-07-01', 3000000);
 INSERT INTO logbook_period (vehicle_id, start_date, end_date, business_pct_bps, valid_until)
