@@ -1,13 +1,14 @@
 "use client";
 
 import { saveSettingsAction } from "@/lib/actions";
-import { FieldError } from "@/components/FieldError";
+import { FieldError, useFieldErrors } from "@/components/FieldError";
 import { useFormSubmit } from "@/components/useFormSubmit";
 
 /** Edits the GST-registered flag and ABN; FY start is shown read-only (July–June is fixed). */
 export function SettingsForm({ settings }: { settings: { gstRegistered: boolean; abn: string | null } }) {
   const { state, pending, onSubmit } = useFormSubmit(saveSettingsAction);
   const errs = state.ok ? {} : (state.fieldErrors ?? {});
+  const fe = useFieldErrors(errs);
 
   return (
     <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4 max-w-md">
@@ -23,6 +24,7 @@ export function SettingsForm({ settings }: { settings: { gstRegistered: boolean;
       <label className="flex flex-col gap-1">
         <span>ABN (optional)</span>
         <input
+          {...fe("abn").input}
           name="abn"
           type="text"
           inputMode="numeric"
@@ -31,7 +33,7 @@ export function SettingsForm({ settings }: { settings: { gstRegistered: boolean;
           defaultValue={settings.abn ?? ""}
           className="border rounded px-2 py-1"
         />
-        <FieldError message={errs.abn} />
+        <FieldError {...fe("abn").error} />
       </label>
       <div className="flex flex-col gap-1">
         <span>Financial year starts</span>

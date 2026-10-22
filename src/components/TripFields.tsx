@@ -1,4 +1,4 @@
-import { FieldError } from "@/components/FieldError";
+import { FieldError, useFieldErrors } from "@/components/FieldError";
 import { inputCls, labelCls } from "@/components/ui";
 import type { TripRow } from "@/lib/logbook/types";
 
@@ -16,22 +16,23 @@ export function TripFields({
   defaultDate?: string;
   errs: Record<string, string>;
 }) {
+  const fe = useFieldErrors(errs);
   return (
     <div className="grid grid-cols-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)] gap-3">
       <label className="col-span-2 md:col-span-1 flex flex-col gap-1.5">
         <span className={labelCls}>Date</span>
-        <input name="date" type="date" defaultValue={trip?.date ?? defaultDate} className={inputCls} />
-        <FieldError message={errs.date} />
+        <input {...fe("date").input} name="date" type="date" defaultValue={trip?.date ?? defaultDate} className={inputCls} />
+        <FieldError {...fe("date").error} />
       </label>
       <label className="flex flex-col gap-1.5">
         <span className={labelCls}>Odo start (km)</span>
-        <input name="odoStart" type="number" min="0" inputMode="numeric" defaultValue={trip?.odoStart} className={`${inputCls} font-mono`} />
-        <FieldError message={errs.odoStart} />
+        <input {...fe("odoStart").input} name="odoStart" type="number" min="0" inputMode="numeric" defaultValue={trip?.odoStart} className={`${inputCls} font-mono`} />
+        <FieldError {...fe("odoStart").error} />
       </label>
       <label className="flex flex-col gap-1.5">
         <span className={labelCls}>Odo end (km)</span>
-        <input name="odoEnd" type="number" min="0" inputMode="numeric" defaultValue={trip?.odoEnd} className={`${inputCls} font-mono`} />
-        <FieldError message={errs.odoEnd} />
+        <input {...fe("odoEnd").input} name="odoEnd" type="number" min="0" inputMode="numeric" defaultValue={trip?.odoEnd} className={`${inputCls} font-mono`} />
+        <FieldError {...fe("odoEnd").error} />
       </label>
       <label className="col-span-2 md:col-span-1 flex flex-col gap-1.5">
         <span className={labelCls}>Purpose</span>
