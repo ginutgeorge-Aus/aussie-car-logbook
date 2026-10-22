@@ -136,13 +136,39 @@ export function isIsoDate(value: string): boolean {
 }
 
 /**
+ * Parses the period odometer fields: both required non-negative whole km,
+ * end above start. The ATO logbook must show the odometer at the start and end
+ * of the period; total km = end − start.
+ * Source: https://www.ato.gov.au/individuals-and-families/your-tax-return/instructions-to-complete-your-tax-return/mytax-instructions/2026/deductions/work-related-expenses/work-related-car-expenses
+ */
+export function parsePeriodOdometers(fd: FormData, errors: Record<string, string>): { odoStart: number; odoEnd: number } {
+  const odoStart = optInt(str(fd, "odoStart"));
+  const odoEnd = optInt(str(fd, "odoEnd"));
+  if (odoStart === null || Number.isNaN(odoStart) || odoStart < 0) errors.odoStart = "Enter the odometer at the start of the logbook (whole km).";
+  if (odoEnd === null || Number.isNaN(odoEnd) || odoEnd < 0) errors.odoEnd = "Enter the odometer at the end of the logbook (whole km).";
+  if (!errors.odoStart && !errors.odoEnd && (odoEnd as number) <= (odoStart as number)) {
+    errors.odoEnd = "End odometer must be higher than the start odometer.";
+  }
+  return { odoStart: odoStart as number, odoEnd: odoEnd as number };
+}
+
+/** Parses the form that sets odometer readings on an existing logbook period. */
+export function parseLogbookPeriodOdometerForm(fd: FormData): ParseResult<{ odoStart: number; odoEnd: number }> {
+  const errors: Record<string, string> = {};
+  const value = parsePeriodOdometers(fd, errors);
+  if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
+  return { ok: true, value };
+}
+
+/**
  * Parses the logbook-period form: start and end dates are required, must be
  * real ISO dates, end must not precede start, and the period must cover at
- * least 12 continuous weeks (ATO logbook method).
+ * least 12 continuous weeks (ATO logbook method). Start/end odometer readings
+ * are required too (see `parsePeriodOdometers`).
  */
 export function parseLogbookPeriodForm(
   fd: FormData,
-): ParseResult<{ startDate: string; endDate: string; nominatedFy: string | null }> {
+): ParseResult<{ startDate: string; endDate: string; nominatedFy: string | null; odoStart: number; odoEnd: number }> {
   const errors: Record<string, string> = {};
   const startDate = str(fd, "startDate");
   const endDate = str(fd, "endDate");
@@ -162,6 +188,7 @@ export function parseLogbookPeriodForm(
     if (!options.includes(nominatedRaw)) errors.nominatedFy = "Choose the FY the logbook starts or ends in.";
     else if (options.length > 1) nominatedFy = nominatedRaw;
   }
+  const { odoStart, odoEnd } = parsePeriodOdometers(fd, errors);
   if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
-  return { ok: true, value: { startDate, endDate, nominatedFy } };
+  return { ok: true, value: { startDate, endDate, nominatedFy, odoStart, odoEnd } };
 }

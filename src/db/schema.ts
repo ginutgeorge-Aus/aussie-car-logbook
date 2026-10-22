@@ -20,6 +20,8 @@ export const logbookPeriod = sqliteTable("logbook_period", {
   businessPctBps: integer("business_pct_bps"), // basis points (business% x 100), computed cache
   validUntil: text("valid_until"),
   nominatedFy: text("nominated_fy"), // FY label the logbook is for when it crosses 30 June; null = start FY
+  odoStart: integer("odo_start"), // odometer at period start (km); null = not recorded yet
+  odoEnd: integer("odo_end"), // odometer at period end (km); total km = end - start
 });
 
 export const trip = sqliteTable("trip", {

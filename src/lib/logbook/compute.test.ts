@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { tripKm, tripsToLegs, filterTripsByFy, resolveBusinessUse, logbookPeriodBusinessPctBps, logbookFyLabels, currentOdometer, fyKmTotals } from "@/lib/logbook/compute";
+import { logbookPeriodUse, tripKm, tripsToLegs, filterTripsByFy, resolveBusinessUse, logbookPeriodBusinessPctBps, logbookFyLabels, currentOdometer, fyKmTotals } from "@/lib/logbook/compute";
 import type { LogbookPeriodRow, TripRow } from "@/lib/logbook/types";
 
 const TODAY = "2099-01-01";
@@ -37,7 +37,7 @@ const t = (over: Partial<TripRow>): TripRow => ({
   odoStart: 0, odoEnd: 100, purpose: null, isBusiness: true, ...over,
 });
 const period = (over: Partial<LogbookPeriodRow>): LogbookPeriodRow => ({
-  id: 1, vehicleId: 1, startDate: "2024-08-01", endDate: "2024-10-31", ...over,
+  id: 1, vehicleId: 1, startDate: "2024-08-01", endDate: "2024-10-31", odoStart: 0, odoEnd: 100, ...over,
 });
 // Logbook period trips: 60 business / 40 private km => 60%.
 const logbookTrips = [
@@ -148,4 +148,63 @@ test("fyKmTotals sums business and total km within the FY", () => {
     { date: "2024-06-30", odoStart: 0, odoEnd: 999, isBusiness: true }, // FY 2023-24
   ];
   expect(fyKmTotals(trips, "2024-25")).toEqual({ businessKm: 40, totalKm: 60 });
+});
+
+test("total km is the odometer span, not the sum of logged trips (#49)", () => {
+  // 60 business km logged, but the odometer moved 200 km: unlogged private trips count.
+  const p = period({ odoStart: 0, odoEnd: 200 });
+  expect(logbookPeriodUse(logbookTrips, p)).toEqual({ ok: true, businessKm: 60, totalKm: 200 });
+  expect(logbookPeriodBusinessPctBps(logbookTrips, p)).toBe(3000);
+  const r = resolveBusinessUse({ trips: logbookTrips, periods: [p], fyLabel: "2024-25", today: TODAY });
+  expect(r.ratio).toBeCloseTo(0.3, 10);
+});
+
+test("a period with odometers but only private trips legitimately gives 0%", () => {
+  const priv = [t({ id: 1, date: "2024-08-10", odoStart: 0, odoEnd: 50, isBusiness: false })];
+  expect(logbookPeriodBusinessPctBps(priv, period({}))).toBe(0);
+});
+
+test("a period without odometer readings is skipped with a notice", () => {
+  for (const missing of [{ odoStart: null }, { odoEnd: null }, { odoStart: undefined, odoEnd: undefined }]) {
+    const p = period(missing);
+    expect(logbookPeriodBusinessPctBps(logbookTrips, p)).toBeNull();
+    const r = resolveBusinessUse({ trips: logbookTrips, periods: [p], fyLabel: "2024-25", today: TODAY });
+    expect(r.source.kind).toBe("fy-trips");
+    expect(r.notices[0]).toMatch(/2024-08-01 to 2024-10-31.*odometer readings are missing.*Trips page/);
+  }
+});
+
+test("a period whose end odometer is not above the start is skipped", () => {
+  for (const p of [period({ odoStart: 100, odoEnd: 100 }), period({ odoStart: 100, odoEnd: 50 })]) {
+    expect(logbookPeriodBusinessPctBps(logbookTrips, p)).toBeNull();
+    const r = resolveBusinessUse({ trips: logbookTrips, periods: [p], fyLabel: "2024-25", today: TODAY });
+    expect(r.source.kind).toBe("fy-trips");
+    expect(r.notices[0]).toMatch(/end odometer must be higher/);
+  }
+});
+
+test("a period is skipped when a trip falls outside its odometer readings", () => {
+  for (const p of [period({ odoStart: 10 }), period({ odoEnd: 90 })]) {
+    expect(logbookPeriodBusinessPctBps(logbookTrips, p)).toBeNull();
+    const r = resolveBusinessUse({ trips: logbookTrips, periods: [p], fyLabel: "2024-25", today: TODAY });
+    expect(r.source.kind).toBe("fy-trips");
+    expect(r.notices[0]).toMatch(/outside the period's odometer readings/);
+  }
+});
+
+test("a period is skipped when business km exceed total km (overlapping trips)", () => {
+  const overlap = [
+    t({ id: 1, date: "2024-08-10", odoStart: 0, odoEnd: 80, isBusiness: true }),
+    t({ id: 2, date: "2024-08-11", odoStart: 0, odoEnd: 80, isBusiness: true }),
+  ];
+  expect(logbookPeriodBusinessPctBps(overlap, period({}))).toBeNull();
+  const r = resolveBusinessUse({ trips: overlap, periods: [period({})], fyLabel: "2024-25", today: TODAY });
+  expect(r.notices[0]).toMatch(/business km exceed/);
+});
+
+test("an unusable newest period falls back to the previous valid one", () => {
+  const bad = period({ id: 2, startDate: "2025-08-01", endDate: "2025-10-31", odoStart: null, odoEnd: null });
+  const r = resolveBusinessUse({ trips: logbookTrips, periods: [period({}), bad], fyLabel: "2025-26", today: TODAY });
+  expect(r.source).toMatchObject({ kind: "logbook", periodId: 1 });
+  expect(r.notices[0]).toMatch(/2025-08-01 to 2025-10-31/);
 });

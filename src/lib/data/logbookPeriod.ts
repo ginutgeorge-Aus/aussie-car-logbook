@@ -14,6 +14,8 @@ export async function listLogbookPeriods(): Promise<LogbookPeriodRow[]> {
       startDate: logbookPeriod.startDate,
       endDate: logbookPeriod.endDate,
       nominatedFy: logbookPeriod.nominatedFy,
+      odoStart: logbookPeriod.odoStart,
+      odoEnd: logbookPeriod.odoEnd,
     })
     .from(logbookPeriod)
     .orderBy(asc(logbookPeriod.startDate));
@@ -28,6 +30,8 @@ export async function createLogbookPeriod(input: {
   startDate: string;
   endDate: string;
   nominatedFy: string | null;
+  odoStart: number;
+  odoEnd: number;
 }): Promise<void> {
   const db = await getDb();
   const rows = await db.select({ id: vehicle.id }).from(vehicle).limit(1);
@@ -36,6 +40,12 @@ export async function createLogbookPeriod(input: {
   const { lastFy } = logbookValidity(input);
   const validUntil = `${Number(lastFy.slice(0, 4)) + 1}-06-30`;
   await db.insert(logbookPeriod).values({ ...input, vehicleId, validUntil });
+}
+
+/** Sets the start/end odometer readings of an existing logbook period (fixes periods saved without them). */
+export async function updateLogbookPeriodOdometer(id: number, odoStart: number, odoEnd: number): Promise<void> {
+  const db = await getDb();
+  await db.update(logbookPeriod).set({ odoStart, odoEnd }).where(eq(logbookPeriod.id, id));
 }
 
 /** Deletes a logbook period, first unlinking any trips that reference it (FK). */

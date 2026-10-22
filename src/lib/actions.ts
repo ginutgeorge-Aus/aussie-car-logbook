@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { parseVehicleForm, parseTripForm, parseLogbookPeriodForm } from "@/lib/logbook/parse";
-import { createLogbookPeriod, deleteLogbookPeriod } from "@/lib/data/logbookPeriod";
+import { parseVehicleForm, parseTripForm, parseLogbookPeriodForm, parseLogbookPeriodOdometerForm } from "@/lib/logbook/parse";
+import { createLogbookPeriod, deleteLogbookPeriod, updateLogbookPeriodOdometer } from "@/lib/data/logbookPeriod";
 import { upsertVehicle } from "@/lib/data/vehicle";
 import { createTrip, updateTrip, deleteTrip } from "@/lib/data/trip";
 import type { ActionResult } from "@/lib/logbook/types";
@@ -103,6 +103,21 @@ export async function createLogbookPeriodAction(_prev: ActionResult, fd: FormDat
   }
   revalidateAll("/trips");
   return { ok: true };
+}
+
+/** Sets the start/end odometer readings on the existing logbook period whose id is posted. */
+export async function updateLogbookPeriodOdometerAction(_prev: ActionResult, fd: FormData): Promise<ActionResult> {
+  const id = idFrom(fd);
+  if (id === null) return { ok: false, error: "Invalid logbook period." };
+  const parsed = parseLogbookPeriodOdometerForm(fd);
+  if (!parsed.ok) return { ok: false, fieldErrors: parsed.fieldErrors };
+  try {
+    await updateLogbookPeriodOdometer(id, parsed.value.odoStart, parsed.value.odoEnd);
+  } catch (e) {
+    return failure(e);
+  }
+  revalidateAll("/trips");
+  return { ok: true, saved: true };
 }
 
 /** Deletes the logbook period whose id is posted by the delete form. */
