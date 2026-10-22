@@ -8,3 +8,17 @@ export function gstCredit(expenses: ExpenseInput[], businessPctRatio: number): n
   const totalGst = expenses.reduce((s, e) => s + e.gstCents, 0);
   return Math.round(totalGst * businessPctRatio);
 }
+
+/** ATO: a tax invoice is required to claim a GST credit on purchases over $82.50 incl. GST. */
+export const TAX_INVOICE_THRESHOLD_CENTS = 8250;
+
+/** ATO: tax invoices for sales of $1,000+ incl. GST must also show the buyer's identity or ABN. */
+export const TAX_INVOICE_BUYER_ID_THRESHOLD_CENTS = 100000;
+
+/**
+ * Whether an expense's GST may be claimed on the BAS now: GST-free (nothing to
+ * claim), at or under the tax-invoice threshold, or a tax invoice is held.
+ */
+export function gstCreditEligible(e: { amountInclCents: number; gstCents: number; taxInvoice: boolean }): boolean {
+  return e.gstCents === 0 || e.amountInclCents <= TAX_INVOICE_THRESHOLD_CENTS || e.taxInvoice;
+}

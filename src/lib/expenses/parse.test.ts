@@ -20,8 +20,30 @@ describe("parseExpenseForm", () => {
       amountInclCents: 11000,
       gstCents: 1000, // round(11000/11)
       vendor: null,
+      abn: null,
+      taxInvoice: false,
       notes: null,
     });
+  });
+
+  it("normalises a valid ABN and reads the tax-invoice checkbox", () => {
+    const r = parseExpenseForm(fd({ ...base, abn: "51 824 753 556", taxInvoice: "on" }));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.value.abn).toBe("51824753556");
+    expect(r.value.taxInvoice).toBe(true);
+  });
+
+  it("rejects an invalid ABN", () => {
+    const r = parseExpenseForm(fd({ ...base, abn: "51 824 753 557" }));
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.fieldErrors.abn).toBe("Enter a valid 11-digit ABN.");
+  });
+
+  it("treats a blank ABN as none", () => {
+    const r = parseExpenseForm(fd({ ...base, abn: "   " }));
+    expect(r.ok && r.value.abn).toBeNull();
   });
 
   it("uses an explicit GST when provided", () => {

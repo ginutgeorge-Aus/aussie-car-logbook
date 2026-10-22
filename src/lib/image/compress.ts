@@ -1,11 +1,11 @@
-// Client-only receipt compressor. Downscales + re-encodes to JPEG so the blob
-// sent to Workers AI OCR and stored in R2 stays tiny (target < 150 KB). Also
-// normalizes HEIC/PNG to JPEG via the canvas, so any camera output becomes
-// scannable and cheap to store.
+// Client-only receipt compressor. Downscales + re-encodes to JPEG so the copy
+// stored in R2 stays small (target < 200 KB) while staying a "true and clear"
+// reproduction (ATO record-keeping rule). Also normalizes HEIC/PNG to JPEG via
+// the canvas, so any camera output becomes cheap to store.
 
-const TARGET_BYTES = 150 * 1024; // 150 KB
+const TARGET_BYTES = 200 * 1024; // 200 KB
 const START_EDGE = 1600; // longest-edge px cap on first attempt
-const START_QUALITY = 0.7;
+const START_QUALITY = 0.8;
 const MIN_QUALITY = 0.4;
 const MIN_EDGE = 800;
 
@@ -47,7 +47,7 @@ function encode(img: HTMLImageElement, maxEdge: number, quality: number): Promis
   });
 }
 
-// Returns a JPEG File under ~150 KB. Steps quality down first, then dimensions,
+// Returns a JPEG File under ~200 KB. Steps quality down first, then dimensions,
 // stopping at the floor even if still slightly over (rare for real receipts).
 export async function compressReceipt(file: File): Promise<File> {
   const img = await loadImage(file);
