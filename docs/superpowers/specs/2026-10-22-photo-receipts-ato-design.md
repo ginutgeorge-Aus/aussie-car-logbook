@@ -28,8 +28,9 @@ photo (R2) and the user enters the fields. Add the data the ATO needs to justify
   row in `CLAUDE.md`.
 - `ExpenseForm`: the "Scan receipt" button becomes **"Add receipt photo"** — pick/take photo → compress →
   thumbnail preview + "Replace photo". No pre-fill, no scan state.
-- `ocr_raw` DB column: **kept** (forward-only, non-destructive migrations); removed from the Drizzle
-  schema and no longer written.
+- `ocr_raw` DB column: **kept** (forward-only, non-destructive migrations) and stays in the Drizzle
+  schema marked legacy — removing it there would make `drizzle-kit generate` emit a `DROP COLUMN`.
+  No longer written.
 
 ## 2. Photo
 
