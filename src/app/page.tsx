@@ -18,7 +18,7 @@ import { EmptyState, btnPrimary, btnSecondary, cardCls, eyebrowCls, pageCls } fr
 export const dynamic = "force-dynamic";
 
 /** Stat tile: whole dollars on phones, cents on desktop. `highlight` = amber deduction tile. */
-function Stat({ label, cents, highlight = false, className = "" }: { label: string; cents: number; highlight?: boolean; className?: string }) {
+function Stat({ label, cents, highlight = false, note, className = "" }: { label: string; cents: number; highlight?: boolean; note?: React.ReactNode; className?: string }) {
   return (
     <div
       className={`flex flex-col gap-1.5 md:gap-2 rounded-xl md:rounded-[14px] border bg-surface p-3 md:p-4.5 ${
@@ -32,6 +32,7 @@ function Stat({ label, cents, highlight = false, className = "" }: { label: stri
         <span className="md:hidden">{formatMoneyWhole(cents)}</span>
         <span className="hidden md:inline">{formatMoney(cents)}</span>
       </span>
+      {note ? <span className="text-xs text-muted">{note}</span> : null}
     </div>
   );
 }
@@ -117,7 +118,13 @@ export default async function Home() {
             Not GST-registered — no BAS credits
           </p>
         )}
-        <Stat label="Deduction" cents={deductionCents} highlight className="md:col-span-2" />
+        <Stat
+          label="Deduction"
+          cents={deductionCents}
+          highlight
+          note={report.annual.claimable ? undefined : <>Not claimable — no valid logbook. <Link href="/trips" className="underline">Add one</Link></>}
+          className="md:col-span-2"
+        />
         <p className="col-span-3 md:col-span-2 text-xs text-muted">
           Estimates for FY {fyLabel} — same figures as Reports, which has the breakdown.
         </p>

@@ -39,6 +39,11 @@ export type FyReport = {
     purchaseGstCreditCents: number;
   };
   annual: {
+    /**
+     * False when no valid logbook covers the FY: the ATO logbook method then
+     * allows no car deduction, so every deduction figure is 0 (#52).
+     */
+    claimable: boolean;
     runningCostsDeductionCents: number;
     depreciationDeductionCents: number;
     totalDeductionCents: number;
@@ -100,7 +105,8 @@ function carPurchaseCredit(input: {
  * every dollar figure uses that rounded ratio. BAS credits are 0 unless
  * GST-registered; 'depreciation' expense rows are excluded (computed instead). Business use comes from the most recent valid logbook period
  * (ATO logbook method), falling back to the FY's own trips with a notice when
- * no valid logbook exists (see `resolveBusinessUse`).
+ * no valid logbook exists (see `resolveBusinessUse`). That fallback feeds BAS
+ * only: without a valid logbook the income-tax car deduction is 0.
  */
 export function buildFyReport(input: {
   trips: TripRow[];
@@ -117,6 +123,16 @@ export function buildFyReport(input: {
   // Single rounding: % to 2 dp; all dollars use the same rounded ratio that is displayed.
   const bps = businessPctBps(businessUse.ratio);
   const ratio = bps / 10000;
+  // ATO logbook method: no valid logbook, no car deduction. BAS still apportions
+  // GST by business use, which doesn't need a logbook, so it keeps `ratio`.
+  const claimable = businessUse.source.kind === "logbook";
+  const deductionRatio = claimable ? ratio : 0;
+  if (!claimable) {
+    notices.push(
+      `The car deduction can't be claimed for FY ${fyLabel} — the ATO logbook method needs a valid logbook. ` +
+        "Keep a logbook for at least 12 continuous weeks, then add it on the Trips page.",
+    );
+  }
   const inFy = expenses.filter((e) => financialYear(e.date).label === fyLabel);
   // Depreciation is computed from the vehicle; a 'depreciation' expense row would double count.
   const fyExpenses = inFy.filter((e) => e.category !== "depreciation");
@@ -155,7 +171,7 @@ export function buildFyReport(input: {
 
   const runningCostsDeductionCents = annualDeduction(
     fyExpenses.map(toExpenseInput),
-    ratio,
+    deductionRatio,
     settings.gstRegistered,
   );
 
@@ -185,7 +201,7 @@ export function buildFyReport(input: {
         fyLabel,
         purchaseGstClaimedCents,
       });
-      depreciationDeductionCents = Math.round(decline * ratio);
+      depreciationDeductionCents = Math.round(decline * deductionRatio);
     } catch {
       notices.push(missingCarLimitNotice(financialYear(vehicle.purchaseDate).label, "Depreciation is omitted"));
     }
@@ -206,6 +222,7 @@ export function buildFyReport(input: {
     businessUseSource: businessUse.source,
     bas: { quarters, totalGstCreditCents, totalHeldBackGstCents, purchaseGstCreditCents: purchase.creditCents },
     annual: {
+      claimable,
       runningCostsDeductionCents,
       depreciationDeductionCents,
       totalDeductionCents: runningCostsDeductionCents + depreciationDeductionCents,

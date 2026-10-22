@@ -108,8 +108,8 @@ export function resolveBusinessUse(input: {
   }
 
   notices.push(
-    `No valid logbook period covers FY ${fyLabel}, so business use is estimated from all trips recorded in FY ${fyLabel}. ` +
-      "The ATO logbook method needs a logbook kept for at least 12 continuous weeks (valid for 5 years) — add one on the Trips page.",
+    `No valid logbook period covers FY ${fyLabel}, so business use is estimated from all trips recorded in FY ${fyLabel} ` +
+      "and used for BAS GST credits only. The ATO logbook method needs a logbook kept for at least 12 continuous weeks (valid for 5 years).",
   );
   return { ratio: businessPct(tripsToLegs(filterTripsByFy(trips, fyLabel))), source: { kind: "fy-trips" }, notices };
 }
