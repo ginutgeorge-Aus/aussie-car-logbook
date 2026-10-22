@@ -39,9 +39,11 @@ export const expense = sqliteTable("expense", {
   amountInclCents: integer("amount_incl_cents").notNull(),
   gstCents: integer("gst_cents").notNull().default(0),
   vendor: text("vendor"),
+  abn: text("abn"), // seller ABN, 11 digits, no spaces
+  taxInvoice: integer("tax_invoice", { mode: "boolean" }).notNull().default(false),
   receiptKey: text("receipt_key"), // R2 object key
   notes: text("notes"),
-  ocrRaw: text("ocr_raw"),
+  ocrRaw: text("ocr_raw"), // legacy (OCR removed); kept so migrations stay non-destructive
 });
 
 export const settings = sqliteTable("settings", {

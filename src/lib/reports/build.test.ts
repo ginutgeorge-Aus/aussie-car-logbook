@@ -11,7 +11,7 @@ const trip = (over: Partial<TripRow>): TripRow => ({
 });
 const expense = (over: Partial<ExpenseRow>): ExpenseRow => ({
   id: 1, vehicleId: 1, date: "2024-08-01", category: "fuel",
-  amountInclCents: 11000, gstCents: 1000, vendor: null, receiptKey: null,
+  amountInclCents: 11000, gstCents: 1000, vendor: null, abn: null, taxInvoice: true, receiptKey: null,
   notes: null, ocrRaw: null, ...over,
 });
 
