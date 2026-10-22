@@ -9,11 +9,18 @@ import { FieldError, FormError } from "@/components/FieldError";
 import { useFormSubmit } from "@/components/useFormSubmit";
 import { btnDanger, btnGhost, btnPrimary, btnSecondary, inputCls, labelCls } from "@/components/ui";
 import type { ExpenseRow as ExpenseRowType } from "@/lib/data/expense";
+import { isValidAbn } from "@/lib/tax/abn";
+import { TAX_INVOICE_BUYER_ID_THRESHOLD_CENTS } from "@/lib/tax/gst";
 
 /** Stacked edit form for one expense; `onDone` leaves edit mode (after save or cancel). */
 function ExpenseEditForm({ expense, onDone }: { expense: ExpenseRowType; onDone: () => void }) {
   const { state, pending, onSubmit } = useFormSubmit(updateExpenseAction.bind(null, expense.id), { onSuccess: onDone });
   const errs = state.ok ? {} : (state.fieldErrors ?? {});
+  // Controlled only where the add form's helpers need them: ABN auto-tick and the $1,000 hint.
+  const [abn, setAbn] = useState(expense.abn ?? "");
+  const [taxInvoice, setTaxInvoice] = useState(expense.taxInvoice);
+  const [invoiceTouched, setInvoiceTouched] = useState(false);
+  const [amount, setAmount] = useState(centsToDollars(expense.amountInclCents));
   return (
     <form method="post" onSubmit={onSubmit} aria-label={`Edit ${categoryLabel(expense.category)} expense`} className="flex flex-col gap-3 py-3">
       <input type="hidden" name="notes" value={expense.notes ?? ""} />
@@ -36,12 +43,22 @@ function ExpenseEditForm({ expense, onDone }: { expense: ExpenseRowType; onDone:
         </label>
         <label className="flex flex-col gap-1.5">
           <span className={labelCls}>Seller ABN</span>
-          <input name="abn" inputMode="numeric" defaultValue={expense.abn ?? ""} className={`${inputCls} font-mono`} />
+          <input
+            name="abn"
+            inputMode="numeric"
+            value={abn}
+            onChange={(e) => {
+              // Same as the add form: tick when the ABN becomes valid, unless the box was set by hand.
+              if (!invoiceTouched && isValidAbn(e.target.value) && !isValidAbn(abn)) setTaxInvoice(true);
+              setAbn(e.target.value);
+            }}
+            className={`${inputCls} font-mono`}
+          />
           <FieldError message={errs.abn} />
         </label>
         <label className="flex flex-col gap-1.5">
           <span className={labelCls}>Amount incl GST ($)</span>
-          <input name="amountIncl" type="number" step="0.01" min="0" inputMode="decimal" defaultValue={centsToDollars(expense.amountInclCents)} className={`${inputCls} font-mono`} />
+          <input name="amountIncl" type="number" step="0.01" min="0" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className={`${inputCls} font-mono`} />
           <FieldError message={errs.amountIncl} />
         </label>
         <label className="flex flex-col gap-1.5">
@@ -50,9 +67,12 @@ function ExpenseEditForm({ expense, onDone }: { expense: ExpenseRowType; onDone:
           <FieldError message={errs.gst} />
         </label>
         <label className="col-span-2 md:col-span-1 flex min-h-11 cursor-pointer items-center gap-3">
-          <input name="taxInvoice" type="checkbox" defaultChecked={expense.taxInvoice} className="size-5 accent-[var(--accent)]" />
+          <input name="taxInvoice" type="checkbox" checked={taxInvoice} onChange={(e) => { setTaxInvoice(e.target.checked); setInvoiceTouched(true); }} className="size-5 accent-[var(--accent)]" />
           <span className="text-[15px]">Tax invoice held</span>
         </label>
+        {Math.round(Number(amount) * 100) >= TAX_INVOICE_BUYER_ID_THRESHOLD_CENTS ? (
+          <p className="col-span-2 md:col-span-3 text-sm text-muted">Tax invoice must also show your name or ABN.</p>
+        ) : null}
         <label className="col-span-2 md:col-span-1 flex flex-col gap-1.5">
           <span className={labelCls}>Replace receipt</span>
           <input name="receipt" type="file" accept="image/*" className="min-h-11 text-sm text-muted file:mr-3 file:min-h-11 file:rounded-lg file:border file:border-line file:bg-transparent file:px-3 file:text-ink" />
