@@ -8,7 +8,7 @@ export function normaliseAbn(raw: string): string {
 
 /**
  * ATO ABN check: 11 digits; subtract 1 from the first digit, weight each digit,
- * and the sum must be divisible by 89.
+ * and the sum must be divisible by 89. Source: https://abr.business.gov.au/Help/AbnFormat
  */
 export function isValidAbn(raw: string): boolean {
   const abn = normaliseAbn(raw);

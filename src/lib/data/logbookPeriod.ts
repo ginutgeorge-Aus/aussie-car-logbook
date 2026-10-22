@@ -13,6 +13,7 @@ export async function listLogbookPeriods(): Promise<LogbookPeriodRow[]> {
       vehicleId: logbookPeriod.vehicleId,
       startDate: logbookPeriod.startDate,
       endDate: logbookPeriod.endDate,
+      nominatedFy: logbookPeriod.nominatedFy,
     })
     .from(logbookPeriod)
     .orderBy(asc(logbookPeriod.startDate));
@@ -23,12 +24,16 @@ export async function listLogbookPeriods(): Promise<LogbookPeriodRow[]> {
  * an informational cache (30 June of the last valid FY); reports recompute
  * validity from the dates and never read it.
  */
-export async function createLogbookPeriod(input: { startDate: string; endDate: string }): Promise<void> {
+export async function createLogbookPeriod(input: {
+  startDate: string;
+  endDate: string;
+  nominatedFy: string | null;
+}): Promise<void> {
   const db = await getDb();
   const rows = await db.select({ id: vehicle.id }).from(vehicle).limit(1);
   const vehicleId = rows[0]?.id;
   if (vehicleId === undefined) throw new Error("No vehicle set up yet.");
-  const { lastFy } = logbookValidity(input.startDate);
+  const { lastFy } = logbookValidity(input);
   const validUntil = `${Number(lastFy.slice(0, 4)) + 1}-06-30`;
   await db.insert(logbookPeriod).values({ ...input, vehicleId, validUntil });
 }

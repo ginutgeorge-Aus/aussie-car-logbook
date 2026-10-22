@@ -15,6 +15,13 @@
       "when": 1792645440471,
       "tag": "0001_expense_abn_tax_invoice",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1792665636139,
+      "tag": "0002_vehicle_gst_logbook_nominated_fy",
+      "breakpoints": true
     }
   ]
 }

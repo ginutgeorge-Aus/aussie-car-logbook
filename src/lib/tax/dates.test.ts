@@ -1,3 +1,4 @@
+// Each rule tested here maps to its ATO source in docs/ato-rules.md.
 import { expect, test, describe, it } from "vitest";
 import { financialYear, basQuarter, fyQuarters, daysHeldInFy, fyLabelOr } from "@/lib/tax/dates";
 

@@ -92,7 +92,7 @@ function carPurchaseCredit(input: {
   if (!gstRegistered || !vehicle?.purchaseDate || vehicle.purchaseCostCents == null) return none;
   if (financialYear(vehicle.purchaseDate).label !== fyLabel) return none;
   try {
-    const gst = carPurchaseGstCents({ purchaseCostCents: vehicle.purchaseCostCents, purchaseDateISO: vehicle.purchaseDate });
+    const gst = carPurchaseGstCents({ purchaseGstCents: vehicle.purchaseGstCents, purchaseDateISO: vehicle.purchaseDate });
     return { creditCents: Math.round(gst * ratio), dateISO: vehicle.purchaseDate, notice: null };
   } catch {
     return { ...none, notice: missingCarLimitNotice(fyLabel, "the car purchase GST credit is omitted from the BAS") };
@@ -123,7 +123,7 @@ export function buildFyReport(input: {
   // Single rounding: % to 2 dp; all dollars use the same rounded ratio that is displayed.
   const bps = businessPctBps(businessUse.ratio);
   const ratio = bps / 10000;
-  // ATO logbook method: no valid logbook, no car deduction. BAS still apportions
+  // ATO logbook method: no valid logbook, no car deduction (ITAA 1997 s28-100(2): "you must ... keep a log book"). BAS still apportions
   // GST by business use, which doesn't need a logbook, so it keeps `ratio`.
   const claimable = businessUse.source.kind === "logbook";
   const deductionRatio = claimable ? ratio : 0;
@@ -144,6 +144,18 @@ export function buildFyReport(input: {
 
   const purchase = carPurchaseCredit({ vehicle, gstRegistered: settings.gstRegistered, fyLabel, ratio });
   if (purchase.notice) notices.push(purchase.notice);
+  if (
+    settings.gstRegistered &&
+    vehicle?.purchaseDate &&
+    vehicle.purchaseCostCents != null &&
+    vehicle.purchaseGstCents == null &&
+    financialYear(vehicle.purchaseDate).label <= fyLabel
+  ) {
+    notices.push(
+      "The GST on the car purchase isn't recorded, so no GST credit is claimed for it and depreciation uses the full cost. " +
+        "Enter the GST from the tax invoice on the Vehicle page (0 for a private sale).",
+    );
+  }
 
   const quarters = fyQuarters(fyLabel).map((q) => {
     const inQ = fyExpenses.filter((e) => e.date >= q.startISO && e.date <= q.endISO);
@@ -192,7 +204,7 @@ export function buildFyReport(input: {
       }
       const purchaseGstClaimedCents = settings.gstRegistered
         ? Math.round(
-            carPurchaseGstCents({ purchaseCostCents: vehicle.purchaseCostCents, purchaseDateISO: vehicle.purchaseDate }) * purchaseRatio,
+            carPurchaseGstCents({ purchaseGstCents: vehicle.purchaseGstCents, purchaseDateISO: vehicle.purchaseDate }) * purchaseRatio,
           )
         : 0;
       const decline = depreciationForFy({

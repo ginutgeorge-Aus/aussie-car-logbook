@@ -3,6 +3,8 @@ import { financialYear } from "@/lib/tax/dates";
 
 /**
  * Business-use ratio (0..1) for a set of trip legs: businessKm / totalKm.
+ * ATO logbook method: "dividing the distance travelled for business by the total distance travelled".
+ * Source: https://www.ato.gov.au/businesses-and-organisations/income-deductions-and-concessions/income-and-deductions-for-business/deductions/deductions-for-motor-vehicle-expenses/logbook-method
  * Returns 0 when there are no kilometres (no divide-by-zero).
  */
 export function businessPct(trips: TripLeg[]): number {
@@ -37,10 +39,17 @@ export function businessPctRounded(trips: TripLeg[]): number {
   return businessPctBps(businessPct(trips)) / 100;
 }
 
-/** ATO logbook method: the logbook must cover at least 12 continuous weeks. */
+/**
+ * ATO logbook method: the logbook must cover at least 12 continuous weeks.
+ * ITAA 1997 s28-120(1); ATO: https://www.ato.gov.au/businesses-and-organisations/income-deductions-and-concessions/income-and-deductions-for-business/deductions/deductions-for-motor-vehicle-expenses/logbook-method
+ */
 export const LOGBOOK_MIN_DAYS = 12 * 7;
 
-/** ATO logbook method: a logbook is valid for its first income year plus the following 4. */
+/**
+ * ATO logbook method: a logbook is valid for its income year plus the following 4
+ * (ATO: "Each logbook you keep is valid for five years"; ITAA 1997 s28-115(2)).
+ * Sources: https://www.ato.gov.au/businesses-and-organisations/income-deductions-and-concessions/income-and-deductions-for-business/deductions/deductions-for-motor-vehicle-expenses/logbook-method and https://www.legislation.gov.au/C2004A05138/latest/text
+ */
 export const LOGBOOK_VALID_YEARS = 5;
 
 /**
@@ -55,26 +64,55 @@ export function logbookPeriodDays(startISO: string, endISO: string): number {
   return Math.round((end - start) / 86400000) + 1;
 }
 
+/** The dates of a logbook period, plus the income year the taxpayer nominated it for (if any). */
+export type LogbookPeriodDates = { startDate: string; endDate: string; nominatedFy?: string | null };
+
 /**
- * The FYs a logbook can be relied on for: the FY in which the logbook period
- * starts, through the 4 following FYs (ATO: "Your logbook is valid for 5 years").
+ * FYs a logbook period can be nominated for: the FY it starts in, plus the FY
+ * it ends in when it crosses 30 June.
  *
- * @param startISO first day of the logbook period (YYYY-MM-DD).
+ * @param period the logbook period's start and end dates (YYYY-MM-DD).
+ */
+export function logbookNominableFys(period: LogbookPeriodDates): string[] {
+  const startFy = financialYear(period.startDate).label;
+  const endFy = financialYear(period.endDate).label;
+  return startFy === endFy ? [startFy] : [startFy, endFy];
+}
+
+/**
+ * The income year a logbook is for: its nominated FY when that is one the
+ * period touches, else the FY the period starts in. ITAA 1997 s28-120(2): "The
+ * period may overlap the start or end of the income year, so long as it includes
+ * part of the year" — so a period crossing 30 June can serve either year.
+ * Source: https://www.legislation.gov.au/C2004A05138/latest/text
+ *
+ * @param period the logbook period, with its optional nominated FY.
+ */
+export function logbookFirstFy(period: LogbookPeriodDates): string {
+  const options = logbookNominableFys(period);
+  return period.nominatedFy && options.includes(period.nominatedFy) ? period.nominatedFy : options[0];
+}
+
+/**
+ * The FYs a logbook can be relied on for: the income year it is for (see
+ * `logbookFirstFy`) through the 4 following FYs (ATO: "Your logbook is valid for 5 years").
+ *
+ * @param period the logbook period, with its optional nominated FY.
  * @returns first and last valid FY labels, e.g. { firstFy: "2024-25", lastFy: "2028-29" }.
  */
-export function logbookValidity(startISO: string): { firstFy: string; lastFy: string } {
-  const firstFy = financialYear(startISO).label;
+export function logbookValidity(period: LogbookPeriodDates): { firstFy: string; lastFy: string } {
+  const firstFy = logbookFirstFy(period);
   const lastStartYear = Number(firstFy.slice(0, 4)) + LOGBOOK_VALID_YEARS - 1;
   return { firstFy, lastFy: financialYear(`${lastStartYear}-07-01`).label };
 }
 
 /**
- * Whether a logbook whose period starts on `startISO` is valid for `fyLabel`.
+ * Whether a logbook period is valid for `fyLabel`.
  *
- * @param startISO first day of the logbook period (YYYY-MM-DD).
+ * @param period the logbook period, with its optional nominated FY.
  * @param fyLabel target FY label, e.g. "2025-26".
  */
-export function logbookCoversFy(startISO: string, fyLabel: string): boolean {
-  const { firstFy, lastFy } = logbookValidity(startISO);
+export function logbookCoversFy(period: LogbookPeriodDates, fyLabel: string): boolean {
+  const { firstFy, lastFy } = logbookValidity(period);
   return fyLabel >= firstFy && fyLabel <= lastFy;
 }

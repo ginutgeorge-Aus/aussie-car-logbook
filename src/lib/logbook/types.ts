@@ -17,6 +17,8 @@ export type LogbookPeriodRow = {
   vehicleId: number;
   startDate: string;
   endDate: string;
+  /** Income year the logbook is for when the period crosses 30 June; null = the FY it starts in. */
+  nominatedFy?: string | null;
 };
 
 export type VehicleRow = {
@@ -28,6 +30,8 @@ export type VehicleRow = {
   odoClose: number | null;
   purchaseDate: string | null;
   purchaseCostCents: number | null;
+  /** GST on the purchase tax invoice; 0 = private sale, null = not recorded (no credit claimed). */
+  purchaseGstCents: number | null;
 };
 
 export type ParseResult<T> =

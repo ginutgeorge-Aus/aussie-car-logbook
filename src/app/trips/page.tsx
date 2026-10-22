@@ -30,7 +30,7 @@ export default async function TripsPage({ searchParams }: PageProps<"/trips">) {
   const businessUse = resolveBusinessUse({ trips, periods, fyLabel: activeFy, today });
   const pct = formatBusinessPct(businessPctBps(businessUse.ratio));
   const periodViews = periods.map((p) => {
-    const { firstFy, lastFy } = logbookValidity(p.startDate);
+    const { firstFy, lastFy } = logbookValidity(p);
     return {
       id: p.id,
       startDate: p.startDate,
@@ -66,8 +66,8 @@ export default async function TripsPage({ searchParams }: PageProps<"/trips">) {
       <section aria-label="Logbook periods" className="flex flex-col gap-2">
         <h2 className={eyebrowCls}>Logbook periods</h2>
         <p className="text-sm text-muted">
-          Keep a logbook for at least 12 continuous weeks. It sets your business-use % for the FY it starts in and the
-          next 4 FYs.
+          Keep a logbook for at least 12 continuous weeks. It sets your business-use % for the FY it&apos;s for and the
+          next 4 FYs. A logbook that crosses 30 June can be for either FY — you choose.
         </p>
         <LogbookPeriodForm />
         {periodViews.length > 0 && (

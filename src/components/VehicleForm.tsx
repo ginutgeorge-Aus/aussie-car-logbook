@@ -1,15 +1,28 @@
 "use client";
 
+import { useState } from "react";
 import { saveVehicleAction } from "@/lib/actions";
 import { FieldError, FormError, useFieldErrors } from "@/components/FieldError";
 import { useFormSubmit } from "@/components/useFormSubmit";
 import { btnPrimary, inputCls, labelCls } from "@/components/ui";
-import { centsToDollars } from "@/lib/logbook/parse";
+import { centsToDollars, dollarsToCents } from "@/lib/logbook/parse";
+import { gstFromInclusive } from "@/lib/tax";
 import type { VehicleRow } from "@/lib/logbook/types";
 
-/** Vehicle details form (make, model, rego, opening odometer, purchase). Keeps input on error. */
+/** 1/11 of a dollar string as dollars ("4000.00"), or null when it isn't a valid amount. */
+function elevenths(dollars: string): string | null {
+  try {
+    return dollars.trim() === "" ? null : centsToDollars(gstFromInclusive(dollarsToCents(dollars)));
+  } catch {
+    return null;
+  }
+}
+
+/** Vehicle details form (make, model, rego, opening odometer, purchase cost + GST). Keeps input on error. */
 export function VehicleForm({ vehicle }: { vehicle: VehicleRow | null }) {
   const { state, pending, onSubmit } = useFormSubmit(saveVehicleAction);
+  const [cost, setCost] = useState(vehicle?.purchaseCostCents != null ? centsToDollars(vehicle.purchaseCostCents) : "");
+  const maxGst = elevenths(cost);
   const errs = state.ok ? {} : (state.fieldErrors ?? {});
   const fe = useFieldErrors(errs);
 
@@ -50,12 +63,29 @@ export function VehicleForm({ vehicle }: { vehicle: VehicleRow | null }) {
             name="purchaseCost"
             type="text"
             inputMode="decimal"
-            defaultValue={vehicle?.purchaseCostCents != null ? centsToDollars(vehicle.purchaseCostCents) : ""}
+            value={cost}
+            onChange={(e) => setCost(e.target.value)}
             className={`${inputCls} font-mono`}
           />
           <FieldError {...fe("purchaseCost").error} />
         </label>
       </div>
+      <label className="flex flex-col gap-1.5">
+        <span className={labelCls}>GST on the purchase tax invoice $ (optional)</span>
+        <input
+          {...fe("purchaseGst").input}
+          name="purchaseGst"
+          type="text"
+          inputMode="decimal"
+          defaultValue={vehicle?.purchaseGstCents != null ? centsToDollars(vehicle.purchaseGstCents) : ""}
+          className={`${inputCls} font-mono`}
+        />
+        <span className="text-sm text-muted">
+          From the dealer&apos;s tax invoice{maxGst ? ` — usually 1/11 of the price ($${maxGst})` : ""}. Enter 0 for a private
+          sale. Left blank, no GST credit is claimed for the car.
+        </span>
+        <FieldError {...fe("purchaseGst").error} />
+      </label>
       <div className="flex flex-wrap items-center gap-3">
         <button type="submit" disabled={pending} className={`${btnPrimary} w-full md:w-auto`}>
           {pending ? "Saving…" : "Save vehicle"}

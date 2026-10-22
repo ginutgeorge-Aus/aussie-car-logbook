@@ -16,6 +16,7 @@ export async function upsertVehicle(input: {
   odoOpen: number | null;
   purchaseDate: string | null;
   purchaseCostCents: number | null;
+  purchaseGstCents: number | null;
 }): Promise<void> {
   const db = await getDb();
   const existing = await getVehicle();

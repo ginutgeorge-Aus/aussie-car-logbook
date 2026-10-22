@@ -1,9 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { createLogbookPeriodAction, deleteLogbookPeriodAction } from "@/lib/actions";
 import { FieldError, useFieldErrors } from "@/components/FieldError";
 import { useFormSubmit } from "@/components/useFormSubmit";
 import { btnDanger, btnPrimary, cardCls, inputCls, labelCls } from "@/components/ui";
+import { logbookNominableFys } from "@/lib/tax";
+import { isIsoDate } from "@/lib/logbook/parse";
 
 export type LogbookPeriodView = {
   id: number;
@@ -15,9 +18,21 @@ export type LogbookPeriodView = {
   businessPct: string | null;
 };
 
-/** Form to add a logbook period (start/end date, validated as ≥12 weeks on the server). */
+/**
+ * Form to add a logbook period (start/end date, validated as ≥12 weeks on the
+ * server). A period crossing 30 June gets a picker for the FY it is for.
+ */
 export function LogbookPeriodForm() {
-  const { state, pending, onSubmit } = useFormSubmit(createLogbookPeriodAction, { onSuccess: (form) => form.reset() });
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const { state, pending, onSubmit } = useFormSubmit(createLogbookPeriodAction, {
+    onSuccess: (form) => {
+      form.reset();
+      setStartDate("");
+      setEndDate("");
+    },
+  });
+  const fyOptions = isIsoDate(startDate) && isIsoDate(endDate) && endDate >= startDate ? logbookNominableFys({ startDate, endDate }) : [];
   const errs = state.ok ? {} : (state.fieldErrors ?? {});
   const fe = useFieldErrors(errs);
 
@@ -25,14 +40,23 @@ export function LogbookPeriodForm() {
     <form method="post" onSubmit={onSubmit} className={`${cardCls} flex flex-wrap items-end gap-3 p-4`}>
       <label className="flex flex-col gap-1">
         <span className={labelCls}>Logbook start</span>
-        <input {...fe("startDate").input} name="startDate" type="date" className={inputCls} />
+        <input {...fe("startDate").input} name="startDate" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputCls} />
         <FieldError {...fe("startDate").error} />
       </label>
       <label className="flex flex-col gap-1">
         <span className={labelCls}>Logbook end</span>
-        <input {...fe("endDate").input} name="endDate" type="date" className={inputCls} />
+        <input {...fe("endDate").input} name="endDate" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={inputCls} />
         <FieldError {...fe("endDate").error} />
       </label>
+      {fyOptions.length > 1 ? (
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Logbook is for</span>
+          <select {...fe("nominatedFy").input} name="nominatedFy" defaultValue={fyOptions[0]} className={inputCls}>
+            {fyOptions.map((fy) => <option key={fy} value={fy}>FY {fy}</option>)}
+          </select>
+          <FieldError {...fe("nominatedFy").error} />
+        </label>
+      ) : null}
       <button type="submit" disabled={pending} className={btnPrimary}>
         {pending ? "Adding…" : "Add logbook period"}
       </button>

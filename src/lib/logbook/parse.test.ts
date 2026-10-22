@@ -37,8 +37,27 @@ test("parseVehicleForm ok with required fields", () => {
   const r = parseVehicleForm(fd({ make: "Toyota", model: "Corolla", rego: "ABC123", odoOpen: "50000" }));
   expect(r).toEqual({
     ok: true,
-    value: { make: "Toyota", model: "Corolla", rego: "ABC123", odoOpen: 50000, purchaseDate: null, purchaseCostCents: null },
+    value: { make: "Toyota", model: "Corolla", rego: "ABC123", odoOpen: 50000, purchaseDate: null, purchaseCostCents: null, purchaseGstCents: null },
   });
+});
+
+test("parseVehicleForm reads the GST on the purchase tax invoice (#46)", () => {
+  const base = { make: "Toyota", model: "Corolla", purchaseDate: "2025-11-20", purchaseCost: "44000" };
+  const r = parseVehicleForm(fd({ ...base, purchaseGst: "4000" }));
+  expect(r.ok && r.value.purchaseGstCents).toBe(400000);
+  // Private sale: GST is 0.
+  const priv = parseVehicleForm(fd({ ...base, purchaseGst: "0" }));
+  expect(priv.ok && priv.value.purchaseGstCents).toBe(0);
+});
+
+test("parseVehicleForm rejects purchase GST over 1/11 of the cost or without a cost", () => {
+  const over = parseVehicleForm(fd({ make: "T", model: "C", purchaseCost: "44000", purchaseGst: "4001.01" }));
+  expect(!over.ok && over.fieldErrors.purchaseGst).toMatch(/1\/11/);
+  // Per-line GST rounding on a multi-line invoice can land a few cents over 1/11 of the total.
+  const rounded = parseVehicleForm(fd({ make: "T", model: "C", purchaseCost: "44000", purchaseGst: "4000.03" }));
+  expect(rounded.ok).toBe(true);
+  const noCost = parseVehicleForm(fd({ make: "T", model: "C", purchaseGst: "100" }));
+  expect(!noCost.ok && noCost.fieldErrors.purchaseGst).toMatch(/purchase cost/);
 });
 
 test("parseVehicleForm errors when make/model missing", () => {
@@ -74,8 +93,20 @@ test("parseTripForm errors when date missing", () => {
 test("parseLogbookPeriodForm accepts a 12-week period", () => {
   expect(parseLogbookPeriodForm(fd({ startDate: "2024-07-01", endDate: "2024-09-22" }))).toEqual({
     ok: true,
-    value: { startDate: "2024-07-01", endDate: "2024-09-22" },
+    value: { startDate: "2024-07-01", endDate: "2024-09-22", nominatedFy: null },
   });
+});
+
+test("parseLogbookPeriodForm keeps the nominated FY for a period crossing 30 June (#45)", () => {
+  const r = parseLogbookPeriodForm(fd({ startDate: "2025-06-10", endDate: "2025-09-10", nominatedFy: "2025-26" }));
+  expect(r).toEqual({ ok: true, value: { startDate: "2025-06-10", endDate: "2025-09-10", nominatedFy: "2025-26" } });
+});
+
+test("parseLogbookPeriodForm drops a nomination for a period inside one FY, rejects one outside the period", () => {
+  const inside = parseLogbookPeriodForm(fd({ startDate: "2024-07-01", endDate: "2024-09-22", nominatedFy: "2024-25" }));
+  expect(inside.ok && inside.value.nominatedFy).toBe(null);
+  const outside = parseLogbookPeriodForm(fd({ startDate: "2025-06-10", endDate: "2025-09-10", nominatedFy: "2026-27" }));
+  expect(!outside.ok && outside.fieldErrors.nominatedFy).toBeDefined();
 });
 
 test("parseLogbookPeriodForm rejects a period under 12 weeks", () => {

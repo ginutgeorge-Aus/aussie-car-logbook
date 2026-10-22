@@ -1,3 +1,4 @@
+// Each rule tested here maps to its ATO source in docs/ato-rules.md.
 import { expect, test } from "vitest";
 import { gstFromInclusive, gstCredit, gstCreditEligible, TAX_INVOICE_THRESHOLD_CENTS } from "@/lib/tax/gst";
 

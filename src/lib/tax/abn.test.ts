@@ -1,3 +1,4 @@
+// Each rule tested here maps to its ATO source in docs/ato-rules.md.
 import { describe, expect, it } from "vitest";
 import { isValidAbn, normaliseAbn } from "@/lib/tax/abn";
 

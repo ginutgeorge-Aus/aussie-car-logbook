@@ -9,6 +9,7 @@ export const vehicle = sqliteTable("vehicle", {
   odoClose: integer("odo_close"),
   purchaseDate: text("purchase_date"),
   purchaseCostCents: integer("purchase_cost_cents"),
+  purchaseGstCents: integer("purchase_gst_cents"), // GST on the tax invoice; 0 = private sale, null = not recorded
 });
 
 export const logbookPeriod = sqliteTable("logbook_period", {
@@ -18,6 +19,7 @@ export const logbookPeriod = sqliteTable("logbook_period", {
   endDate: text("end_date").notNull(),
   businessPctBps: integer("business_pct_bps"), // basis points (business% x 100), computed cache
   validUntil: text("valid_until"),
+  nominatedFy: text("nominated_fy"), // FY label the logbook is for when it crosses 30 June; null = start FY
 });
 
 export const trip = sqliteTable("trip", {

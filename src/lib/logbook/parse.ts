@@ -1,8 +1,21 @@
-import { LOGBOOK_MIN_DAYS, logbookPeriodDays } from "@/lib/tax";
+import { gstFromInclusive, LOGBOOK_MIN_DAYS, logbookNominableFys, logbookPeriodDays } from "@/lib/tax";
 import type { ParseResult } from "@/lib/logbook/types";
 
 /** Plain non-negative decimal: digits with an optional fraction ("12", "12.5", ".5", "12."). */
 const DECIMAL_RE = /^(\d+\.?\d*|\.\d+)$/;
+
+/** Slack over 1/11 of the cost for invoices that round GST line by line. */
+const PURCHASE_GST_ROUNDING_SLACK_CENTS = 100;
+
+/**
+ * Most GST a purchase tax invoice can show: 1/11 of the GST-inclusive cost,
+ * plus a $1 slack for per-line rounding on multi-line invoices.
+ *
+ * @param costCents GST-inclusive purchase cost (cents).
+ */
+export function maxPurchaseGstCents(costCents: number): number {
+  return gstFromInclusive(costCents) + PURCHASE_GST_ROUNDING_SLACK_CENTS;
+}
 
 /**
  * Converts a dollar string to integer cents, rounding half-up on the third
@@ -44,6 +57,7 @@ export function parseVehicleForm(
   odoOpen: number | null;
   purchaseDate: string | null;
   purchaseCostCents: number | null;
+  purchaseGstCents: number | null;
 }> {
   const errors: Record<string, string> = {};
   const make = str(fd, "make");
@@ -66,11 +80,26 @@ export function parseVehicleForm(
       errors.purchaseCost = "Enter a valid dollar amount.";
     }
   }
+  const gstRaw = str(fd, "purchaseGst");
+  let purchaseGstCents: number | null = null;
+  if (gstRaw !== "") {
+    try {
+      purchaseGstCents = dollarsToCents(gstRaw);
+    } catch {
+      errors.purchaseGst = "Enter a valid dollar amount.";
+    }
+    if (purchaseGstCents !== null && !errors.purchaseCost) {
+      if (purchaseCostCents === null) errors.purchaseGst = "Enter the purchase cost too.";
+      else if (purchaseGstCents > maxPurchaseGstCents(purchaseCostCents)) {
+        errors.purchaseGst = "GST can't be more than 1/11 of the purchase cost.";
+      }
+    }
+  }
 
   if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
   return {
     ok: true,
-    value: { make, model, rego, odoOpen: odoOpen ?? null, purchaseDate, purchaseCostCents },
+    value: { make, model, rego, odoOpen: odoOpen ?? null, purchaseDate, purchaseCostCents, purchaseGstCents },
   };
 }
 
@@ -100,7 +129,7 @@ export function parseTripForm(
  * Whether `value` is a real calendar date in strict ISO `YYYY-MM-DD` form
  * (rejects e.g. "2024-02-30" and "2024-13-01").
  */
-function isIsoDate(value: string): boolean {
+export function isIsoDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const d = new Date(value + "T00:00:00Z");
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
@@ -111,7 +140,9 @@ function isIsoDate(value: string): boolean {
  * real ISO dates, end must not precede start, and the period must cover at
  * least 12 continuous weeks (ATO logbook method).
  */
-export function parseLogbookPeriodForm(fd: FormData): ParseResult<{ startDate: string; endDate: string }> {
+export function parseLogbookPeriodForm(
+  fd: FormData,
+): ParseResult<{ startDate: string; endDate: string; nominatedFy: string | null }> {
   const errors: Record<string, string> = {};
   const startDate = str(fd, "startDate");
   const endDate = str(fd, "endDate");
@@ -123,6 +154,14 @@ export function parseLogbookPeriodForm(fd: FormData): ParseResult<{ startDate: s
       errors.endDate = "A logbook period must cover at least 12 continuous weeks (84 days).";
     }
   }
+  // Only a period crossing 30 June has a choice of income year; otherwise it's the FY it's in.
+  let nominatedFy: string | null = null;
+  const nominatedRaw = str(fd, "nominatedFy");
+  if (!errors.startDate && !errors.endDate && nominatedRaw !== "") {
+    const options = logbookNominableFys({ startDate, endDate });
+    if (!options.includes(nominatedRaw)) errors.nominatedFy = "Choose the FY the logbook starts or ends in.";
+    else if (options.length > 1) nominatedFy = nominatedRaw;
+  }
   if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
-  return { ok: true, value: { startDate, endDate } };
+  return { ok: true, value: { startDate, endDate, nominatedFy } };
 }
