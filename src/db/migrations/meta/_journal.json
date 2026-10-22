@@ -29,6 +29,13 @@
       "when": 1792710915809,
       "tag": "0003_logbook_period_odometer",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1792711525967,
+      "tag": "0004_trip_end_date",
+      "breakpoints": true
     }
   ]
 }

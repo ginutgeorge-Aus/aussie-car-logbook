@@ -5,6 +5,8 @@ export type TripRow = {
   vehicleId: number;
   periodId: number | null;
   date: string;
+  /** Date the journey ended; null = same day as `date`. */
+  endDate: string | null;
   odoStart: number;
   odoEnd: number;
   purpose: string | null;

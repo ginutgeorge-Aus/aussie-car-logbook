@@ -73,8 +73,35 @@ test("parseTripForm ok computes nothing but validates odo order", () => {
   const r = parseTripForm(fd({ date: "2024-07-02", odoStart: "50000", odoEnd: "50040", purpose: "Client", isBusiness: "on" }));
   expect(r).toEqual({
     ok: true,
-    value: { date: "2024-07-02", odoStart: 50000, odoEnd: 50040, purpose: "Client", isBusiness: true },
+    value: { date: "2024-07-02", endDate: null, odoStart: 50000, odoEnd: 50040, purpose: "Client", isBusiness: true },
   });
+});
+
+test("parseTripForm requires a reason for a business trip (#50)", () => {
+  const base = { date: "2024-07-02", odoStart: "50000", odoEnd: "50040", isBusiness: "on" };
+  for (const purpose of [undefined, "", "   "]) {
+    const r = parseTripForm(fd(purpose === undefined ? base : { ...base, purpose }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.fieldErrors.purpose).toMatch(/reason/i);
+  }
+});
+
+test("parseTripForm allows a private trip without a reason", () => {
+  const r = parseTripForm(fd({ date: "2024-07-02", odoStart: "50000", odoEnd: "50040" }));
+  expect(r).toEqual({ ok: true, value: { date: "2024-07-02", endDate: null, odoStart: 50000, odoEnd: 50040, purpose: null, isBusiness: false } });
+});
+
+test("parseTripForm end date: blank or same day -> null, later day kept, earlier/invalid rejected (#50)", () => {
+  const base = { date: "2024-07-02", odoStart: "50000", odoEnd: "50040", purpose: "Interstate client" , isBusiness: "on" };
+  const end = (endDate: string) => parseTripForm(fd({ ...base, endDate }));
+  expect(end("")).toMatchObject({ ok: true, value: { endDate: null } });
+  expect(end("2024-07-02")).toMatchObject({ ok: true, value: { endDate: null } });
+  expect(end("2024-07-04")).toMatchObject({ ok: true, value: { endDate: "2024-07-04" } });
+  for (const bad of ["2024-07-01", "2024-02-30", "soon"]) {
+    const r = end(bad);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.fieldErrors.endDate).toBeDefined();
+  }
 });
 
 test("parseTripForm errors when odoEnd <= odoStart", () => {

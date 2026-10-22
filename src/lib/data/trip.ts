@@ -5,6 +5,7 @@ import type { TripRow } from "@/lib/logbook/types";
 
 type TripInput = {
   date: string;
+  endDate: string | null;
   odoStart: number;
   odoEnd: number;
   purpose: string | null;

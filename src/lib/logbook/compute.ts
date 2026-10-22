@@ -26,6 +26,15 @@ export function filterTripsByFy<T extends { date: string }>(
   return trips.filter((t) => financialYear(t.date).label === fyLabel);
 }
 
+/**
+ * Business trips with no reason recorded — the ATO needs the reason for every
+ * business journey.
+ * Source: https://www.ato.gov.au/individuals-and-families/your-tax-return/instructions-to-complete-your-tax-return/mytax-instructions/2026/deductions/work-related-expenses/work-related-car-expenses
+ */
+export function businessTripsMissingPurpose<T extends Pick<TripRow, "purpose" | "isBusiness">>(trips: T[]): T[] {
+  return trips.filter((t) => t.isBusiness && !t.purpose?.trim());
+}
+
 type PeriodTrip = Pick<TripRow, "vehicleId" | "date" | "odoStart" | "odoEnd" | "isBusiness">;
 
 /** Km a logbook period measures, or why it can't set business use (`no-trips` = nothing recorded in it, not an odometer error). */

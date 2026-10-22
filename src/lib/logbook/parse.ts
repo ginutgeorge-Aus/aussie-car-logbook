@@ -103,9 +103,16 @@ export function parseVehicleForm(
   };
 }
 
+/**
+ * Parses the trip form. ATO: each business journey must show the dates it began
+ * and ended, the odometer readings, the km travelled and the reason for it, so a
+ * business trip needs a non-blank `purpose`; `endDate` is optional (blank or the
+ * same day as `date` -> null).
+ * Source: https://www.ato.gov.au/individuals-and-families/your-tax-return/instructions-to-complete-your-tax-return/mytax-instructions/2026/deductions/work-related-expenses/work-related-car-expenses
+ */
 export function parseTripForm(
   fd: FormData,
-): ParseResult<{ date: string; odoStart: number; odoEnd: number; purpose: string | null; isBusiness: boolean }> {
+): ParseResult<{ date: string; endDate: string | null; odoStart: number; odoEnd: number; purpose: string | null; isBusiness: boolean }> {
   const errors: Record<string, string> = {};
   const date = str(fd, "date");
   if (!date) errors.date = "Date is required.";
@@ -120,9 +127,20 @@ export function parseTripForm(
 
   const purpose = str(fd, "purpose") || null;
   const isBusiness = str(fd, "isBusiness") === "on";
+  // ATO: each business journey needs its reason.
+  if (isBusiness && !purpose) errors.purpose = "Enter the reason for this business trip (ATO requirement).";
+
+  // Optional end date (multi-day journey); same day as the start is stored as null.
+  const endRaw = str(fd, "endDate");
+  let endDate: string | null = null;
+  if (endRaw) {
+    if (!isIsoDate(endRaw)) errors.endDate = "Enter a valid end date.";
+    else if (date && endRaw < date) errors.endDate = "End date can't be before the trip date.";
+    else if (endRaw !== date) endDate = endRaw;
+  }
 
   if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
-  return { ok: true, value: { date, odoStart: odoStart as number, odoEnd: odoEnd as number, purpose, isBusiness } };
+  return { ok: true, value: { date, endDate, odoStart: odoStart as number, odoEnd: odoEnd as number, purpose, isBusiness } };
 }
 
 /**

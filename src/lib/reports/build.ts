@@ -8,7 +8,7 @@ import {
   carPurchaseGstCents,
   businessPctBps,
 } from "@/lib/tax";
-import { resolveBusinessUse, type BusinessUseSource } from "@/lib/logbook/compute";
+import { businessTripsMissingPurpose, filterTripsByFy, resolveBusinessUse, type BusinessUseSource } from "@/lib/logbook/compute";
 import type { LogbookPeriodRow, TripRow, VehicleRow } from "@/lib/logbook/types";
 import type { ExpenseRow } from "@/lib/data/expense";
 import type { ExpenseCategory, ExpenseInput } from "@/lib/tax/types";
@@ -131,6 +131,14 @@ export function buildFyReport(input: {
     notices.push(
       `The car deduction can't be claimed for FY ${fyLabel} — the ATO logbook method needs a valid logbook. ` +
         "Keep a logbook for at least 12 continuous weeks, then add it on the Trips page.",
+    );
+  }
+  // Flag only (no $ change): the ATO needs the reason for every business journey.
+  const noReason = businessTripsMissingPurpose(filterTripsByFy(trips, fyLabel)).length;
+  if (noReason > 0) {
+    notices.push(
+      `${noReason} business ${noReason === 1 ? "trip" : "trips"} in FY ${fyLabel} ${noReason === 1 ? "has" : "have"} no reason recorded — ` +
+        "the ATO needs the reason for every business journey. Add it on the Trips page.",
     );
   }
   const inFy = expenses.filter((e) => financialYear(e.date).label === fyLabel);

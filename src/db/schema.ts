@@ -29,6 +29,7 @@ export const trip = sqliteTable("trip", {
   vehicleId: integer("vehicle_id").notNull().references(() => vehicle.id),
   periodId: integer("period_id").references(() => logbookPeriod.id),
   date: text("date").notNull(),
+  endDate: text("end_date"), // null = the trip ends the same day as `date`
   odoStart: integer("odo_start").notNull(),
   odoEnd: integer("odo_end").notNull(),
   purpose: text("purpose"),

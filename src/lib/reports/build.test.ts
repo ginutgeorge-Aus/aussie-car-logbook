@@ -7,8 +7,8 @@ import type { ExpenseRow } from "@/lib/data/expense";
 const TODAY = "2099-01-01";
 
 const trip = (over: Partial<TripRow>): TripRow => ({
-  id: 1, vehicleId: 1, periodId: null, date: "2024-08-01",
-  odoStart: 0, odoEnd: 100, purpose: null, isBusiness: true, ...over,
+  id: 1, vehicleId: 1, periodId: null, date: "2024-08-01", endDate: null,
+  odoStart: 0, odoEnd: 100, purpose: "Client visit", isBusiness: true, ...over,
 });
 const expense = (over: Partial<ExpenseRow>): ExpenseRow => ({
   id: 1, vehicleId: 1, date: "2024-08-01", category: "fuel",
@@ -20,6 +20,19 @@ const expense = (over: Partial<ExpenseRow>): ExpenseRow => ({
 const LOGBOOK_2024: LogbookPeriodRow = { id: 9, vehicleId: 1, startDate: "2024-07-01", endDate: "2024-10-31", odoStart: 0, odoEnd: 100 };
 
 describe("buildFyReport", () => {
+  it("flags business trips with no reason without changing the figures (#50)", () => {
+    const base = { expenses: [expense({})], vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [LOGBOOK_2024], fyLabel: "2024-25", today: TODAY };
+    // Private trips and other-FY trips never count, so they have no reason in both runs.
+    const others = [trip({ id: 3, purpose: null, isBusiness: false }), trip({ id: 4, purpose: null, date: "2023-08-01" })];
+    const ok = buildFyReport({ ...base, trips: [trip({}), trip({ id: 2 }), ...others] });
+    const missing = buildFyReport({ ...base, trips: [trip({ purpose: null }), trip({ id: 2, purpose: "  " }), ...others] });
+    expect(ok.notices.some((n) => /no reason recorded/.test(n))).toBe(false);
+    expect(missing.notices.filter((n) => /no reason recorded/.test(n))).toEqual([
+      "2 business trips in FY 2024-25 have no reason recorded — the ATO needs the reason for every business journey. Add it on the Trips page.",
+    ]);
+    expect(missing.bas).toEqual(ok.bas);
+  });
+
   it("holds back GST on expenses over $82.50 without a tax invoice", () => {
     const trips = [trip({ odoStart: 0, odoEnd: 100, isBusiness: true })]; // 100% business
     const expenses = [

@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { logbookPeriodUse, tripKm, tripsToLegs, filterTripsByFy, resolveBusinessUse, logbookPeriodBusinessPctBps, logbookFyLabels, currentOdometer, fyKmTotals } from "@/lib/logbook/compute";
+import { logbookPeriodUse, tripKm, tripsToLegs, filterTripsByFy, resolveBusinessUse, businessTripsMissingPurpose, logbookPeriodBusinessPctBps, logbookFyLabels, currentOdometer, fyKmTotals } from "@/lib/logbook/compute";
 import type { LogbookPeriodRow, TripRow } from "@/lib/logbook/types";
 
 const TODAY = "2099-01-01";
@@ -34,7 +34,7 @@ test("filterTripsByFy keeps only trips in the FY", () => {
 
 const t = (over: Partial<TripRow>): TripRow => ({
   id: 1, vehicleId: 1, periodId: null, date: "2024-08-01",
-  odoStart: 0, odoEnd: 100, purpose: null, isBusiness: true, ...over,
+  odoStart: 0, odoEnd: 100, purpose: null, endDate: null, isBusiness: true, ...over,
 });
 const period = (over: Partial<LogbookPeriodRow>): LogbookPeriodRow => ({
   id: 1, vehicleId: 1, startDate: "2024-08-01", endDate: "2024-10-31", odoStart: 0, odoEnd: 100, ...over,
@@ -207,4 +207,11 @@ test("an unusable newest period falls back to the previous valid one", () => {
   const r = resolveBusinessUse({ trips: logbookTrips, periods: [period({}), bad], fyLabel: "2025-26", today: TODAY });
   expect(r.source).toMatchObject({ kind: "logbook", periodId: 1 });
   expect(r.notices[0]).toMatch(/2025-08-01 to 2025-10-31/);
+});
+
+test("businessTripsMissingPurpose returns business trips with a null or blank reason (#50)", () => {
+  const t = (id: number, purpose: string | null, isBusiness = true) => ({ id, purpose, isBusiness });
+  expect(
+    businessTripsMissingPurpose([t(1, null), t(2, "  "), t(3, "Client"), t(4, null, false), t(5, "", true)]).map((x) => x.id),
+  ).toEqual([1, 2, 5]);
 });
