@@ -28,7 +28,7 @@ export function filterTripsByFy<T extends { date: string }>(
 
 type PeriodTrip = Pick<TripRow, "vehicleId" | "date" | "odoStart" | "odoEnd" | "isBusiness">;
 
-/** Why a logbook period can't set business use; `none` = no trips recorded in it (not an error to fix in the odometers). */
+/** Km a logbook period measures, or why it can't set business use (`no-trips` = nothing recorded in it, not an odometer error). */
 export type LogbookPeriodUse =
   | { ok: true; businessKm: number; totalKm: number }
   | { ok: false; kind: "no-trips" | "invalid"; reason: string };
@@ -78,7 +78,7 @@ export function logbookPeriodUse(trips: PeriodTrip[], period: LogbookPeriodRow):
 export function logbookPeriodBusinessPctBps(trips: PeriodTrip[], period: LogbookPeriodRow): number | null {
   const use = logbookPeriodUse(trips, period);
   if (!use.ok) return null;
-  return businessPctBps(businessPct([{ km: use.businessKm, isBusiness: true }, { km: use.totalKm - use.businessKm, isBusiness: false }]));
+  return businessPctBps(use.businessKm / use.totalKm);
 }
 
 /** Where a report's business-use % came from. */
@@ -125,7 +125,7 @@ export function resolveBusinessUse(input: {
     }
     const { firstFy, lastFy } = logbookValidity(p);
     return {
-      ratio: businessPct([{ km: use.businessKm, isBusiness: true }, { km: use.totalKm - use.businessKm, isBusiness: false }]),
+      ratio: use.businessKm / use.totalKm,
       source: { kind: "logbook", periodId: p.id, startDate: p.startDate, endDate: p.endDate, firstFy, lastFy },
       notices,
     };
