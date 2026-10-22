@@ -22,6 +22,13 @@ function str(fd: FormData, key: string): string {
   return (fd.get(key) ?? "").toString().trim();
 }
 
+/** Optional seller ABN: blank → null; otherwise normalised and checksum-validated. */
+function parseAbn(raw: string): { abn: string | null; error?: string } {
+  const abn = normaliseAbn(raw);
+  if (!abn) return { abn: null };
+  return isValidAbn(abn) ? { abn } : { abn, error: "Enter a valid 11-digit ABN." };
+}
+
 /**
  * Parses the expense form: date, a user-enterable category, a positive amount
  * and GST (defaults to 1/11 of the amount; 0 when GST-free; a typed GST must not
@@ -69,9 +76,8 @@ export function parseExpenseForm(fd: FormData): ParseResult<ExpenseInput> {
   }
 
   const vendor = str(fd, "vendor") || null;
-  const abnRaw = normaliseAbn(str(fd, "abn"));
-  if (abnRaw && !isValidAbn(abnRaw)) errors.abn = "Enter a valid 11-digit ABN.";
-  const abn = abnRaw || null;
+  const { abn, error: abnError } = parseAbn(str(fd, "abn"));
+  if (abnError) errors.abn = abnError;
   const taxInvoice = str(fd, "taxInvoice") === "on";
   const notes = str(fd, "notes") || null;
 

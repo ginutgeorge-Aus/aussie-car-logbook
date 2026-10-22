@@ -20,7 +20,7 @@ The most relevant classes of issue:
 
 - Secrets or personal data leaking into the repo, build output, or logs
 - Auth bypass around the Cloudflare Access gate
-- Injection / XSS in receipt handling, OCR, or report rendering
+- Injection / XSS in receipt handling or report rendering
 - Anything that could expose one deployment's D1/R2 data
 
 ## Out of scope

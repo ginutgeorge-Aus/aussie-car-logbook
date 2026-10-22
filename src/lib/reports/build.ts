@@ -138,12 +138,16 @@ export function buildFyReport(input: {
     }
     const claimable = inQ.filter((e) => gstCreditEligible(e));
     const held = inQ.filter((e) => !gstCreditEligible(e));
+    const heldBackGstCents = gstCredit(held.map(toExpenseInput), ratio);
     return {
       quarter: q.quarter,
       label: q.label,
       gstCreditCents: gstCredit(claimable.map(toExpenseInput), ratio) + (purchaseInQ ? purchase.creditCents : 0),
-      heldBackGstCents: gstCredit(held.map(toExpenseInput), ratio),
-      needsTaxInvoice: held.map((e) => ({ id: e.id, date: e.date, vendor: e.vendor, amountInclCents: e.amountInclCents })),
+      heldBackGstCents,
+      // Nothing to chase when the business share is 0 (e.g. 0% business use).
+      needsTaxInvoice: heldBackGstCents > 0
+        ? held.map((e) => ({ id: e.id, date: e.date, vendor: e.vendor, amountInclCents: e.amountInclCents }))
+        : [],
     };
   });
   const totalGstCreditCents = quarters.reduce((s, q) => s + q.gstCreditCents, 0);

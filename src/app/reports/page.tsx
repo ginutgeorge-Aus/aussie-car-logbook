@@ -3,7 +3,7 @@ import { listTrips } from "@/lib/data/trip";
 import { listExpenses } from "@/lib/data/expense";
 import { getSettings } from "@/lib/data/settings";
 import { listLogbookPeriods } from "@/lib/data/logbookPeriod";
-import { financialYear, formatBusinessPct, fyLabelOr } from "@/lib/tax";
+import { financialYear, formatBusinessPct, fyLabelOr, TAX_INVOICE_THRESHOLD_CENTS } from "@/lib/tax";
 import { todayIso } from "@/lib/today";
 import { formatMoney, humanDate } from "@/lib/format";
 import { categoryLabel } from "@/lib/expenses/categories";
@@ -105,12 +105,12 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
               <div key={q.quarter} role="note" className="mx-5 mb-2 rounded-lg border border-line px-3 py-2 text-sm">
                 <p className="font-medium">
                   {q.label}: {formatMoney(q.heldBackGstCents)} GST held back — {q.needsTaxInvoice.length} expense
-                  {q.needsTaxInvoice.length === 1 ? "" : "s"} over $82.50 need{q.needsTaxInvoice.length === 1 ? "s" : ""} a tax invoice (ATO rule).
+                  {q.needsTaxInvoice.length === 1 ? "" : "s"} over {formatMoney(TAX_INVOICE_THRESHOLD_CENTS)} need{q.needsTaxInvoice.length === 1 ? "s" : ""} a tax invoice (ATO rule).
                 </p>
                 <ul className="mt-1 text-muted">
                   {q.needsTaxInvoice.map((e) => (
                     <li key={e.id}>
-                      <a href={`/expenses#expense-${e.id}`} className="underline">
+                      <a href="/expenses" className="underline">
                         {humanDate(e.date, { withYear: true })} · {e.vendor ?? "Unknown vendor"} · {formatMoney(e.amountInclCents)}
                       </a>
                     </li>

@@ -10,6 +10,7 @@ import { btnPrimary, btnSecondary, cardCls, eyebrowCls, inputCls, labelCls } fro
 import { useFormSubmit } from "@/components/useFormSubmit";
 import { todayIso } from "@/lib/today";
 import { isValidAbn } from "@/lib/tax/abn";
+import { TAX_INVOICE_BUYER_ID_THRESHOLD_CENTS } from "@/lib/tax/gst";
 
 /** "Add an expense" card: receipt photo, fields, and add confirmation. */
 export function ExpenseForm() {
@@ -84,6 +85,10 @@ export function ExpenseForm() {
     });
   }
 
+  let photoLabel = "Add receipt photo";
+  if (preparing) photoLabel = "Preparing photo…";
+  else if (hasFile) photoLabel = "Replace receipt photo";
+
   return (
     <section id="add-expense" aria-labelledby="add-expense-h" className={`${cardCls} scroll-mt-24 p-4 md:p-5`}>
       <h2 id="add-expense-h" className={`${eyebrowCls} mb-3`}>Add an expense</h2>
@@ -92,10 +97,10 @@ export function ExpenseForm() {
           <input ref={fileRef} name="receipt" type="file" accept="image/*" onChange={onFileChange} className="sr-only" />
           <button type="button" onClick={() => fileRef.current?.click()} disabled={preparing} className={`${btnSecondary} w-full md:w-auto md:self-start min-h-12`}>
             <CameraIcon size={20} />
-            {preparing ? "Preparing photo…" : hasFile ? "Replace receipt photo" : "Add receipt photo"}
+            {photoLabel}
           </button>
-          {hasFile && !preparing ? <p role="status" className="text-sm text-success">Receipt photo attached.</p> : null}
-          {photoMsg ? <p role="status" className="text-sm text-muted">{photoMsg}</p> : null}
+          {hasFile && !preparing ? <output className="text-sm text-success">Receipt photo attached.</output> : null}
+          {photoMsg ? <output className="text-sm text-muted">{photoMsg}</output> : null}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <label className="flex flex-col gap-1.5">
@@ -131,9 +136,10 @@ export function ExpenseForm() {
               inputMode="numeric"
               value={abn}
               onChange={(e) => {
+                // A printed ABN usually means a tax invoice: tick once when it first becomes
+                // valid, so later edits don't undo a deliberate untick.
+                if (isValidAbn(e.target.value) && !isValidAbn(abn)) setTaxInvoice(true);
                 setAbn(e.target.value);
-                // A printed ABN usually means a tax invoice; the user can untick.
-                if (isValidAbn(e.target.value)) setTaxInvoice(true);
               }}
               placeholder="11 digits"
               className={`${inputCls} font-mono`}
@@ -152,7 +158,7 @@ export function ExpenseForm() {
             <input name="taxInvoice" type="checkbox" checked={taxInvoice} onChange={(e) => setTaxInvoice(e.target.checked)} className="size-5 accent-[var(--accent)]" />
             <span className="text-[15px]">Receipt is a tax invoice (shows seller ABN + GST)</span>
           </label>
-          {Number(amount) >= 1000 ? (
+          {Math.round(Number(amount) * 100) >= TAX_INVOICE_BUYER_ID_THRESHOLD_CENTS ? (
             <p className="col-span-2 md:col-span-4 text-sm text-muted">Tax invoice must also show your name or ABN.</p>
           ) : null}
         </div>

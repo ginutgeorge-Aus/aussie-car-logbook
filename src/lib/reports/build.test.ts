@@ -32,6 +32,15 @@ describe("buildFyReport", () => {
     expect(r.bas.totalHeldBackGstCents).toBe(1000);
   });
 
+  it("lists no expenses to chase when business use is 0%", () => {
+    const trips = [trip({ odoStart: 0, odoEnd: 100, isBusiness: false })];
+    const expenses = [expense({ amountInclCents: 11000, gstCents: 1000, taxInvoice: false })];
+    const r = buildFyReport({ trips, expenses, vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25", today: TODAY });
+
+    expect(r.bas.quarters[0].heldBackGstCents).toBe(0);
+    expect(r.bas.quarters[0].needsTaxInvoice).toEqual([]);
+  });
+
   it("holds nothing back when not GST-registered", () => {
     const trips = [trip({ odoStart: 0, odoEnd: 100, isBusiness: true })];
     const expenses = [expense({ amountInclCents: 11000, gstCents: 1000, taxInvoice: false })];

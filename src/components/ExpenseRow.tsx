@@ -114,7 +114,7 @@ export function ExpenseRow({ expense, variant }: { expense: ExpenseRowType; vari
 
   if (variant === "card") {
     return (
-      <li id={`expense-${expense.id}`} className="border-b border-rule scroll-mt-24">
+      <li className="border-b border-rule">
         {editing ? (
           <ExpenseEditForm expense={expense} onDone={done} />
         ) : (
@@ -148,7 +148,7 @@ export function ExpenseRow({ expense, variant }: { expense: ExpenseRowType; vari
   }
 
   return (
-    <tr id={`expense-${expense.id}`} className="scroll-mt-24">
+    <tr>
       <td className="border-b border-rule px-5 py-1.5 whitespace-nowrap text-nav-ink">{humanDate(expense.date, { withYear: true })}</td>
       <td className="border-b border-rule px-3 py-1.5">{categoryLabel(expense.category)}</td>
       <td className="border-b border-rule px-3 py-1.5">{expense.vendor ?? ""}</td>

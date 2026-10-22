@@ -43,7 +43,7 @@ describe("parseExpenseForm", () => {
 
   it("treats a blank ABN as none", () => {
     const r = parseExpenseForm(fd({ ...base, abn: "   " }));
-    expect(r.ok && r.value.abn).toBe(null);
+    expect(r.ok && r.value.abn).toBeNull();
   });
 
   it("uses an explicit GST when provided", () => {
