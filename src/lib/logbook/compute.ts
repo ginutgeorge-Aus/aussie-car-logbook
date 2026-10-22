@@ -39,7 +39,7 @@ export type LogbookPeriodUse =
  * total km = odometer at the end of the period minus odometer at the start —
  * NOT the sum of logged trips, since unlogged private trips would otherwise
  * overstate business use. A period is unusable when its odometer readings are
- * missing or not increasing, or a logged trip falls outside them.
+ * missing or not increasing, or a logged trip falls outside them or overlaps another.
  * Source: https://www.ato.gov.au/individuals-and-families/your-tax-return/instructions-to-complete-your-tax-return/mytax-instructions/2026/deductions/work-related-expenses/work-related-car-expenses
  *
  * @param trips all trips.
@@ -59,11 +59,14 @@ export function logbookPeriodUse(trips: PeriodTrip[], period: LogbookPeriodRow):
   if (inPeriod.some((t) => t.odoStart < odoStart || t.odoEnd > odoEnd)) {
     return invalid("a trip in it falls outside the period's odometer readings — fix the readings on the Trips page");
   }
+  // One car can't cover the same km twice: overlapping trips would double-count business km.
+  const byOdo = [...inPeriod].sort((a, b) => a.odoStart - b.odoStart);
+  if (byOdo.some((t, i) => i > 0 && t.odoStart < byOdo[i - 1].odoEnd)) {
+    return invalid("two trips in it overlap on the odometer — fix the trips' odometer readings");
+  }
+  // Every trip lies within the readings and none overlap, so businessKm ≤ totalKm.
   const totalKm = odoEnd - odoStart;
   const businessKm = inPeriod.filter((t) => t.isBusiness).reduce((s, t) => s + tripKm(t), 0);
-  if (businessKm > totalKm) {
-    return invalid("business km exceed the period's total km — check the odometer readings and trips");
-  }
   return { ok: true, businessKm, totalKm };
 }
 
