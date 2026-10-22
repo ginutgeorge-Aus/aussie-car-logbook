@@ -5,7 +5,7 @@ import { getSettings } from "@/lib/data/settings";
 import { listLogbookPeriods } from "@/lib/data/logbookPeriod";
 import { financialYear, formatBusinessPct, fyLabelOr } from "@/lib/tax";
 import { todayIso } from "@/lib/today";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, humanDate } from "@/lib/format";
 import { categoryLabel } from "@/lib/expenses/categories";
 import { logbookFyLabels } from "@/lib/logbook/compute";
 import { buildFyReport } from "@/lib/reports/build";
@@ -99,6 +99,25 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
               capped at 1/11 of the ATO car limit) in the quarter of purchase.
             </p>
           )}
+          {report.bas.quarters
+            .filter((q) => q.needsTaxInvoice.length > 0)
+            .map((q) => (
+              <div key={q.quarter} role="note" className="mx-5 mb-2 rounded-lg border border-line px-3 py-2 text-sm">
+                <p className="font-medium">
+                  {q.label}: {formatMoney(q.heldBackGstCents)} GST held back — {q.needsTaxInvoice.length} expense
+                  {q.needsTaxInvoice.length === 1 ? "" : "s"} over $82.50 need{q.needsTaxInvoice.length === 1 ? "s" : ""} a tax invoice (ATO rule).
+                </p>
+                <ul className="mt-1 text-muted">
+                  {q.needsTaxInvoice.map((e) => (
+                    <li key={e.id}>
+                      <a href={`/expenses#expense-${e.id}`} className="underline">
+                        {humanDate(e.date, { withYear: true })} · {e.vendor ?? "Unknown vendor"} · {formatMoney(e.amountInclCents)}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
         </section>
       ) : (
         <p className="text-sm text-muted">Not GST-registered — no BAS credits</p>

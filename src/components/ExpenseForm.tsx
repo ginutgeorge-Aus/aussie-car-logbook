@@ -9,6 +9,7 @@ import { CameraIcon, PlusIcon } from "@/components/icons";
 import { btnPrimary, btnSecondary, cardCls, eyebrowCls, inputCls, labelCls } from "@/components/ui";
 import { useFormSubmit } from "@/components/useFormSubmit";
 import { todayIso } from "@/lib/today";
+import { isValidAbn } from "@/lib/tax/abn";
 
 /** "Add an expense" card: receipt photo, fields, and add confirmation. */
 export function ExpenseForm() {
@@ -23,6 +24,8 @@ export function ExpenseForm() {
   const [gst, setGst] = useState("");
   const [vendor, setVendor] = useState("");
   const [gstFree, setGstFree] = useState(false);
+  const [abn, setAbn] = useState("");
+  const [taxInvoice, setTaxInvoice] = useState(false);
 
   // nosemgrep: glb-no-float-gst -- dollar-string preview only; saved GST is re-derived in cents server-side
   const autoGst = gstFree ? "0.00" : (Number(amount) > 0 ? (Number(amount) / 11).toFixed(2) : "");
@@ -42,6 +45,8 @@ export function ExpenseForm() {
     setGst("");
     setVendor("");
     setGstFree(false);
+    setAbn("");
+    setTaxInvoice(false);
     setHasFile(false);
     setPhotoMsg(null);
     setAdded(true);
@@ -120,6 +125,22 @@ export function ExpenseForm() {
             <input name="vendor" value={vendor} onChange={(e) => setVendor(e.target.value)} className={inputCls} />
           </label>
           <label className="flex flex-col gap-1.5">
+            <span className={labelCls}>Seller ABN</span>
+            <input
+              name="abn"
+              inputMode="numeric"
+              value={abn}
+              onChange={(e) => {
+                setAbn(e.target.value);
+                // A printed ABN usually means a tax invoice; the user can untick.
+                if (isValidAbn(e.target.value)) setTaxInvoice(true);
+              }}
+              placeholder="11 digits"
+              className={`${inputCls} font-mono`}
+            />
+            <FieldError message={errs.abn} />
+          </label>
+          <label className="flex flex-col gap-1.5">
             <span className={labelCls}>Notes</span>
             <input name="notes" className={inputCls} />
           </label>
@@ -127,6 +148,13 @@ export function ExpenseForm() {
             <input name="gstFree" type="checkbox" checked={gstFree} onChange={(e) => setGstFree(e.target.checked)} className="size-5 accent-[var(--accent)]" />
             <span className="text-[15px]">GST-free</span>
           </label>
+          <label className="col-span-2 flex min-h-11 w-fit cursor-pointer items-center gap-3 md:self-end">
+            <input name="taxInvoice" type="checkbox" checked={taxInvoice} onChange={(e) => setTaxInvoice(e.target.checked)} className="size-5 accent-[var(--accent)]" />
+            <span className="text-[15px]">Receipt is a tax invoice (shows seller ABN + GST)</span>
+          </label>
+          {Number(amount) >= 1000 ? (
+            <p className="col-span-2 md:col-span-4 text-sm text-muted">Tax invoice must also show your name or ABN.</p>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <button type="submit" disabled={pending || preparing} className={`${btnPrimary} w-full md:w-auto`}>

@@ -35,6 +35,11 @@ function ExpenseEditForm({ expense, onDone }: { expense: ExpenseRowType; onDone:
           <input name="vendor" defaultValue={expense.vendor ?? ""} className={inputCls} />
         </label>
         <label className="flex flex-col gap-1.5">
+          <span className={labelCls}>Seller ABN</span>
+          <input name="abn" inputMode="numeric" defaultValue={expense.abn ?? ""} className={`${inputCls} font-mono`} />
+          <FieldError message={errs.abn} />
+        </label>
+        <label className="flex flex-col gap-1.5">
           <span className={labelCls}>Amount incl GST ($)</span>
           <input name="amountIncl" type="number" step="0.01" min="0" inputMode="decimal" defaultValue={centsToDollars(expense.amountInclCents)} className={`${inputCls} font-mono`} />
           <FieldError message={errs.amountIncl} />
@@ -43,6 +48,10 @@ function ExpenseEditForm({ expense, onDone }: { expense: ExpenseRowType; onDone:
           <span className={labelCls}>GST ($)</span>
           <input name="gst" type="number" step="0.01" min="0" inputMode="decimal" defaultValue={centsToDollars(expense.gstCents)} className={`${inputCls} font-mono`} />
           <FieldError message={errs.gst} />
+        </label>
+        <label className="col-span-2 md:col-span-1 flex min-h-11 cursor-pointer items-center gap-3">
+          <input name="taxInvoice" type="checkbox" defaultChecked={expense.taxInvoice} className="size-5 accent-[var(--accent)]" />
+          <span className="text-[15px]">Tax invoice held</span>
         </label>
         <label className="col-span-2 md:col-span-1 flex flex-col gap-1.5">
           <span className={labelCls}>Replace receipt</span>
@@ -105,7 +114,7 @@ export function ExpenseRow({ expense, variant }: { expense: ExpenseRowType; vari
 
   if (variant === "card") {
     return (
-      <li className="border-b border-rule">
+      <li id={`expense-${expense.id}`} className="border-b border-rule scroll-mt-24">
         {editing ? (
           <ExpenseEditForm expense={expense} onDone={done} />
         ) : (
@@ -139,7 +148,7 @@ export function ExpenseRow({ expense, variant }: { expense: ExpenseRowType; vari
   }
 
   return (
-    <tr>
+    <tr id={`expense-${expense.id}`} className="scroll-mt-24">
       <td className="border-b border-rule px-5 py-1.5 whitespace-nowrap text-nav-ink">{humanDate(expense.date, { withYear: true })}</td>
       <td className="border-b border-rule px-3 py-1.5">{categoryLabel(expense.category)}</td>
       <td className="border-b border-rule px-3 py-1.5">{expense.vendor ?? ""}</td>
