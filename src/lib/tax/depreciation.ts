@@ -43,8 +43,9 @@ export function carLimitFor(fyLabel: string): number {
  * @throws Error when the purchase FY has no configured car limit.
  */
 export function carPurchaseGstCents(input: { purchaseGstCents: number | null; purchaseDateISO: string }): number {
+  if (!input.purchaseGstCents) return 0;
   const maxCredit = gstFromInclusive(carLimitFor(financialYear(input.purchaseDateISO).label));
-  return Math.min(input.purchaseGstCents ?? 0, maxCredit);
+  return Math.min(input.purchaseGstCents, maxCredit);
 }
 
 /**

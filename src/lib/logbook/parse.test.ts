@@ -51,8 +51,11 @@ test("parseVehicleForm reads the GST on the purchase tax invoice (#46)", () => {
 });
 
 test("parseVehicleForm rejects purchase GST over 1/11 of the cost or without a cost", () => {
-  const over = parseVehicleForm(fd({ make: "T", model: "C", purchaseCost: "44000", purchaseGst: "4000.01" }));
+  const over = parseVehicleForm(fd({ make: "T", model: "C", purchaseCost: "44000", purchaseGst: "4001.01" }));
   expect(!over.ok && over.fieldErrors.purchaseGst).toMatch(/1\/11/);
+  // Per-line GST rounding on a multi-line invoice can land a few cents over 1/11 of the total.
+  const rounded = parseVehicleForm(fd({ make: "T", model: "C", purchaseCost: "44000", purchaseGst: "4000.03" }));
+  expect(rounded.ok).toBe(true);
   const noCost = parseVehicleForm(fd({ make: "T", model: "C", purchaseGst: "100" }));
   expect(!noCost.ok && noCost.fieldErrors.purchaseGst).toMatch(/purchase cost/);
 });

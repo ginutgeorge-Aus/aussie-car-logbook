@@ -32,6 +32,10 @@ describe("carPurchaseGstCents", () => {
   it("is 0 when the GST isn't recorded (no tax invoice, no credit)", () => {
     expect(carPurchaseGstCents({ purchaseGstCents: null, purchaseDateISO: "2024-07-01" })).toBe(0);
   });
+  it("needs no car limit when there is no GST to cap", () => {
+    expect(carPurchaseGstCents({ purchaseGstCents: 0, purchaseDateISO: "2099-07-01" })).toBe(0);
+    expect(carPurchaseGstCents({ purchaseGstCents: null, purchaseDateISO: "2099-07-01" })).toBe(0);
+  });
   // ATO: max GST credit 2025-26 = 1/11 x $69,674 = $6,334; 2026-27 = 1/11 x $69,883 = $6,353.
   it("is capped at 1/11 of the car limit for the purchase FY", () => {
     expect(carPurchaseGstCents({ purchaseGstCents: 681818, purchaseDateISO: "2025-07-01" })).toBe(633400);

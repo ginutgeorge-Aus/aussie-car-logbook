@@ -4,6 +4,19 @@ import type { ParseResult } from "@/lib/logbook/types";
 /** Plain non-negative decimal: digits with an optional fraction ("12", "12.5", ".5", "12."). */
 const DECIMAL_RE = /^(\d+\.?\d*|\.\d+)$/;
 
+/** Slack over 1/11 of the cost for invoices that round GST line by line. */
+const PURCHASE_GST_ROUNDING_SLACK_CENTS = 100;
+
+/**
+ * Most GST a purchase tax invoice can show: 1/11 of the GST-inclusive cost,
+ * plus a $1 slack for per-line rounding on multi-line invoices.
+ *
+ * @param costCents GST-inclusive purchase cost (cents).
+ */
+export function maxPurchaseGstCents(costCents: number): number {
+  return gstFromInclusive(costCents) + PURCHASE_GST_ROUNDING_SLACK_CENTS;
+}
+
 /**
  * Converts a dollar string to integer cents, rounding half-up on the third
  * decimal. Only plain decimals are accepted — `Number()` forms such as "1e3",
@@ -77,7 +90,7 @@ export function parseVehicleForm(
     }
     if (purchaseGstCents !== null && !errors.purchaseCost) {
       if (purchaseCostCents === null) errors.purchaseGst = "Enter the purchase cost too.";
-      else if (purchaseGstCents > gstFromInclusive(purchaseCostCents)) {
+      else if (purchaseGstCents > maxPurchaseGstCents(purchaseCostCents)) {
         errors.purchaseGst = "GST can't be more than 1/11 of the purchase cost.";
       }
     }
@@ -116,7 +129,7 @@ export function parseTripForm(
  * Whether `value` is a real calendar date in strict ISO `YYYY-MM-DD` form
  * (rejects e.g. "2024-02-30" and "2024-13-01").
  */
-function isIsoDate(value: string): boolean {
+export function isIsoDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const d = new Date(value + "T00:00:00Z");
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;

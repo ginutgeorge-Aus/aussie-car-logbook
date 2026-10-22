@@ -6,6 +6,7 @@ import { FieldError, useFieldErrors } from "@/components/FieldError";
 import { useFormSubmit } from "@/components/useFormSubmit";
 import { btnDanger, btnPrimary, cardCls, inputCls, labelCls } from "@/components/ui";
 import { logbookNominableFys } from "@/lib/tax";
+import { isIsoDate } from "@/lib/logbook/parse";
 
 export type LogbookPeriodView = {
   id: number;
@@ -16,9 +17,6 @@ export type LogbookPeriodView = {
   /** Business-use % (2 dp, e.g. "66.67") from trips inside the period, or null when it has none. */
   businessPct: string | null;
 };
-
-/** Real ISO date check for the picker: a half-typed date input gives "" or an invalid value. */
-const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v));
 
 /**
  * Form to add a logbook period (start/end date, validated as ≥12 weeks on the
@@ -34,7 +32,7 @@ export function LogbookPeriodForm() {
       setEndDate("");
     },
   });
-  const fyOptions = isDate(startDate) && isDate(endDate) && endDate >= startDate ? logbookNominableFys({ startDate, endDate }) : [];
+  const fyOptions = isIsoDate(startDate) && isIsoDate(endDate) && endDate >= startDate ? logbookNominableFys({ startDate, endDate }) : [];
   const errs = state.ok ? {} : (state.fieldErrors ?? {});
   const fe = useFieldErrors(errs);
 
