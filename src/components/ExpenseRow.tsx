@@ -5,7 +5,7 @@ import { deleteExpenseAction, updateExpenseAction } from "@/lib/actions";
 import { EXPENSE_CATEGORIES, categoryLabel } from "@/lib/expenses/categories";
 import { centsToDollars } from "@/lib/logbook/parse";
 import { formatMoney, humanDate } from "@/lib/format";
-import { FieldError, FormError } from "@/components/FieldError";
+import { FieldError, FormError, useFieldErrors } from "@/components/FieldError";
 import { useFormSubmit } from "@/components/useFormSubmit";
 import { btnDanger, btnGhost, btnPrimary, btnSecondary, inputCls, labelCls } from "@/components/ui";
 import type { ExpenseRow as ExpenseRowType } from "@/lib/data/expense";
@@ -16,6 +16,7 @@ import { TAX_INVOICE_BUYER_ID_THRESHOLD_CENTS } from "@/lib/tax/gst";
 function ExpenseEditForm({ expense, onDone }: { expense: ExpenseRowType; onDone: () => void }) {
   const { state, pending, onSubmit } = useFormSubmit(updateExpenseAction.bind(null, expense.id), { onSuccess: onDone });
   const errs = state.ok ? {} : (state.fieldErrors ?? {});
+  const fe = useFieldErrors(errs);
   // Controlled only where the add form's helpers need them: ABN auto-tick and the $1,000 hint.
   const [abn, setAbn] = useState(expense.abn ?? "");
   const [taxInvoice, setTaxInvoice] = useState(expense.taxInvoice);
@@ -26,15 +27,15 @@ function ExpenseEditForm({ expense, onDone }: { expense: ExpenseRowType; onDone:
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         <label className="flex flex-col gap-1.5">
           <span className={labelCls}>Date</span>
-          <input name="date" type="date" defaultValue={expense.date} className={inputCls} />
-          <FieldError message={errs.date} />
+          <input {...fe("date").input} name="date" type="date" defaultValue={expense.date} className={inputCls} />
+          <FieldError {...fe("date").error} />
         </label>
         <label className="flex flex-col gap-1.5">
           <span className={labelCls}>Category</span>
-          <select name="category" defaultValue={expense.category} className={inputCls}>
+          <select {...fe("category").input} name="category" defaultValue={expense.category} className={inputCls}>
             {EXPENSE_CATEGORIES.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
           </select>
-          <FieldError message={errs.category} />
+          <FieldError {...fe("category").error} />
         </label>
         <label className="flex flex-col gap-1.5">
           <span className={labelCls}>Vendor</span>
@@ -43,6 +44,7 @@ function ExpenseEditForm({ expense, onDone }: { expense: ExpenseRowType; onDone:
         <label className="flex flex-col gap-1.5">
           <span className={labelCls}>Seller ABN</span>
           <input
+            {...fe("abn").input}
             name="abn"
             inputMode="numeric"
             value={abn}
@@ -53,17 +55,17 @@ function ExpenseEditForm({ expense, onDone }: { expense: ExpenseRowType; onDone:
             }}
             className={`${inputCls} font-mono`}
           />
-          <FieldError message={errs.abn} />
+          <FieldError {...fe("abn").error} />
         </label>
         <label className="flex flex-col gap-1.5">
           <span className={labelCls}>Amount incl GST ($)</span>
-          <input name="amountIncl" type="number" step="0.01" min="0" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className={`${inputCls} font-mono`} />
-          <FieldError message={errs.amountIncl} />
+          <input {...fe("amountIncl").input} name="amountIncl" type="number" step="0.01" min="0" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className={`${inputCls} font-mono`} />
+          <FieldError {...fe("amountIncl").error} />
         </label>
         <label className="flex flex-col gap-1.5">
           <span className={labelCls}>GST ($)</span>
-          <input name="gst" type="number" step="0.01" min="0" inputMode="decimal" defaultValue={centsToDollars(expense.gstCents)} className={`${inputCls} font-mono`} />
-          <FieldError message={errs.gst} />
+          <input {...fe("gst").input} name="gst" type="number" step="0.01" min="0" inputMode="decimal" defaultValue={centsToDollars(expense.gstCents)} className={`${inputCls} font-mono`} />
+          <FieldError {...fe("gst").error} />
         </label>
         <label className="col-span-2 md:col-span-1 flex min-h-11 cursor-pointer items-center gap-3">
           <input name="taxInvoice" type="checkbox" checked={taxInvoice} onChange={(e) => setTaxInvoice(e.target.checked)} className="size-5 accent-[var(--accent)]" />

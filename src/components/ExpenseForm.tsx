@@ -4,7 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { createExpenseAction } from "@/lib/actions";
 import { compressReceipt } from "@/lib/image/compress";
 import { EXPENSE_CATEGORIES } from "@/lib/expenses/categories";
-import { FieldError, FormError } from "@/components/FieldError";
+import { FieldError, FormError, useFieldErrors } from "@/components/FieldError";
 import { CameraIcon, PlusIcon } from "@/components/icons";
 import { btnPrimary, btnSecondary, cardCls, eyebrowCls, inputCls, labelCls } from "@/components/ui";
 import { useFormSubmit } from "@/components/useFormSubmit";
@@ -17,6 +17,7 @@ export function ExpenseForm() {
   const [added, setAdded] = useState(false);
   const { state, pending, onSubmit } = useFormSubmit(createExpenseAction, { onSuccess: resetForm });
   const errs = state.ok ? {} : (state.fieldErrors ?? {});
+  const fe = useFieldErrors(errs);
 
   // Controlled fields.
   const [date, setDate] = useState(todayIso());
@@ -105,25 +106,25 @@ export function ExpenseForm() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <label className="flex flex-col gap-1.5">
             <span className={labelCls}>Date</span>
-            <input name="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} />
-            <FieldError message={errs.date} />
+            <input {...fe("date").input} name="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} />
+            <FieldError {...fe("date").error} />
           </label>
           <label className="flex flex-col gap-1.5">
             <span className={labelCls}>Category</span>
-            <select name="category" value={category} onChange={(e) => setCategory(e.target.value)} className={inputCls}>
+            <select {...fe("category").input} name="category" value={category} onChange={(e) => setCategory(e.target.value)} className={inputCls}>
               {EXPENSE_CATEGORIES.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
             </select>
-            <FieldError message={errs.category} />
+            <FieldError {...fe("category").error} />
           </label>
           <label className="flex flex-col gap-1.5">
             <span className={labelCls}>Amount incl GST ($)</span>
-            <input name="amountIncl" type="number" step="0.01" min="0" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className={`${inputCls} font-mono`} />
-            <FieldError message={errs.amountIncl} />
+            <input {...fe("amountIncl").input} name="amountIncl" type="number" step="0.01" min="0" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className={`${inputCls} font-mono`} />
+            <FieldError {...fe("amountIncl").error} />
           </label>
           <label className="flex flex-col gap-1.5">
             <span className={labelCls}>GST ($)</span>
-            <input name="gst" type="number" step="0.01" min="0" inputMode="decimal" value={gst} onChange={(e) => setGst(e.target.value)} placeholder={autoGst} disabled={gstFree} className={`${inputCls} font-mono`} />
-            <FieldError message={errs.gst} />
+            <input {...fe("gst").input} name="gst" type="number" step="0.01" min="0" inputMode="decimal" value={gst} onChange={(e) => setGst(e.target.value)} placeholder={autoGst} disabled={gstFree} className={`${inputCls} font-mono`} />
+            <FieldError {...fe("gst").error} />
           </label>
           <label className="flex flex-col gap-1.5">
             <span className={labelCls}>Vendor</span>
@@ -132,6 +133,7 @@ export function ExpenseForm() {
           <label className="flex flex-col gap-1.5">
             <span className={labelCls}>Seller ABN</span>
             <input
+              {...fe("abn").input}
               name="abn"
               inputMode="numeric"
               value={abn}
@@ -144,7 +146,7 @@ export function ExpenseForm() {
               placeholder="11 digits"
               className={`${inputCls} font-mono`}
             />
-            <FieldError message={errs.abn} />
+            <FieldError {...fe("abn").error} />
           </label>
           <label className="flex flex-col gap-1.5">
             <span className={labelCls}>Notes</span>
