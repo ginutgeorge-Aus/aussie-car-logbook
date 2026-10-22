@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getVehicle } from "@/lib/data/vehicle";
 import { listTrips } from "@/lib/data/trip";
 import { listExpenses } from "@/lib/data/expense";
@@ -71,7 +72,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
           Business use: <span className="font-mono font-semibold text-ink">{formatBusinessPct(report.businessPctBps)}%</span>{" "}
           {report.businessUseSource.kind === "logbook"
             ? `(logbook period ${report.businessUseSource.startDate} to ${report.businessUseSource.endDate}, valid FY ${report.businessUseSource.firstFy} to ${report.businessUseSource.lastFy})`
-            : `(estimated from FY ${activeFy} trips — no valid logbook)`}
+            : `(estimated from FY ${activeFy} trips — no valid logbook, used for BAS only)`}
         </p>
       </div>
 
@@ -135,6 +136,12 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
             <MoneyRow label="Total deduction" cents={report.annual.totalDeductionCents} total accent />
           </tbody>
         </table>
+        {!report.annual.claimable && (
+          <p role="note" className="px-5 pb-2 text-sm text-muted">
+            Not claimable — no valid logbook covers FY {activeFy}. Keep a logbook for at least 12 continuous weeks, then{" "}
+            <Link href="/trips" className="underline">add it on the Trips page</Link>.
+          </p>
+        )}
       </section>
 
       {report.annual.byCategory.length > 0 && (
