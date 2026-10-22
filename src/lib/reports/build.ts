@@ -123,7 +123,7 @@ export function buildFyReport(input: {
   // Single rounding: % to 2 dp; all dollars use the same rounded ratio that is displayed.
   const bps = businessPctBps(businessUse.ratio);
   const ratio = bps / 10000;
-  // ATO logbook method: no valid logbook, no car deduction. BAS still apportions
+  // ATO logbook method: no valid logbook, no car deduction (ITAA 1997 s28-100(2): "you must ... keep a log book"). BAS still apportions
   // GST by business use, which doesn't need a logbook, so it keeps `ratio`.
   const claimable = businessUse.source.kind === "logbook";
   const deductionRatio = claimable ? ratio : 0;

@@ -3,6 +3,8 @@ import { financialYear } from "@/lib/tax/dates";
 
 /**
  * Business-use ratio (0..1) for a set of trip legs: businessKm / totalKm.
+ * ATO logbook method: "dividing the distance travelled for business by the total distance travelled".
+ * Source: https://www.ato.gov.au/businesses-and-organisations/income-deductions-and-concessions/income-and-deductions-for-business/deductions/deductions-for-motor-vehicle-expenses/logbook-method
  * Returns 0 when there are no kilometres (no divide-by-zero).
  */
 export function businessPct(trips: TripLeg[]): number {
@@ -37,10 +39,17 @@ export function businessPctRounded(trips: TripLeg[]): number {
   return businessPctBps(businessPct(trips)) / 100;
 }
 
-/** ATO logbook method: the logbook must cover at least 12 continuous weeks. */
+/**
+ * ATO logbook method: the logbook must cover at least 12 continuous weeks.
+ * ITAA 1997 s28-120(1); ATO: https://www.ato.gov.au/businesses-and-organisations/income-deductions-and-concessions/income-and-deductions-for-business/deductions/deductions-for-motor-vehicle-expenses/logbook-method
+ */
 export const LOGBOOK_MIN_DAYS = 12 * 7;
 
-/** ATO logbook method: a logbook is valid for its first income year plus the following 4. */
+/**
+ * ATO logbook method: a logbook is valid for its income year plus the following 4
+ * (ATO: "Each logbook you keep is valid for five years"; ITAA 1997 s28-115(2)).
+ * Sources: https://www.ato.gov.au/businesses-and-organisations/income-deductions-and-concessions/income-and-deductions-for-business/deductions/deductions-for-motor-vehicle-expenses/logbook-method and https://www.legislation.gov.au/C2004A05138/latest/text
+ */
 export const LOGBOOK_VALID_YEARS = 5;
 
 /**
@@ -72,8 +81,10 @@ export function logbookNominableFys(period: LogbookPeriodDates): string[] {
 
 /**
  * The income year a logbook is for: its nominated FY when that is one the
- * period touches (a 12-week period crossing 30 June may be nominated for either
- * year), else the FY the period starts in.
+ * period touches, else the FY the period starts in. ITAA 1997 s28-120(2): "The
+ * period may overlap the start or end of the income year, so long as it includes
+ * part of the year" — so a period crossing 30 June can serve either year.
+ * Source: https://www.legislation.gov.au/C2004A05138/latest/text
  *
  * @param period the logbook period, with its optional nominated FY.
  */

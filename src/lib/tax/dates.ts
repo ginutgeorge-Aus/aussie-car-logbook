@@ -1,3 +1,4 @@
+// Australian income year = 1 July to 30 June (ITAA 1997 s995-1 "income year").
 const FY_START_MONTH = 7; // July
 
 function fyBounds(dateISO: string) {
@@ -21,7 +22,8 @@ export function financialYear(dateISO: string) {
 export function basQuarter(dateISO: string) {
   const fy = financialYear(dateISO);
   const m = Number(dateISO.slice(5, 7));
-  // Jul(7)-Sep(9)=Q1, Oct-Dec=Q2, Jan-Mar=Q3, Apr-Jun=Q4
+  // Jul(7)-Sep(9)=Q1, Oct-Dec=Q2, Jan-Mar=Q3, Apr-Jun=Q4.
+  // ATO quarterly BAS periods: https://www.ato.gov.au/businesses-and-organisations/preparing-lodging-and-paying/business-activity-statements-bas/due-dates-for-lodging-and-paying-your-bas
   const quarterMap: Record<number, 1 | 2 | 3 | 4> = {
     7: 1, 8: 1, 9: 1, 10: 2, 11: 2, 12: 2, 1: 3, 2: 3, 3: 3, 4: 4, 5: 4, 6: 4,
   };

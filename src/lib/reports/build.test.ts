@@ -1,3 +1,4 @@
+// Each rule tested here maps to its ATO source in docs/ato-rules.md.
 import { describe, it, expect } from "vitest";
 import { buildFyReport } from "@/lib/reports/build";
 import type { LogbookPeriodRow, TripRow, VehicleRow } from "@/lib/logbook/types";
