@@ -1,4 +1,4 @@
-import { LOGBOOK_MIN_DAYS, logbookPeriodDays } from "@/lib/tax";
+import { gstFromInclusive, LOGBOOK_MIN_DAYS, logbookNominableFys, logbookPeriodDays } from "@/lib/tax";
 import type { ParseResult } from "@/lib/logbook/types";
 
 /** Plain non-negative decimal: digits with an optional fraction ("12", "12.5", ".5", "12."). */
@@ -44,6 +44,7 @@ export function parseVehicleForm(
   odoOpen: number | null;
   purchaseDate: string | null;
   purchaseCostCents: number | null;
+  purchaseGstCents: number | null;
 }> {
   const errors: Record<string, string> = {};
   const make = str(fd, "make");
@@ -66,11 +67,26 @@ export function parseVehicleForm(
       errors.purchaseCost = "Enter a valid dollar amount.";
     }
   }
+  const gstRaw = str(fd, "purchaseGst");
+  let purchaseGstCents: number | null = null;
+  if (gstRaw !== "") {
+    try {
+      purchaseGstCents = dollarsToCents(gstRaw);
+    } catch {
+      errors.purchaseGst = "Enter a valid dollar amount.";
+    }
+    if (purchaseGstCents !== null && !errors.purchaseCost) {
+      if (purchaseCostCents === null) errors.purchaseGst = "Enter the purchase cost too.";
+      else if (purchaseGstCents > gstFromInclusive(purchaseCostCents)) {
+        errors.purchaseGst = "GST can't be more than 1/11 of the purchase cost.";
+      }
+    }
+  }
 
   if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
   return {
     ok: true,
-    value: { make, model, rego, odoOpen: odoOpen ?? null, purchaseDate, purchaseCostCents },
+    value: { make, model, rego, odoOpen: odoOpen ?? null, purchaseDate, purchaseCostCents, purchaseGstCents },
   };
 }
 
@@ -111,7 +127,9 @@ function isIsoDate(value: string): boolean {
  * real ISO dates, end must not precede start, and the period must cover at
  * least 12 continuous weeks (ATO logbook method).
  */
-export function parseLogbookPeriodForm(fd: FormData): ParseResult<{ startDate: string; endDate: string }> {
+export function parseLogbookPeriodForm(
+  fd: FormData,
+): ParseResult<{ startDate: string; endDate: string; nominatedFy: string | null }> {
   const errors: Record<string, string> = {};
   const startDate = str(fd, "startDate");
   const endDate = str(fd, "endDate");
@@ -123,6 +141,14 @@ export function parseLogbookPeriodForm(fd: FormData): ParseResult<{ startDate: s
       errors.endDate = "A logbook period must cover at least 12 continuous weeks (84 days).";
     }
   }
+  // Only a period crossing 30 June has a choice of income year; otherwise it's the FY it's in.
+  let nominatedFy: string | null = null;
+  const nominatedRaw = str(fd, "nominatedFy");
+  if (!errors.startDate && !errors.endDate && nominatedRaw !== "") {
+    const options = logbookNominableFys({ startDate, endDate });
+    if (!options.includes(nominatedRaw)) errors.nominatedFy = "Choose the FY the logbook starts or ends in.";
+    else if (options.length > 1) nominatedFy = nominatedRaw;
+  }
   if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
-  return { ok: true, value: { startDate, endDate } };
+  return { ok: true, value: { startDate, endDate, nominatedFy } };
 }

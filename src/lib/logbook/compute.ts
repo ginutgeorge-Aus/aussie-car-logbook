@@ -86,7 +86,7 @@ export function resolveBusinessUse(input: {
   const notices: string[] = [];
 
   const candidates = periods
-    .filter((p) => logbookPeriodDays(p.startDate, p.endDate) >= LOGBOOK_MIN_DAYS && logbookCoversFy(p.startDate, fyLabel))
+    .filter((p) => logbookPeriodDays(p.startDate, p.endDate) >= LOGBOOK_MIN_DAYS && logbookCoversFy(p, fyLabel))
     .sort((a, b) => (a.startDate < b.startDate ? 1 : a.startDate > b.startDate ? -1 : b.id - a.id));
 
   for (const p of candidates) {
@@ -99,7 +99,7 @@ export function resolveBusinessUse(input: {
       notices.push(`Logbook period ${p.startDate} to ${p.endDate} has no trips recorded — it was ignored.`);
       continue;
     }
-    const { firstFy, lastFy } = logbookValidity(p.startDate);
+    const { firstFy, lastFy } = logbookValidity(p);
     return {
       ratio: businessPct(legs),
       source: { kind: "logbook", periodId: p.id, startDate: p.startDate, endDate: p.endDate, firstFy, lastFy },
@@ -125,7 +125,7 @@ export function logbookFyLabels(periods: LogbookPeriodRow[], currentFy: string):
   const labels = new Set<string>();
   for (const p of periods) {
     if (logbookPeriodDays(p.startDate, p.endDate) < LOGBOOK_MIN_DAYS) continue;
-    const { firstFy, lastFy } = logbookValidity(p.startDate);
+    const { firstFy, lastFy } = logbookValidity(p);
     for (let y = Number(firstFy.slice(0, 4)); y <= Number(lastFy.slice(0, 4)); y++) {
       const label = financialYear(`${y}-07-01`).label;
       if (label <= currentFy) labels.add(label);

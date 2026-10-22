@@ -35,15 +35,16 @@ export function carLimitFor(fyLabel: string): number {
 }
 
 /**
- * GST credit on a car purchase (before business-use apportionment): 1/11 of the
- * GST-inclusive cost, capped at 1/11 of the car limit for the purchase FY.
+ * GST credit on a car purchase (before business-use apportionment): the GST on
+ * the tax invoice, capped at 1/11 of the car limit for the purchase FY. A
+ * private sale (0) or unrecorded GST (null — no tax invoice, no credit) gives 0.
  *
- * @param input GST-inclusive purchase cost (cents) and purchase date (ISO).
+ * @param input GST on the purchase tax invoice (cents, or null when not recorded) and purchase date (ISO).
  * @throws Error when the purchase FY has no configured car limit.
  */
-export function carPurchaseGstCents(input: { purchaseCostCents: number; purchaseDateISO: string }): number {
-  const limit = carLimitFor(financialYear(input.purchaseDateISO).label);
-  return gstFromInclusive(Math.min(input.purchaseCostCents, limit));
+export function carPurchaseGstCents(input: { purchaseGstCents: number | null; purchaseDateISO: string }): number {
+  const maxCredit = gstFromInclusive(carLimitFor(financialYear(input.purchaseDateISO).label));
+  return Math.min(input.purchaseGstCents ?? 0, maxCredit);
 }
 
 export function diminishingValue(input: {

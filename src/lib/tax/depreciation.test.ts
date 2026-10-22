@@ -22,13 +22,19 @@ test("car limit lookup fails loudly for an unpublished/unknown FY", () => {
 });
 
 describe("carPurchaseGstCents", () => {
-  it("is 1/11 of the GST-inclusive cost under the car limit", () => {
-    expect(carPurchaseGstCents({ purchaseCostCents: 4400000, purchaseDateISO: "2024-07-01" })).toBe(400000);
+  it("is the GST shown on the tax invoice", () => {
+    expect(carPurchaseGstCents({ purchaseGstCents: 400000, purchaseDateISO: "2024-07-01" })).toBe(400000);
+  });
+  it("is 0 for a private sale (no GST on the invoice)", () => {
+    expect(carPurchaseGstCents({ purchaseGstCents: 0, purchaseDateISO: "2024-07-01" })).toBe(0);
+  });
+  it("is 0 when the GST isn't recorded (no tax invoice, no credit)", () => {
+    expect(carPurchaseGstCents({ purchaseGstCents: null, purchaseDateISO: "2024-07-01" })).toBe(0);
   });
   // ATO: max GST credit 2025-26 = 1/11 x $69,674 = $6,334; 2026-27 = 1/11 x $69,883 = $6,353.
   it("is capped at 1/11 of the car limit for the purchase FY", () => {
-    expect(carPurchaseGstCents({ purchaseCostCents: 7500000, purchaseDateISO: "2025-07-01" })).toBe(633400);
-    expect(carPurchaseGstCents({ purchaseCostCents: 9000000, purchaseDateISO: "2026-07-01" })).toBe(635300);
+    expect(carPurchaseGstCents({ purchaseGstCents: 681818, purchaseDateISO: "2025-07-01" })).toBe(633400);
+    expect(carPurchaseGstCents({ purchaseGstCents: 818182, purchaseDateISO: "2026-07-01" })).toBe(635300);
   });
 });
 test("diminishing value full year, 8yr life", () => {

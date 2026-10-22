@@ -53,6 +53,14 @@ test("resolveBusinessUse uses the valid logbook period's trips, not the FY's", (
   expect(r.notices).toEqual([]);
 });
 
+test("resolveBusinessUse uses a period crossing 30 June for its nominated FY window (#45)", () => {
+  const cross = period({ startDate: "2025-06-10", endDate: "2025-09-10", nominatedFy: "2025-26" });
+  const trips = [t({ id: 6, date: "2025-07-01", odoStart: 0, odoEnd: 100, isBusiness: true })];
+  const r = resolveBusinessUse({ trips, periods: [cross], fyLabel: "2029-30", today: TODAY });
+  expect(r.source).toMatchObject({ kind: "logbook", firstFy: "2025-26", lastFy: "2029-30" });
+  expect(resolveBusinessUse({ trips, periods: [cross], fyLabel: "2024-25", today: TODAY }).source.kind).toBe("fy-trips");
+});
+
 test("resolveBusinessUse carries a prior logbook into an FY with no trips", () => {
   const r = resolveBusinessUse({ trips: logbookTrips, periods: [period({})], fyLabel: "2026-27", today: TODAY });
   expect(r.ratio).toBeCloseTo(0.6, 10);
