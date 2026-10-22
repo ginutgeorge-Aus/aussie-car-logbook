@@ -28,6 +28,7 @@ export function ExpenseForm() {
   const [gstFree, setGstFree] = useState(false);
   const [abn, setAbn] = useState("");
   const [taxInvoice, setTaxInvoice] = useState(false);
+  const [invoiceTouched, setInvoiceTouched] = useState(false);
 
   // nosemgrep: glb-no-float-gst -- dollar-string preview only; saved GST is re-derived in cents server-side
   const autoGst = gstFree ? "0.00" : (Number(amount) > 0 ? (Number(amount) / 11).toFixed(2) : "");
@@ -49,6 +50,7 @@ export function ExpenseForm() {
     setGstFree(false);
     setAbn("");
     setTaxInvoice(false);
+    setInvoiceTouched(false);
     setHasFile(false);
     setPhotoMsg(null);
     setAdded(true);
@@ -138,9 +140,9 @@ export function ExpenseForm() {
               inputMode="numeric"
               value={abn}
               onChange={(e) => {
-                // A printed ABN usually means a tax invoice: tick once when it first becomes
-                // valid, so later edits don't undo a deliberate untick.
-                if (isValidAbn(e.target.value) && !isValidAbn(abn)) setTaxInvoice(true);
+                // A printed ABN usually means a tax invoice: tick when it becomes valid,
+                // unless the box was set by hand (a deliberate untick sticks).
+                if (!invoiceTouched && isValidAbn(e.target.value) && !isValidAbn(abn)) setTaxInvoice(true);
                 setAbn(e.target.value);
               }}
               placeholder="11 digits"
@@ -157,7 +159,7 @@ export function ExpenseForm() {
             <span className="text-[15px]">GST-free</span>
           </label>
           <label className="col-span-2 flex min-h-11 w-fit cursor-pointer items-center gap-3 md:self-end">
-            <input name="taxInvoice" type="checkbox" checked={taxInvoice} onChange={(e) => setTaxInvoice(e.target.checked)} className="size-5 accent-[var(--accent)]" />
+            <input name="taxInvoice" type="checkbox" checked={taxInvoice} onChange={(e) => { setTaxInvoice(e.target.checked); setInvoiceTouched(true); }} className="size-5 accent-[var(--accent)]" />
             <span className="text-[15px]">Receipt is a tax invoice (shows seller ABN + GST)</span>
           </label>
           {Math.round(Number(amount) * 100) >= TAX_INVOICE_BUYER_ID_THRESHOLD_CENTS ? (

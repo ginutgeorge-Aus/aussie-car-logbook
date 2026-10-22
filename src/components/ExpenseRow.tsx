@@ -20,6 +20,7 @@ function ExpenseEditForm({ expense, onDone }: { expense: ExpenseRowType; onDone:
   // Controlled only where the add form's helpers need them: ABN auto-tick and the $1,000 hint.
   const [abn, setAbn] = useState(expense.abn ?? "");
   const [taxInvoice, setTaxInvoice] = useState(expense.taxInvoice);
+  const [invoiceTouched, setInvoiceTouched] = useState(false);
   const [amount, setAmount] = useState(centsToDollars(expense.amountInclCents));
   return (
     <form method="post" onSubmit={onSubmit} aria-label={`Edit ${categoryLabel(expense.category)} expense`} className="flex flex-col gap-3 py-3">
@@ -49,8 +50,8 @@ function ExpenseEditForm({ expense, onDone }: { expense: ExpenseRowType; onDone:
             inputMode="numeric"
             value={abn}
             onChange={(e) => {
-              // Same as the add form: tick once when the ABN first becomes valid.
-              if (isValidAbn(e.target.value) && !isValidAbn(abn)) setTaxInvoice(true);
+              // Same as the add form: tick when the ABN becomes valid, unless the box was set by hand.
+              if (!invoiceTouched && isValidAbn(e.target.value) && !isValidAbn(abn)) setTaxInvoice(true);
               setAbn(e.target.value);
             }}
             className={`${inputCls} font-mono`}
@@ -68,7 +69,7 @@ function ExpenseEditForm({ expense, onDone }: { expense: ExpenseRowType; onDone:
           <FieldError {...fe("gst").error} />
         </label>
         <label className="col-span-2 md:col-span-1 flex min-h-11 cursor-pointer items-center gap-3">
-          <input name="taxInvoice" type="checkbox" checked={taxInvoice} onChange={(e) => setTaxInvoice(e.target.checked)} className="size-5 accent-[var(--accent)]" />
+          <input name="taxInvoice" type="checkbox" checked={taxInvoice} onChange={(e) => { setTaxInvoice(e.target.checked); setInvoiceTouched(true); }} className="size-5 accent-[var(--accent)]" />
           <span className="text-[15px]">Tax invoice held</span>
         </label>
         {Math.round(Number(amount) * 100) >= TAX_INVOICE_BUYER_ID_THRESHOLD_CENTS ? (
