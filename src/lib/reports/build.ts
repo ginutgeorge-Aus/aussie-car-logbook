@@ -2,6 +2,7 @@ import {
   financialYear,
   fyQuarters,
   gstCredit,
+  gstCreditEligible,
   annualDeduction,
   depreciationForFy,
   carPurchaseGstCents,
@@ -12,6 +13,9 @@ import type { LogbookPeriodRow, TripRow, VehicleRow } from "@/lib/logbook/types"
 import type { ExpenseRow } from "@/lib/data/expense";
 import type { ExpenseCategory, ExpenseInput } from "@/lib/tax/types";
 
+/** An expense whose GST credit is held back until a tax invoice is recorded. */
+export type NeedsTaxInvoiceItem = { id: number; date: string; vendor: string | null; amountInclCents: number };
+
 export type FyReport = {
   fyLabel: string;
   /** Business use in basis points (% to 2 dp) — the displayed value. */
@@ -21,8 +25,16 @@ export type FyReport = {
   /** Where `businessPct` came from: a valid logbook period, or the FY-trips fallback. */
   businessUseSource: BusinessUseSource;
   bas: {
-    quarters: Array<{ quarter: 1 | 2 | 3 | 4; label: string; gstCreditCents: number }>;
+    quarters: Array<{
+      quarter: 1 | 2 | 3 | 4;
+      label: string;
+      gstCreditCents: number;
+      /** Business share of GST not claimable yet: over $82.50 with no tax invoice (ATO rule). */
+      heldBackGstCents: number;
+      needsTaxInvoice: NeedsTaxInvoiceItem[];
+    }>;
     totalGstCreditCents: number;
+    totalHeldBackGstCents: number;
     /** Business share of the capped car-purchase GST credit (already inside its quarter). */
     purchaseGstCreditCents: number;
   };
@@ -120,16 +132,22 @@ export function buildFyReport(input: {
   const quarters = fyQuarters(fyLabel).map((q) => {
     const inQ = fyExpenses.filter((e) => e.date >= q.startISO && e.date <= q.endISO);
     const purchaseInQ = purchase.dateISO !== null && purchase.dateISO >= q.startISO && purchase.dateISO <= q.endISO;
+    // No GST credits at all unless GST-registered.
+    if (!settings.gstRegistered) {
+      return { quarter: q.quarter, label: q.label, gstCreditCents: 0, heldBackGstCents: 0, needsTaxInvoice: [] };
+    }
+    const claimable = inQ.filter((e) => gstCreditEligible(e));
+    const held = inQ.filter((e) => !gstCreditEligible(e));
     return {
       quarter: q.quarter,
       label: q.label,
-      // No GST credits at all unless GST-registered.
-      gstCreditCents: settings.gstRegistered
-        ? gstCredit(inQ.map(toExpenseInput), ratio) + (purchaseInQ ? purchase.creditCents : 0)
-        : 0,
+      gstCreditCents: gstCredit(claimable.map(toExpenseInput), ratio) + (purchaseInQ ? purchase.creditCents : 0),
+      heldBackGstCents: gstCredit(held.map(toExpenseInput), ratio),
+      needsTaxInvoice: held.map((e) => ({ id: e.id, date: e.date, vendor: e.vendor, amountInclCents: e.amountInclCents })),
     };
   });
   const totalGstCreditCents = quarters.reduce((s, q) => s + q.gstCreditCents, 0);
+  const totalHeldBackGstCents = quarters.reduce((s, q) => s + q.heldBackGstCents, 0);
 
   const runningCostsDeductionCents = annualDeduction(
     fyExpenses.map(toExpenseInput),
@@ -182,7 +200,7 @@ export function buildFyReport(input: {
     businessPctBps: bps,
     businessPct: ratio,
     businessUseSource: businessUse.source,
-    bas: { quarters, totalGstCreditCents, purchaseGstCreditCents: purchase.creditCents },
+    bas: { quarters, totalGstCreditCents, totalHeldBackGstCents, purchaseGstCreditCents: purchase.creditCents },
     annual: {
       runningCostsDeductionCents,
       depreciationDeductionCents,

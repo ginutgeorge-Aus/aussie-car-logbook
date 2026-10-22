@@ -16,6 +16,32 @@ const expense = (over: Partial<ExpenseRow>): ExpenseRow => ({
 });
 
 describe("buildFyReport", () => {
+  it("holds back GST on expenses over $82.50 without a tax invoice", () => {
+    const trips = [trip({ odoStart: 0, odoEnd: 100, isBusiness: true })]; // 100% business
+    const expenses = [
+      expense({ id: 1, date: "2024-08-01", amountInclCents: 11000, gstCents: 1000, taxInvoice: false, vendor: "BP" }),
+      expense({ id: 2, date: "2024-08-02", amountInclCents: 8250, gstCents: 750, taxInvoice: false }),
+      expense({ id: 3, date: "2024-08-03", amountInclCents: 22000, gstCents: 2000, taxInvoice: true }),
+    ];
+    const r = buildFyReport({ trips, expenses, vehicle: null, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25", today: TODAY });
+    const q1 = r.bas.quarters[0];
+
+    expect(q1.gstCreditCents).toBe(2750); // 750 (<= $82.50) + 2000 (invoice held)
+    expect(q1.heldBackGstCents).toBe(1000);
+    expect(q1.needsTaxInvoice).toEqual([{ id: 1, date: "2024-08-01", vendor: "BP", amountInclCents: 11000 }]);
+    expect(r.bas.totalHeldBackGstCents).toBe(1000);
+  });
+
+  it("holds nothing back when not GST-registered", () => {
+    const trips = [trip({ odoStart: 0, odoEnd: 100, isBusiness: true })];
+    const expenses = [expense({ amountInclCents: 11000, gstCents: 1000, taxInvoice: false })];
+    const r = buildFyReport({ trips, expenses, vehicle: null, settings: { gstRegistered: false }, logbookPeriods: [], fyLabel: "2024-25", today: TODAY });
+
+    expect(r.bas.quarters[0].heldBackGstCents).toBe(0);
+    expect(r.bas.quarters[0].needsTaxInvoice).toEqual([]);
+    expect(r.bas.totalHeldBackGstCents).toBe(0);
+  });
+
   it("buckets GST credit by quarter and totals the FY", () => {
     // 80% business (800 of 1000 km).
     const trips = [
