@@ -1,7 +1,7 @@
 "use client";
 
 import { saveVehicleAction } from "@/lib/actions";
-import { FieldError, FormError } from "@/components/FieldError";
+import { FieldError, FormError, useFieldErrors } from "@/components/FieldError";
 import { useFormSubmit } from "@/components/useFormSubmit";
 import { btnPrimary, inputCls, labelCls } from "@/components/ui";
 import { centsToDollars } from "@/lib/logbook/parse";
@@ -11,19 +11,20 @@ import type { VehicleRow } from "@/lib/logbook/types";
 export function VehicleForm({ vehicle }: { vehicle: VehicleRow | null }) {
   const { state, pending, onSubmit } = useFormSubmit(saveVehicleAction);
   const errs = state.ok ? {} : (state.fieldErrors ?? {});
+  const fe = useFieldErrors(errs);
 
   return (
     <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1.5">
           <span className={labelCls}>Make</span>
-          <input name="make" defaultValue={vehicle?.make ?? ""} autoComplete="off" className={inputCls} />
-          <FieldError message={errs.make} />
+          <input {...fe("make").input} name="make" defaultValue={vehicle?.make ?? ""} autoComplete="off" className={inputCls} />
+          <FieldError {...fe("make").error} />
         </label>
         <label className="flex flex-col gap-1.5">
           <span className={labelCls}>Model</span>
-          <input name="model" defaultValue={vehicle?.model ?? ""} autoComplete="off" className={inputCls} />
-          <FieldError message={errs.model} />
+          <input {...fe("model").input} name="model" defaultValue={vehicle?.model ?? ""} autoComplete="off" className={inputCls} />
+          <FieldError {...fe("model").error} />
         </label>
       </div>
       <div className="grid grid-cols-2 gap-3">
@@ -33,8 +34,8 @@ export function VehicleForm({ vehicle }: { vehicle: VehicleRow | null }) {
         </label>
         <label className="flex flex-col gap-1.5">
           <span className={labelCls}>Opening odometer (km)</span>
-          <input name="odoOpen" type="number" min="0" inputMode="numeric" defaultValue={vehicle?.odoOpen ?? ""} className={`${inputCls} font-mono`} />
-          <FieldError message={errs.odoOpen} />
+          <input {...fe("odoOpen").input} name="odoOpen" type="number" min="0" inputMode="numeric" defaultValue={vehicle?.odoOpen ?? ""} className={`${inputCls} font-mono`} />
+          <FieldError {...fe("odoOpen").error} />
         </label>
       </div>
       <div className="grid grid-cols-2 gap-3">
@@ -45,13 +46,14 @@ export function VehicleForm({ vehicle }: { vehicle: VehicleRow | null }) {
         <label className="flex flex-col gap-1.5">
           <span className={labelCls}>Purchase cost $ (optional)</span>
           <input
+            {...fe("purchaseCost").input}
             name="purchaseCost"
             type="text"
             inputMode="decimal"
             defaultValue={vehicle?.purchaseCostCents != null ? centsToDollars(vehicle.purchaseCostCents) : ""}
             className={`${inputCls} font-mono`}
           />
-          <FieldError message={errs.purchaseCost} />
+          <FieldError {...fe("purchaseCost").error} />
         </label>
       </div>
       <div className="flex flex-wrap items-center gap-3">
