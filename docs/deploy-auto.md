@@ -64,8 +64,8 @@ Secrets**):
 - **Deploy command:** `pnpm run ci:deploy`
   - applies pending D1 migrations (`wrangler d1 migrations apply DB --remote`),
     then `wrangler deploy`. Schema always lands before the code that reads it.
-  - not `opennextjs-cloudflare deploy`: it opens a remote-bindings proxy (for
-    `AI`) through your `workers.dev` URL, which Cloudflare Access blocks in
+  - not `opennextjs-cloudflare deploy`: it can open a remote-bindings proxy
+    through your `workers.dev` URL, which Cloudflare Access blocks in
     non-interactive CI. With no incremental cache configured, plain
     `wrangler deploy` is equivalent (`OPEN_NEXT_DEPLOY=true` stops wrangler
     handing back to OpenNext).
@@ -81,7 +81,7 @@ Secrets**):
   [Workers Builds API token docs](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/#api-token).
 
 `account_id` is **not** needed in the config — Workers Builds deploys into the
-connected account automatically. `RECEIPTS` and `AI` bindings need no ids.
+connected account automatically. The `RECEIPTS` binding needs no id.
 
 ## Step 5 — Save and deploy
 
@@ -140,4 +140,3 @@ however they like (their own Workers Builds, or manual `pnpm run deploy`).
 | "binding not found" in logs | `D1_DATABASE_ID` secret value is wrong. |
 | App loads but every page errors | Migrations didn't run — check the deploy log for the `migrations apply` step. |
 | Receipt upload fails | R2 bucket name ≠ `ginoos-log-book-receipts`. |
-| OCR does nothing | Workers AI `AI` binding missing (it's in `wrangler.toml.example`). |

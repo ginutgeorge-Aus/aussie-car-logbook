@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { createExpenseAction, scanReceiptAction } from "@/lib/actions";
+import { createExpenseAction } from "@/lib/actions";
 import { compressReceipt } from "@/lib/image/compress";
 import { EXPENSE_CATEGORIES } from "@/lib/expenses/categories";
 import { FieldError, FormError } from "@/components/FieldError";
@@ -10,13 +10,13 @@ import { btnPrimary, btnSecondary, cardCls, eyebrowCls, inputCls, labelCls } fro
 import { useFormSubmit } from "@/components/useFormSubmit";
 import { todayIso } from "@/lib/today";
 
-/** "Add an expense" card: one-tap receipt scan (OCR pre-fill), fields, and add confirmation. */
+/** "Add an expense" card: receipt photo, fields, and add confirmation. */
 export function ExpenseForm() {
   const [added, setAdded] = useState(false);
   const { state, pending, onSubmit } = useFormSubmit(createExpenseAction, { onSuccess: resetForm });
   const errs = state.ok ? {} : (state.fieldErrors ?? {});
 
-  // Controlled OCR-target fields.
+  // Controlled fields.
   const [date, setDate] = useState(todayIso());
   const [category, setCategory] = useState<string>(EXPENSE_CATEGORIES[0].code);
   const [amount, setAmount] = useState("");
@@ -27,11 +27,11 @@ export function ExpenseForm() {
   // nosemgrep: glb-no-float-gst -- dollar-string preview only; saved GST is re-derived in cents server-side
   const autoGst = gstFree ? "0.00" : (Number(amount) > 0 ? (Number(amount) / 11).toFixed(2) : "");
 
-  // Scan state.
+  // Receipt photo state.
   const fileRef = useRef<HTMLInputElement>(null);
   const [hasFile, setHasFile] = useState(false);
-  const [scanning, startScan] = useTransition();
-  const [scanMsg, setScanMsg] = useState<string | null>(null);
+  const [preparing, startPrepare] = useTransition();
+  const [photoMsg, setPhotoMsg] = useState<string | null>(null);
 
   /** Clears every field after a successful add so the next save can't duplicate it. */
   function resetForm(form: HTMLFormElement) {
@@ -43,79 +43,39 @@ export function ExpenseForm() {
     setVendor("");
     setGstFree(false);
     setHasFile(false);
-    setScanMsg(null);
+    setPhotoMsg(null);
     setAdded(true);
   }
 
-  /** Starts compress + scan as soon as a photo is picked. */
+  /** Compresses the picked photo and swaps it into the form's file input. */
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    if (!f) {
+    const original = e.target.files?.[0];
+    setPhotoMsg(null);
+    if (!original) {
       setHasFile(false);
       return;
     }
-    scanFile(f);
-  }
-
-  /** Compresses the photo, attaches it to the form, and pre-fills fields from OCR. */
-  function scanFile(original: File) {
-    setScanMsg(null);
-    startScan(async () => {
+    startPrepare(async () => {
       let file: File;
       try {
         file = await compressReceipt(original);
       } catch {
         if (original.type === "image/heic") {
-          // Chrome/Firefox can't decode HEIC; the server still accepts it, so
-          // keep the original for saving and fall back to manual entry.
+          // Chrome/Firefox can't decode HEIC; the server still accepts it, so keep the original.
           setHasFile(true);
-          setScanMsg("This browser can't scan HEIC photos — enter details manually; the photo will still be saved.");
           return;
         }
         // Clear the real input too, or submit would still upload the bad file.
         if (fileRef.current) fileRef.current.value = "";
         setHasFile(false);
-        setScanMsg("Couldn't read that image — pick another receipt.");
+        setPhotoMsg("Couldn't read that image — pick another receipt.");
         return;
       }
-      // Swap the input's file for the compressed JPEG so the form submit stores
-      // the tiny version in R2, not the multi-MB camera original.
+      // Store the small JPEG in R2, not the multi-MB camera original.
       const dt = new DataTransfer();
       dt.items.add(file);
       if (fileRef.current) fileRef.current.files = dt.files;
       setHasFile(true);
-
-      const fd = new FormData();
-      fd.set("receipt", file);
-      let res: Awaited<ReturnType<typeof scanReceiptAction>>;
-      try {
-        res = await scanReceiptAction({ ok: false, error: "" }, fd);
-      } catch {
-        // Network drop or server throw: the photo is still attached, so the
-        // user can enter details by hand and save.
-        setScanMsg("Scan failed — enter details manually; the photo will still be saved.");
-        return;
-      }
-      if (res.ok) {
-        const v = res.value;
-        if (v.dateISO) setDate(v.dateISO);
-        if (v.amountInclCents != null) setAmount((v.amountInclCents / 100).toFixed(2));
-        if (v.gstCents != null) {
-          setGstFree(false);
-          setGst((v.gstCents / 100).toFixed(2));
-        }
-        if (v.vendor) setVendor(v.vendor);
-        if (v.category) setCategory(v.category);
-        const filledAny =
-          !!v.dateISO || v.amountInclCents != null || v.gstCents != null || !!v.vendor || !!v.category;
-        setScanMsg(
-          filledAny
-            ? "AI-filled — check every field before saving."
-            : "Couldn't read any fields — enter details manually.",
-        );
-      } else {
-        setScanMsg(res.error);
-      }
     });
   }
 
@@ -125,11 +85,12 @@ export function ExpenseForm() {
       <form method="post" onSubmit={onSubmit} onInput={() => setAdded(false)} className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <input ref={fileRef} name="receipt" type="file" accept="image/*" onChange={onFileChange} className="sr-only" />
-          <button type="button" onClick={() => fileRef.current?.click()} disabled={scanning} className={`${btnSecondary} w-full md:w-auto md:self-start min-h-12`}>
+          <button type="button" onClick={() => fileRef.current?.click()} disabled={preparing} className={`${btnSecondary} w-full md:w-auto md:self-start min-h-12`}>
             <CameraIcon size={20} />
-            {scanning ? "Scanning…" : hasFile ? "Rescan receipt" : "Scan receipt"}
+            {preparing ? "Preparing photo…" : hasFile ? "Replace receipt photo" : "Add receipt photo"}
           </button>
-          {scanMsg ? <p role="status" className="text-sm text-muted">{scanMsg}</p> : null}
+          {hasFile && !preparing ? <p role="status" className="text-sm text-success">Receipt photo attached.</p> : null}
+          {photoMsg ? <p role="status" className="text-sm text-muted">{photoMsg}</p> : null}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <label className="flex flex-col gap-1.5">
@@ -168,7 +129,7 @@ export function ExpenseForm() {
           </label>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <button type="submit" disabled={pending || scanning} className={`${btnPrimary} w-full md:w-auto`}>
+          <button type="submit" disabled={pending || preparing} className={`${btnPrimary} w-full md:w-auto`}>
             <PlusIcon size={18} />
             {pending ? "Adding…" : "Add expense"}
           </button>

@@ -4,5 +4,4 @@
 interface CloudflareEnv {
   DB: D1Database;
   RECEIPTS: R2Bucket;
-  AI: Ai;
 }

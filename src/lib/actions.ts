@@ -7,13 +7,9 @@ import { upsertVehicle } from "@/lib/data/vehicle";
 import { createTrip, updateTrip, deleteTrip } from "@/lib/data/trip";
 import type { ActionResult } from "@/lib/logbook/types";
 import { parseExpenseForm } from "@/lib/expenses/parse";
-import { putReceipt, assertReceiptFile } from "@/lib/data/receipts";
+import { putReceipt } from "@/lib/data/receipts";
 import { createExpense, updateExpense, deleteExpense } from "@/lib/data/expense";
 import { getVehicle } from "@/lib/data/vehicle";
-import { runReceiptOcr } from "@/lib/data/ocr";
-import { OcrLicenceError } from "@/lib/ocr/model";
-import { parseOcrResult } from "@/lib/ocr/parse";
-import type { OcrActionResult } from "@/lib/ocr/types";
 import { parseSettingsForm } from "@/lib/settings/parse";
 import { updateSettings } from "@/lib/data/settings";
 
@@ -183,27 +179,4 @@ export async function deleteExpenseAction(_prev: ActionResult, fd: FormData): Pr
   }
   revalidateAll("/expenses");
   return { ok: true };
-}
-
-export async function scanReceiptAction(
-  _prev: OcrActionResult,
-  fd: FormData,
-): Promise<OcrActionResult> {
-  const file = fileFrom(fd);
-  if (!file) return { ok: false, error: "Pick a receipt first." };
-  try {
-    assertReceiptFile(file);
-  } catch (e) {
-    return { ok: false, error: (e as Error).message };
-  }
-  try {
-    const raw = await runReceiptOcr(file);
-    return { ok: true, value: parseOcrResult(raw) };
-  } catch (e) {
-    console.error("scanReceiptAction: OCR failed", e);
-    if (e instanceof OcrLicenceError) {
-      return { ok: false, error: "Receipt scanning needs one-time setup (accept the Llama licence) — see docs/ocr.md." };
-    }
-    return { ok: false, error: "Couldn't read the receipt. Enter details manually." };
-  }
 }

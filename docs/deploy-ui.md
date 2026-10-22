@@ -31,14 +31,13 @@ moments**.
   - That ID isn't a password, but a private repo keeps it (and your future
     tweaks) off the public internet.
 
-The app needs three Cloudflare resources, wired to these exact **binding
+The app needs two Cloudflare resources, wired to these exact **binding
 names** (the code looks them up by name — don't rename them):
 
 | Resource | Binding name | Used for |
 |----------|--------------|----------|
 | D1 database | `DB` | All your data (SQLite) |
 | R2 bucket | `RECEIPTS` | Receipt photos |
-| Workers AI | `AI` | Receipt OCR |
 
 ---
 
@@ -81,7 +80,7 @@ The Git-connected build reads your resource IDs from this file.
 4. Commit `wrangler.toml`. (This is your private copy — that's fine. Never do
    this on the public upstream repo.)
 
-The example already declares the `DB`, `RECEIPTS`, and `AI` bindings, so you
+The example already declares the `DB` and `RECEIPTS` bindings, so you
 don't wire them up by hand — the build picks them up from this file.
 
 ## Step 5 — Connect the repo and deploy
@@ -207,4 +206,3 @@ serves is covered.
 | App loads but every page errors | Migrations didn't run — check the deploy log for the `migrations apply` step. |
 | "binding not found" in logs | `wrangler.toml` missing or `database_id` wrong — Step 4. |
 | Receipt upload fails | R2 bucket name mismatch — must be `ginoos-log-book-receipts`. |
-| OCR does nothing | Workers AI binding `AI` missing — it's in `wrangler.toml.example`. |

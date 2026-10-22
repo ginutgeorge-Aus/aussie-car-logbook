@@ -28,6 +28,3 @@ migrations_dir = "src/db/migrations"
 [[r2_buckets]]
 binding = "RECEIPTS"
 bucket_name = "ginoos-log-book-receipts"
-
-[ai]
-binding = "AI"

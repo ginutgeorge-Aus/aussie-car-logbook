@@ -41,7 +41,7 @@ lives in [`wiki/`](wiki/) and is published to the Wiki automatically.
 - [Tailwind CSS](https://tailwindcss.com) 4
 - [Cloudflare Workers](https://developers.cloudflare.com/workers/) via
   [OpenNext](https://opennext.js.org/cloudflare) — hosting, D1 (database),
-  R2 (receipt storage), Workers AI
+  R2 (receipt storage)
 - [Drizzle ORM](https://orm.drizzle.team/) — D1 schema and queries
 - [Vitest](https://vitest.dev/) — unit tests, including the tax engine
 
@@ -84,7 +84,6 @@ corepack pnpm exec wrangler login
 ```bash
 corepack pnpm exec wrangler d1 create ginoos-log-book
 corepack pnpm exec wrangler r2 bucket create ginoos-log-book-receipts
-# Workers AI needs no resource — the [ai] binding is enough.
 ```
 
 **3. Configure wrangler** — copy the example and paste your own `database_id`:
