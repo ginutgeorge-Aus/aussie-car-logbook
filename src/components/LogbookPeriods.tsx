@@ -116,7 +116,7 @@ export function LogbookPeriodItem({ period }: { period: LogbookPeriodView }) {
   return (
     <li className="flex flex-wrap items-center gap-3 border-b border-line py-2 text-sm last:border-b-0">
       <span className="font-mono">{period.startDate} to {period.endDate}</span>
-      <span className="text-muted">Valid {period.validity}</span>
+      <span className="text-muted">{period.problem ? "Would be valid" : "Valid"} {period.validity}</span>
       {period.odoStart !== null && period.odoEnd !== null ? (
         <span className="font-mono text-muted">
           Odometer {formatKm(period.odoStart)} to {formatKm(period.odoEnd)} · {formatKm(period.odoEnd - period.odoStart)} km total

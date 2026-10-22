@@ -192,14 +192,21 @@ test("a period is skipped when a trip falls outside its odometer readings", () =
   }
 });
 
-test("a period is skipped when business km exceed total km (overlapping trips)", () => {
+test("a period is skipped when trips overlap on the odometer", () => {
+  // Business km 80 ≤ total 100, but the car can't drive 0–40 twice: double-counted business use.
   const overlap = [
-    t({ id: 1, date: "2024-08-10", odoStart: 0, odoEnd: 80, isBusiness: true }),
-    t({ id: 2, date: "2024-08-11", odoStart: 0, odoEnd: 80, isBusiness: true }),
+    t({ id: 1, date: "2024-08-10", odoStart: 0, odoEnd: 40, isBusiness: true }),
+    t({ id: 2, date: "2024-08-11", odoStart: 0, odoEnd: 40, isBusiness: true }),
+    t({ id: 3, date: "2024-08-12", odoStart: 40, odoEnd: 100, isBusiness: false }),
   ];
   expect(logbookPeriodBusinessPctBps(overlap, period({}))).toBeNull();
   const r = resolveBusinessUse({ trips: overlap, periods: [period({})], fyLabel: "2024-25", today: TODAY });
-  expect(r.notices[0]).toMatch(/business km exceed/);
+  expect(r.source.kind).toBe("fy-trips");
+  expect(r.notices[0]).toMatch(/trips in it overlap/);
+});
+
+test("back-to-back trips sharing an odometer reading don't count as overlapping", () => {
+  expect(logbookPeriodBusinessPctBps(logbookTrips, period({}))).not.toBeNull();
 });
 
 test("an unusable newest period falls back to the previous valid one", () => {
