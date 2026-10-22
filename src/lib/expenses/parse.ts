@@ -1,5 +1,5 @@
 import { dollarsToCents } from "@/lib/logbook/parse";
-import { gstFromInclusive } from "@/lib/tax";
+import { gstFromInclusive, isValidAbn, normaliseAbn } from "@/lib/tax";
 import { isExpenseCategory } from "@/lib/expenses/categories";
 import type { ExpenseCategory } from "@/lib/tax/types";
 import type { ParseResult } from "@/lib/logbook/types";
@@ -13,6 +13,8 @@ export type ExpenseInput = {
   amountInclCents: number;
   gstCents: number;
   vendor: string | null;
+  abn: string | null;
+  taxInvoice: boolean;
   notes: string | null;
 };
 
@@ -23,7 +25,8 @@ function str(fd: FormData, key: string): string {
 /**
  * Parses the expense form: date, a user-enterable category, a positive amount
  * and GST (defaults to 1/11 of the amount; 0 when GST-free; a typed GST must not
- * exceed 1/11 of the amount).
+ * exceed 1/11 of the amount), an optional seller ABN (checksum-validated) and
+ * a tax-invoice flag.
  */
 export function parseExpenseForm(fd: FormData): ParseResult<ExpenseInput> {
   const errors: Record<string, string> = {};
@@ -66,11 +69,15 @@ export function parseExpenseForm(fd: FormData): ParseResult<ExpenseInput> {
   }
 
   const vendor = str(fd, "vendor") || null;
+  const abnRaw = normaliseAbn(str(fd, "abn"));
+  if (abnRaw && !isValidAbn(abnRaw)) errors.abn = "Enter a valid 11-digit ABN.";
+  const abn = abnRaw || null;
+  const taxInvoice = str(fd, "taxInvoice") === "on";
   const notes = str(fd, "notes") || null;
 
   if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
   return {
     ok: true,
-    value: { date, category: category as ExpenseCategory, amountInclCents, gstCents, vendor, notes },
+    value: { date, category: category as ExpenseCategory, amountInclCents, gstCents, vendor, abn, taxInvoice, notes },
   };
 }
