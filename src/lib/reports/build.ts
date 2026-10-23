@@ -94,6 +94,7 @@ function carPurchase(vehicle: VehicleRow | null) {
     gstCents: () => carPurchaseGstCents({ purchaseGstCents, purchaseDateISO: dateISO }),
   };
 }
+type CarPurchase = NonNullable<ReturnType<typeof carPurchase>>;
 
 /**
  * Business share of the car-purchase GST credit for the report FY: claimed only
@@ -104,14 +105,13 @@ function carPurchase(vehicle: VehicleRow | null) {
  *   quarter (null when none is claimed), and a notice when the car limit is missing.
  */
 function carPurchaseCredit(input: {
-  vehicle: VehicleRow | null;
+  car: CarPurchase | null;
   gstRegistered: boolean;
   fyLabel: string;
   ratio: number;
 }): { creditCents: number; dateISO: string | null; notice: string | null } {
-  const { vehicle, gstRegistered, fyLabel, ratio } = input;
+  const { car, gstRegistered, fyLabel, ratio } = input;
   const none = { creditCents: 0, dateISO: null, notice: null };
-  const car = carPurchase(vehicle);
   if (!gstRegistered || !car || car.purchaseFy !== fyLabel) return none;
   try {
     return { creditCents: Math.round(car.gstCents() * ratio), dateISO: car.dateISO, notice: null };
@@ -180,9 +180,9 @@ export function buildFyReport(input: {
     );
   }
 
-  const purchase = carPurchaseCredit({ vehicle, gstRegistered: settings.gstRegistered, fyLabel, ratio });
-  if (purchase.notice) notices.push(purchase.notice);
   const car = carPurchase(vehicle);
+  const purchase = carPurchaseCredit({ car, gstRegistered: settings.gstRegistered, fyLabel, ratio });
+  if (purchase.notice) notices.push(purchase.notice);
   if (settings.gstRegistered && car && car.gstUnrecorded && car.purchaseFy <= fyLabel) {
     notices.push(
       "The GST on the car purchase isn't recorded, so no GST credit is claimed for it and depreciation uses the full cost. " +
