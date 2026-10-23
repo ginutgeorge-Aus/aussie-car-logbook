@@ -10,6 +10,7 @@ export const vehicle = sqliteTable("vehicle", {
   purchaseDate: text("purchase_date"),
   purchaseCostCents: integer("purchase_cost_cents"),
   purchaseGstCents: integer("purchase_gst_cents"), // GST on the tax invoice; 0 = private sale, null = not recorded
+  effectiveLifeYears: integer("effective_life_years"), // self-assessed effective life (years); null = ATO default (8)
 });
 
 /** Odometer at the start (1 Jul) and end (30 Jun) of an income year; the ATO wants both for each year a logbook is relied on. */

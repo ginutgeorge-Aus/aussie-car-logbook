@@ -43,6 +43,13 @@
       "when": 1792715764771,
       "tag": "0005_vehicle_fy_odometer",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1792758324126,
+      "tag": "0006_vehicle_effective_life",
+      "breakpoints": true
     }
   ]
 }

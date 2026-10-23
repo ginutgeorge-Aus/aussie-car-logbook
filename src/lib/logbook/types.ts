@@ -47,6 +47,8 @@ export type VehicleRow = {
   purchaseCostCents: number | null;
   /** GST on the purchase tax invoice; 0 = private sale, null = not recorded (no credit claimed). */
   purchaseGstCents: number | null;
+  /** Self-assessed effective life in whole years; null = the ATO default (8). */
+  effectiveLifeYears: number | null;
 };
 
 export type ParseResult<T> =

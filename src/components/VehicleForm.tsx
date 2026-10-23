@@ -86,6 +86,25 @@ export function VehicleForm({ vehicle }: { vehicle: VehicleRow | null }) {
         </span>
         <FieldError {...fe("purchaseGst").error} />
       </label>
+      <label className="flex flex-col gap-1.5">
+        <span className={labelCls}>Effective life (years, optional)</span>
+        <input
+          {...fe("effectiveLifeYears").input}
+          name="effectiveLifeYears"
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={50}
+          step={1}
+          defaultValue={vehicle?.effectiveLifeYears ?? ""}
+          className={`${inputCls} font-mono`}
+        />
+        <span className="text-sm text-muted">
+          Leave blank to use the ATO&apos;s 8 years. Only change it if you self-assess, or you bought the car from an associate who
+          used a different life.
+        </span>
+        <FieldError {...fe("effectiveLifeYears").error} />
+      </label>
       <div className="flex flex-wrap items-center gap-3">
         <button type="submit" disabled={pending} className={`${btnPrimary} w-full md:w-auto`}>
           {pending ? "Saving…" : "Save vehicle"}

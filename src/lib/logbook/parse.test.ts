@@ -37,7 +37,7 @@ test("parseVehicleForm ok with required fields", () => {
   const r = parseVehicleForm(fd({ make: "Toyota", model: "Corolla", rego: "ABC123", odoOpen: "50000" }));
   expect(r).toEqual({
     ok: true,
-    value: { make: "Toyota", model: "Corolla", rego: "ABC123", odoOpen: 50000, purchaseDate: null, purchaseCostCents: null, purchaseGstCents: null },
+    value: { make: "Toyota", model: "Corolla", rego: "ABC123", odoOpen: 50000, purchaseDate: null, purchaseCostCents: null, purchaseGstCents: null, effectiveLifeYears: null },
   });
 });
 
@@ -204,4 +204,16 @@ describe("parseVehicleFyOdometerForm", () => {
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.fieldErrors.odoClose).toMatch(/below/);
   });
+});
+
+test("parseVehicleForm reads an optional whole-year effective life (#66)", () => {
+  const base = { make: "T", model: "C" };
+  const r = parseVehicleForm(fd({ ...base, effectiveLifeYears: "4" }));
+  expect(r.ok && r.value.effectiveLifeYears).toBe(4);
+  const blank = parseVehicleForm(fd({ ...base, effectiveLifeYears: "" }));
+  expect(blank.ok && blank.value.effectiveLifeYears).toBeNull();
+  for (const bad of ["0", "51", "2.5", "abc", "-3"]) {
+    const e = parseVehicleForm(fd({ ...base, effectiveLifeYears: bad }));
+    expect(!e.ok && e.fieldErrors.effectiveLifeYears).toMatch(/1 to 50/);
+  }
 });
