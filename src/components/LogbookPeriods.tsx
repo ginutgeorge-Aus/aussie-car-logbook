@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { createLogbookPeriodAction, deleteLogbookPeriodAction, updateLogbookPeriodOdometerAction } from "@/lib/actions";
 import { FieldError, useFieldErrors } from "@/components/FieldError";
 import { useFormSubmit } from "@/components/useFormSubmit";
@@ -126,6 +127,7 @@ export function LogbookPeriodItem({ period }: { period: LogbookPeriodView }) {
         {period.businessPct === null ? "No business use calculated" : `Business use ${period.businessPct}%`}
       </span>
       {period.problem ? <p role="alert" className="w-full font-medium text-danger">Logbook not valid: {period.problem}.</p> : null}
+      <Link href={`/trips/logbook/${period.id}`} className="font-medium text-accent-ink underline underline-offset-2">View / print</Link>
       <PeriodOdometerForm period={period} />
       <form method="post" onSubmit={del.onSubmit}>
         <input type="hidden" name="id" value={period.id} />

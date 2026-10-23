@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { logbookPeriodUse, tripKm, tripsToLegs, filterTripsByFy, resolveBusinessUse, businessTripsMissingPurpose, logbookPeriodBusinessPctBps, logbookFyLabels, currentOdometer, fyKmTotals, missingFyOdometers } from "@/lib/logbook/compute";
+import { tripsInPeriod, logbookPeriodUse, tripKm, tripsToLegs, filterTripsByFy, resolveBusinessUse, businessTripsMissingPurpose, logbookPeriodBusinessPctBps, logbookFyLabels, currentOdometer, fyKmTotals, missingFyOdometers } from "@/lib/logbook/compute";
 import type { LogbookPeriodRow, TripRow } from "@/lib/logbook/types";
 
 const TODAY = "2099-01-01";
@@ -238,4 +238,16 @@ test("missingFyOdometers: close is only due once the FY has ended, open once it 
   expect(missingFyOdometers([], "2024-25", "2025-06-30")).toEqual({ open: true, close: false });
   expect(missingFyOdometers([], "2024-25", "2025-07-01")).toEqual({ open: true, close: true });
   expect(missingFyOdometers([], "2024-25", "2024-06-30")).toEqual({ open: false, close: false });
+});
+
+test("tripsInPeriod keeps that vehicle's trips dated within the period, inclusive", () => {
+  const p = period({ startDate: "2024-08-01", endDate: "2024-10-31" });
+  const trips = [
+    t({ id: 1, date: "2024-08-01" }),
+    t({ id: 2, date: "2024-10-31" }),
+    t({ id: 3, date: "2024-07-31" }),
+    t({ id: 4, date: "2024-11-01" }),
+    t({ id: 5, date: "2024-09-01", vehicleId: 2 }),
+  ];
+  expect(tripsInPeriod(trips, p).map((x) => x.id)).toEqual([1, 2]);
 });
