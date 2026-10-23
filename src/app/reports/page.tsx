@@ -110,6 +110,9 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
                   {q.label}: {formatMoney(q.heldBackGstCents)} GST held back — {q.needsTaxInvoice.length} expense
                   {q.needsTaxInvoice.length === 1 ? "" : "s"} over {formatMoney(TAX_INVOICE_THRESHOLD_CENTS)} need{q.needsTaxInvoice.length === 1 ? "s" : ""} a tax invoice (ATO rule).
                 </p>
+                <p className="mt-1 text-muted">
+                  The deduction still uses the GST-exclusive amount. Get the tax invoice and claim the credit within 4 years of the BAS due date for this quarter, or it lapses.
+                </p>
                 <ul className="mt-1 text-muted">
                   {q.needsTaxInvoice.map((e) => (
                     <li key={e.id}>
