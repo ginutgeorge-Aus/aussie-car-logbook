@@ -37,6 +37,17 @@ export function businessTripsMissingPurpose<T extends Pick<TripRow, "purpose" | 
 
 type PeriodTrip = Pick<TripRow, "vehicleId" | "date" | "odoStart" | "odoEnd" | "isBusiness">;
 
+/**
+ * The trips a logbook period covers: that vehicle's trips dated from the
+ * period's start date to its end date, inclusive.
+ *
+ * @param trips all trips.
+ * @param period the logbook period.
+ */
+export function tripsInPeriod<T extends Pick<TripRow, "vehicleId" | "date">>(trips: T[], period: LogbookPeriodRow): T[] {
+  return trips.filter((t) => t.vehicleId === period.vehicleId && t.date >= period.startDate && t.date <= period.endDate);
+}
+
 /** Km a logbook period measures, or why it can't set business use (`no-trips` = nothing recorded in it, not an odometer error). */
 export type LogbookPeriodUse =
   | { ok: true; businessKm: number; totalKm: number }
@@ -63,7 +74,7 @@ export function logbookPeriodUse(trips: PeriodTrip[], period: LogbookPeriodRow):
   if (odoEnd <= odoStart) {
     return invalid("the end odometer must be higher than the start odometer — fix them on the Trips page");
   }
-  const inPeriod = trips.filter((t) => t.vehicleId === period.vehicleId && t.date >= period.startDate && t.date <= period.endDate);
+  const inPeriod = tripsInPeriod(trips, period);
   if (inPeriod.reduce((s, t) => s + tripKm(t), 0) === 0) return { ok: false, kind: "no-trips", reason: "no trips recorded" };
   if (inPeriod.some((t) => t.odoStart < odoStart || t.odoEnd > odoEnd)) {
     return invalid("a trip in it falls outside the period's odometer readings — fix the readings on the Trips page");
