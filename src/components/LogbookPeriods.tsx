@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { createLogbookPeriodAction, deleteLogbookPeriodAction, updateLogbookPeriodOdometerAction } from "@/lib/actions";
+import { createLogbookPeriodAction, deleteLogbookPeriodAction, updateLogbookPeriodNominatedFyAction, updateLogbookPeriodOdometerAction } from "@/lib/actions";
 import { FieldError, useFieldErrors } from "@/components/FieldError";
 import { useFormSubmit } from "@/components/useFormSubmit";
 import { btnDanger, btnPrimary, cardCls, inputCls, labelCls } from "@/components/ui";
@@ -18,6 +18,8 @@ export type LogbookPeriodView = {
   validity: string;
   /** Business-use % (2 dp, e.g. "66.67") from trips inside the period, or null when it has none. */
   businessPct: string | null;
+  /** The income year the logbook is for (its nominated FY, else the FY it starts in). */
+  nominatedFy: string;
   /** Odometer (km) at the period's start / end; null until recorded. */
   odoStart: number | null;
   odoEnd: number | null;
@@ -108,6 +110,29 @@ function PeriodOdometerForm({ period }: { period: LogbookPeriodView }) {
   );
 }
 
+/** Inline form to change which FY a period crossing 30 June is nominated for. */
+function PeriodNominatedFyForm({ period }: { period: LogbookPeriodView }) {
+  const { state, pending, onSubmit } = useFormSubmit(updateLogbookPeriodNominatedFyAction);
+  const errs = state.ok ? {} : (state.fieldErrors ?? {});
+  const fe = useFieldErrors(errs);
+
+  return (
+    <form method="post" onSubmit={onSubmit} className="flex w-full flex-wrap items-end gap-3">
+      <input type="hidden" name="id" value={period.id} />
+      <label className="flex flex-col gap-1">
+        <span className={labelCls}>Income year (FY)</span>
+        <select {...fe("nominatedFy").input} name="nominatedFy" defaultValue={period.nominatedFy} className={inputCls}>
+          {logbookNominableFys(period).map((fy) => <option key={fy} value={fy}>{fy}</option>)}
+        </select>
+        <FieldError {...fe("nominatedFy").error} />
+      </label>
+      <button type="submit" disabled={pending} className={btnPrimary}>{pending ? "Saving…" : "Save FY"}</button>
+      {state.ok && state.saved ? <p role="status" className="text-sm text-muted">Saved.</p> : null}
+      {!state.ok && state.error ? <p className="w-full text-sm text-danger">{state.error}</p> : null}
+    </form>
+  );
+}
+
 /** One logbook period with its validity window, odometers, business %, an odometer edit form and a delete button. */
 export function LogbookPeriodItem({ period }: { period: LogbookPeriodView }) {
   const del = useFormSubmit(deleteLogbookPeriodAction, {
@@ -129,6 +154,7 @@ export function LogbookPeriodItem({ period }: { period: LogbookPeriodView }) {
       {period.problem ? <p role="alert" className="w-full font-medium text-danger">Logbook not valid: {period.problem}.</p> : null}
       <Link href={`/trips/logbook/${period.id}`} className="font-medium text-accent-ink underline underline-offset-2">View / print</Link>
       <PeriodOdometerForm period={period} />
+      {logbookNominableFys(period).length > 1 ? <PeriodNominatedFyForm period={period} /> : null}
       <form method="post" onSubmit={del.onSubmit}>
         <input type="hidden" name="id" value={period.id} />
         <button type="submit" disabled={del.pending} className={btnDanger}>

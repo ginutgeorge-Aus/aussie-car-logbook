@@ -36,6 +36,7 @@ export default async function TripsPage({ searchParams }: PageProps<"/trips">) {
       id: p.id,
       startDate: p.startDate,
       endDate: p.endDate,
+      nominatedFy: firstFy,
       odoStart: p.odoStart ?? null,
       odoEnd: p.odoEnd ?? null,
       problem: !use.ok && use.kind === "invalid" ? use.reason : null,
