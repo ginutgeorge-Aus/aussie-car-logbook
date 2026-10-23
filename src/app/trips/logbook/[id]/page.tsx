@@ -75,32 +75,34 @@ export default async function LogbookSummaryPage({ params }: PageProps<"/trips/l
         {periodTrips.length === 0 ? (
           <p className="text-sm text-muted">No journeys recorded.</p>
         ) : (
-          <table className="w-full border-collapse text-left text-[15px]">
-            <thead>
-              <tr className="text-xs uppercase tracking-[0.05em] text-muted">
-                <th scope="col" className={`${cell} font-medium`}>Date</th>
-                <th scope="col" className={`${cell} text-right font-medium`}>Start odometer</th>
-                <th scope="col" className={`${cell} text-right font-medium`}>End odometer</th>
-                <th scope="col" className={`${cell} text-right font-medium`}>km</th>
-                <th scope="col" className={`${cell} font-medium`}>Type</th>
-                <th scope="col" className={`${cell} font-medium`}>Reason</th>
-              </tr>
-            </thead>
-            <tbody>
-              {periodTrips.map((t) => (
-                <tr key={t.id}>
-                  <th scope="row" className={`${cell} font-normal`}>
-                    {t.endDate ? `${humanDate(t.date)} – ${humanDate(t.endDate, { withYear: true })}` : humanDate(t.date, { withYear: true })}
-                  </th>
-                  <td className={`${cell} text-right font-mono`}>{formatKm(t.odoStart)}</td>
-                  <td className={`${cell} text-right font-mono`}>{formatKm(t.odoEnd)}</td>
-                  <td className={`${cell} text-right font-mono`}>{formatKm(tripKm(t))}</td>
-                  <td className={cell}><TripType isBusiness={t.isBusiness} /></td>
-                  <td className={cell}>{t.purpose || <span className="text-muted">—</span>}</td>
+          <div className="overflow-x-auto print:overflow-visible">
+            <table className="w-full border-collapse text-left text-[15px]">
+              <thead>
+                <tr className="text-xs uppercase tracking-[0.05em] text-muted">
+                  <th scope="col" className={`${cell} font-medium`}>Date</th>
+                  <th scope="col" className={`${cell} text-right font-medium`}>Start odometer</th>
+                  <th scope="col" className={`${cell} text-right font-medium`}>End odometer</th>
+                  <th scope="col" className={`${cell} text-right font-medium`}>km</th>
+                  <th scope="col" className={`${cell} font-medium`}>Type</th>
+                  <th scope="col" className={`${cell} font-medium`}>Reason</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {periodTrips.map((t) => (
+                  <tr key={t.id}>
+                    <th scope="row" className={`${cell} font-normal`}>
+                      {t.endDate ? `${humanDate(t.date)} – ${humanDate(t.endDate, { withYear: true })}` : humanDate(t.date, { withYear: true })}
+                    </th>
+                    <td className={`${cell} text-right font-mono`}>{formatKm(t.odoStart)}</td>
+                    <td className={`${cell} text-right font-mono`}>{formatKm(t.odoEnd)}</td>
+                    <td className={`${cell} text-right font-mono`}>{formatKm(tripKm(t))}</td>
+                    <td className={cell}><TripType isBusiness={t.isBusiness} /></td>
+                    <td className={cell}>{t.purpose || <span className="text-muted">—</span>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 
