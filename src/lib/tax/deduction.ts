@@ -5,6 +5,8 @@ import type { ExpenseInput } from "@/lib/tax/types";
  * the GST-exclusive amount, since the GST comes back as a BAS credit. ATO "Effect of GST
  * credits on income tax deductions": "claim the amount of the purchase less any GST credit
  * you're entitled to". Source: https://www.ato.gov.au/businesses-and-organisations/gst-excise-and-indirect-taxes/gst/claiming-gst-credits/effect-of-gst-credits-on-income-tax-deductions
+ * Also GST-exclusive when the credit is held back for want of a tax invoice: s27-5 ITAA97 tests
+ * *entitlement* to the credit, not whether it has been claimed yet (ATO ID 2004/398, TD 2005/35).
  */
 export function annualDeduction(
   expenses: ExpenseInput[],
