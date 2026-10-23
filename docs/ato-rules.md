@@ -25,7 +25,7 @@ Code comments in `src/lib/tax/` link the same pages. Tests sit next to the code 
 | Car purchase GST credit is the GST on the tax invoice, capped at 1/11 of the car limit. A private sale has no GST, so no credit. GST that isn't recorded gets no credit (#46) | [ATO: Purchasing a motor vehicle](https://www.ato.gov.au/businesses-and-organisations/gst-excise-and-indirect-taxes/gst/in-detail/your-industry/motor-vehicle-and-transport/gst-and-motor-vehicles/purchasing-a-motor-vehicle) | `carPurchaseGstCents` (`depreciation.ts`) |
 | Depreciation cost base: cost less the GST credit claimed, then capped at the car limit for the FY the car was first held | Guide to depreciating assets, *Cost of a depreciating asset* (link above) | `depreciationForFy` (`depreciation.ts`) |
 | Diminishing value: base × days/365 × 200% ÷ effective life | [ATO: Prime cost and diminishing value methods](https://www.ato.gov.au/businesses-and-organisations/income-deductions-and-concessions/depreciation-and-capital-expenses-and-allowances/general-depreciation-rules-capital-allowances/prime-cost-straight-line-and-diminishing-value-methods) | `diminishingValue` (`depreciation.ts`) |
-| Effective life of a car: 8 years (**not re-confirmed**: TR 2022/1 is withdrawn, so check the ATO Effective Life lookup) | [ATO: Effective life of an asset](https://www.ato.gov.au/businesses-and-organisations/income-deductions-and-concessions/depreciation-and-capital-expenses-and-allowances/general-depreciation-rules-capital-allowances/effective-life-of-an-asset) | `EFFECTIVE_LIFE_YEARS` (`depreciation.ts`) |
+| Effective life of a car: 8 years by default (LI 2025/20, s40-100(1) ITAA97, re-confirmed 2026-10-23; TR 2022/1 is withdrawn). A taxpayer may self-assess (s40-105), and a car bought from an associate may need the former holder's life, so it can be overridden per vehicle via `vehicle.effectiveLifeYears` | [ATO: LI 2025/20](https://www.ato.gov.au/law/view/view.htm?docid=%22OPS%2FLI202520%2F00001%22) | `EFFECTIVE_LIFE_YEARS` (`depreciation.ts`), `effectiveLifeYears` (`build.ts`) |
 
 ## Logbook method and income-tax deduction
 
@@ -45,5 +45,4 @@ Code comments in `src/lib/tax/` link the same pages. Tests sit next to the code 
 ## Known gaps
 
 - **Yearly odometer readings** (#51) are entered by hand, not backfilled from the vehicle's single opening/closing odometer (no FY attached, so a guess could be wrong tax data). Years with no readings stay flagged on the report.
-- **Effective life** isn't re-confirmed, and users can't override it yet (see row above).
 - **Held-back GST** (no tax invoice yet): the ATO deducts the cost less the GST credit you're *entitled to*. The app still deducts GST-exclusive for these expenses.
