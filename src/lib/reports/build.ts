@@ -8,8 +8,8 @@ import {
   carPurchaseGstCents,
   businessPctBps,
 } from "@/lib/tax";
-import { businessTripsMissingPurpose, filterTripsByFy, resolveBusinessUse, type BusinessUseSource } from "@/lib/logbook/compute";
-import type { LogbookPeriodRow, TripRow, VehicleRow } from "@/lib/logbook/types";
+import { businessTripsMissingPurpose, filterTripsByFy, missingFyOdometers, resolveBusinessUse, type BusinessUseSource } from "@/lib/logbook/compute";
+import type { LogbookPeriodRow, TripRow, VehicleFyOdometerRow, VehicleRow } from "@/lib/logbook/types";
 import type { ExpenseRow } from "@/lib/data/expense";
 import type { ExpenseCategory, ExpenseInput } from "@/lib/tax/types";
 
@@ -106,7 +106,8 @@ function carPurchaseCredit(input: {
  * GST-registered; 'depreciation' expense rows are excluded (computed instead). Business use comes from the most recent valid logbook period
  * (ATO logbook method), falling back to the FY's own trips with a notice when
  * no valid logbook exists (see `resolveBusinessUse`). That fallback feeds BAS
- * only: without a valid logbook the income-tax car deduction is 0.
+ * only: without a valid logbook the income-tax car deduction is 0. Notices also
+ * flag a missing start/end-of-year odometer reading for a year the logbook covers.
  */
 export function buildFyReport(input: {
   trips: TripRow[];
@@ -114,10 +115,11 @@ export function buildFyReport(input: {
   vehicle: VehicleRow | null;
   settings: { gstRegistered: boolean };
   logbookPeriods: LogbookPeriodRow[];
+  fyOdometers: VehicleFyOdometerRow[];
   fyLabel: string;
   today: string;
 }): FyReport {
-  const { trips, expenses, vehicle, settings, logbookPeriods, fyLabel, today } = input;
+  const { trips, expenses, vehicle, settings, logbookPeriods, fyOdometers, fyLabel, today } = input;
   const businessUse = resolveBusinessUse({ trips, periods: logbookPeriods, fyLabel, today });
   const notices: string[] = [...businessUse.notices];
   // Single rounding: % to 2 dp; all dollars use the same rounded ratio that is displayed.
@@ -132,6 +134,13 @@ export function buildFyReport(input: {
       `The car deduction can't be claimed for FY ${fyLabel} — the ATO logbook method needs a valid logbook. ` +
         "Keep a logbook for at least 12 continuous weeks, then add it on the Trips page.",
     );
+  }
+  // Flag only (no $ change): the ATO needs odometer readings at the start and end of each year a logbook is relied on.
+  if (claimable) {
+    const missing = missingFyOdometers(fyOdometers, fyLabel, today);
+    const tail = " — the ATO needs start and end readings for each year you use a logbook. Add it on the Vehicle page.";
+    if (missing.open) notices.push(`Odometer reading at the start of FY ${fyLabel} (1 July) is missing${tail}`);
+    if (missing.close) notices.push(`Odometer reading at the end of FY ${fyLabel} (30 June) is missing${tail}`);
   }
   // Flag only (no $ change): the ATO needs the reason for every business journey.
   const noReason = businessTripsMissingPurpose(filterTripsByFy(trips, fyLabel)).length;

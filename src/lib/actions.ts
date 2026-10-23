@@ -1,9 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { parseVehicleForm, parseTripForm, parseLogbookPeriodForm, parseLogbookPeriodOdometerForm } from "@/lib/logbook/parse";
+import { parseVehicleForm, parseTripForm, parseLogbookPeriodForm, parseLogbookPeriodOdometerForm, parseVehicleFyOdometerForm } from "@/lib/logbook/parse";
 import { createLogbookPeriod, deleteLogbookPeriod, updateLogbookPeriodOdometer } from "@/lib/data/logbookPeriod";
 import { upsertVehicle } from "@/lib/data/vehicle";
+import { upsertVehicleFyOdometer } from "@/lib/data/vehicleFyOdometer";
 import { createTrip, updateTrip, deleteTrip } from "@/lib/data/trip";
 import type { ActionResult } from "@/lib/logbook/types";
 import { parseExpenseForm } from "@/lib/expenses/parse";
@@ -36,6 +37,19 @@ export async function saveVehicleAction(_prev: ActionResult, fd: FormData): Prom
   if (!parsed.ok) return { ok: false, fieldErrors: parsed.fieldErrors };
   try {
     await upsertVehicle(parsed.value);
+  } catch (e) {
+    return failure(e);
+  }
+  revalidateAll("/vehicle");
+  return { ok: true, saved: true };
+}
+
+/** Saves the start/end-of-year odometer readings for one FY (replaces that FY's saved readings). */
+export async function saveVehicleFyOdometerAction(_prev: ActionResult, fd: FormData): Promise<ActionResult> {
+  const parsed = parseVehicleFyOdometerForm(fd);
+  if (!parsed.ok) return { ok: false, fieldErrors: parsed.fieldErrors };
+  try {
+    await upsertVehicleFyOdometer(parsed.value);
   } catch (e) {
     return failure(e);
   }

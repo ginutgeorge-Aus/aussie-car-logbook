@@ -4,6 +4,7 @@ import { listTrips } from "@/lib/data/trip";
 import { listExpenses } from "@/lib/data/expense";
 import { getSettings } from "@/lib/data/settings";
 import { listLogbookPeriods } from "@/lib/data/logbookPeriod";
+import { listVehicleFyOdometers } from "@/lib/data/vehicleFyOdometer";
 import { financialYear, formatBusinessPct, fyLabelOr, TAX_INVOICE_THRESHOLD_CENTS } from "@/lib/tax";
 import { todayIso } from "@/lib/today";
 import { formatMoney, humanDate } from "@/lib/format";
@@ -37,11 +38,12 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
   const vehicle = await getVehicle();
   if (!vehicle) return <NeedsVehicle />;
 
-  const [trips, expenses, settings, logbookPeriods] = await Promise.all([
+  const [trips, expenses, settings, logbookPeriods, fyOdometers] = await Promise.all([
     listTrips(),
     listExpenses(),
     getSettings(),
     listLogbookPeriods(),
+    listVehicleFyOdometers(),
   ]);
   const today = todayIso();
   const currentFy = financialYear(today).label;
@@ -52,7 +54,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
     new Set([currentFy, ...trips.map((t) => financialYear(t.date).label), ...expenses.map((e) => financialYear(e.date).label), ...logbookFyLabels(logbookPeriods, currentFy)]),
   ).sort((a, b) => b.localeCompare(a));
 
-  const report = buildFyReport({ trips, expenses, vehicle, settings, logbookPeriods, fyLabel: activeFy, today });
+  const report = buildFyReport({ trips, expenses, vehicle, settings, logbookPeriods, fyOdometers, fyLabel: activeFy, today });
 
   return (
     <main className={`${pageBase} max-w-3xl flex flex-col gap-5`}>

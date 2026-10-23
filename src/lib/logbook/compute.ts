@@ -7,7 +7,7 @@ import {
   logbookPeriodDays,
   logbookValidity,
 } from "@/lib/tax";
-import type { LogbookPeriodRow, TripLeg, TripRow } from "@/lib/logbook/types";
+import type { LogbookPeriodRow, TripLeg, TripRow, VehicleFyOdometerRow } from "@/lib/logbook/types";
 
 export function tripKm(t: { odoStart: number; odoEnd: number }): number {
   return t.odoEnd - t.odoStart;
@@ -190,4 +190,29 @@ export function fyKmTotals(
     if (leg.isBusiness) businessKm += leg.km;
   }
   return { businessKm, totalKm };
+}
+
+/**
+ * Which odometer readings an income year still lacks. The ATO wants the
+ * reading at the start (1 July) and end (30 June) of each year a logbook is
+ * relied on. A reading can't exist before its date, so the opening one is only
+ * missing once the FY has started and the closing one once it has ended.
+ * Source: https://www.ato.gov.au/individuals-and-families/your-tax-return/instructions-to-complete-your-tax-return/mytax-instructions/2026/deductions/work-related-expenses/work-related-car-expenses
+ *
+ * @param rows saved yearly readings.
+ * @param fyLabel income year to check, e.g. "2025-26".
+ * @param today ISO date the caller treats as now.
+ * @returns `open` / `close` flags; both false when nothing is missing.
+ */
+export function missingFyOdometers(
+  rows: Pick<VehicleFyOdometerRow, "fyLabel" | "odoOpen" | "odoClose">[],
+  fyLabel: string,
+  today: string,
+): { open: boolean; close: boolean } {
+  const row = rows.find((r) => r.fyLabel === fyLabel);
+  const { startISO, endISO } = financialYear(`${fyLabel.slice(0, 4)}-07-01`);
+  return {
+    open: today >= startISO && row?.odoOpen == null,
+    close: today > endISO && row?.odoClose == null,
+  };
 }

@@ -1,4 +1,4 @@
-import { gstFromInclusive, LOGBOOK_MIN_DAYS, logbookNominableFys, logbookPeriodDays } from "@/lib/tax";
+import { financialYear, gstFromInclusive, LOGBOOK_MIN_DAYS, logbookNominableFys, logbookPeriodDays } from "@/lib/tax";
 import type { ParseResult } from "@/lib/logbook/types";
 
 /** Plain non-negative decimal: digits with an optional fraction ("12", "12.5", ".5", "12."). */
@@ -209,4 +209,33 @@ export function parseLogbookPeriodForm(
   const { odoStart, odoEnd } = parsePeriodOdometers(fd, errors);
   if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
   return { ok: true, value: { startDate, endDate, nominatedFy, odoStart, odoEnd } };
+}
+
+/** Whether `label` is a well-formed income-year label ("YYYY-YY", second part = the following year). */
+export function isFyLabel(label: string): boolean {
+  return /^\d{4}-\d{2}$/.test(label) && financialYear(`${label.slice(0, 4)}-07-01`).label === label;
+}
+
+/**
+ * Parses the yearly odometer form: a valid FY label plus optional readings at
+ * the start (1 July) and end (30 June) of that year, each a non-negative whole
+ * km, with the closing reading not below the opening one. The ATO wants both
+ * readings for every income year a logbook is relied on.
+ * Source: https://www.ato.gov.au/individuals-and-families/your-tax-return/instructions-to-complete-your-tax-return/mytax-instructions/2026/deductions/work-related-expenses/work-related-car-expenses
+ */
+export function parseVehicleFyOdometerForm(
+  fd: FormData,
+): ParseResult<{ fyLabel: string; odoOpen: number | null; odoClose: number | null }> {
+  const errors: Record<string, string> = {};
+  const fyLabel = str(fd, "fyLabel");
+  if (!isFyLabel(fyLabel)) errors.fyLabel = "Choose a valid financial year.";
+  const odoOpen = optInt(str(fd, "odoOpen"));
+  const odoClose = optInt(str(fd, "odoClose"));
+  if (Number.isNaN(odoOpen) || (odoOpen !== null && odoOpen < 0)) errors.odoOpen = "Odometer must be a whole number ≥ 0.";
+  if (Number.isNaN(odoClose) || (odoClose !== null && odoClose < 0)) errors.odoClose = "Odometer must be a whole number ≥ 0.";
+  if (!errors.odoOpen && !errors.odoClose && odoOpen !== null && odoClose !== null && odoClose < odoOpen) {
+    errors.odoClose = "End-of-year odometer can't be below the start-of-year reading.";
+  }
+  if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
+  return { ok: true, value: { fyLabel, odoOpen: odoOpen as number | null, odoClose: odoClose as number | null } };
 }
