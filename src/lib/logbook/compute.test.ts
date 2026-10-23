@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { logbookPeriodUse, tripKm, tripsToLegs, filterTripsByFy, resolveBusinessUse, businessTripsMissingPurpose, logbookPeriodBusinessPctBps, logbookFyLabels, currentOdometer, fyKmTotals } from "@/lib/logbook/compute";
+import { logbookPeriodUse, tripKm, tripsToLegs, filterTripsByFy, resolveBusinessUse, businessTripsMissingPurpose, logbookPeriodBusinessPctBps, logbookFyLabels, currentOdometer, fyKmTotals, missingFyOdometers } from "@/lib/logbook/compute";
 import type { LogbookPeriodRow, TripRow } from "@/lib/logbook/types";
 
 const TODAY = "2099-01-01";
@@ -221,4 +221,21 @@ test("businessTripsMissingPurpose returns business trips with a null or blank re
   expect(
     businessTripsMissingPurpose([t(1, null), t(2, "  "), t(3, "Client"), t(4, null, false), t(5, "", true)]).map((x) => x.id),
   ).toEqual([1, 2, 5]);
+});
+
+test("missingFyOdometers flags the readings a finished FY lacks", () => {
+  const row = (odoOpen: number | null, odoClose: number | null) => [{ fyLabel: "2024-25", odoOpen, odoClose }];
+  expect(missingFyOdometers([], "2024-25", TODAY)).toEqual({ open: true, close: true });
+  expect(missingFyOdometers(row(100, null), "2024-25", TODAY)).toEqual({ open: false, close: true });
+  expect(missingFyOdometers(row(null, 200), "2024-25", TODAY)).toEqual({ open: true, close: false });
+  expect(missingFyOdometers(row(100, 200), "2024-25", TODAY)).toEqual({ open: false, close: false });
+  // another FY's row doesn't count
+  expect(missingFyOdometers([{ fyLabel: "2023-24", odoOpen: 1, odoClose: 2 }], "2024-25", TODAY)).toEqual({ open: true, close: true });
+});
+
+test("missingFyOdometers: close is only due once the FY has ended, open once it has started", () => {
+  expect(missingFyOdometers([], "2024-25", "2025-03-01")).toEqual({ open: true, close: false });
+  expect(missingFyOdometers([], "2024-25", "2025-06-30")).toEqual({ open: true, close: false });
+  expect(missingFyOdometers([], "2024-25", "2025-07-01")).toEqual({ open: true, close: true });
+  expect(missingFyOdometers([], "2024-25", "2024-06-30")).toEqual({ open: false, close: false });
 });

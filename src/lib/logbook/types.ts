@@ -26,6 +26,16 @@ export type LogbookPeriodRow = {
   odoEnd?: number | null;
 };
 
+/** Odometer readings at the start (1 July) and end (30 June) of one income year. Null = not recorded. */
+export type VehicleFyOdometerRow = {
+  id: number;
+  vehicleId: number;
+  /** Income year label, e.g. "2025-26". */
+  fyLabel: string;
+  odoOpen: number | null;
+  odoClose: number | null;
+};
+
 export type VehicleRow = {
   id: number;
   make: string;

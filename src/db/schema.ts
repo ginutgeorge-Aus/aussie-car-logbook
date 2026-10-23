@@ -1,4 +1,4 @@
-import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
+import { sqliteTable, integer, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const vehicle = sqliteTable("vehicle", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -11,6 +11,19 @@ export const vehicle = sqliteTable("vehicle", {
   purchaseCostCents: integer("purchase_cost_cents"),
   purchaseGstCents: integer("purchase_gst_cents"), // GST on the tax invoice; 0 = private sale, null = not recorded
 });
+
+/** Odometer at the start (1 Jul) and end (30 Jun) of an income year; the ATO wants both for each year a logbook is relied on. */
+export const vehicleFyOdometer = sqliteTable(
+  "vehicle_fy_odometer",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    vehicleId: integer("vehicle_id").notNull().references(() => vehicle.id),
+    fyLabel: text("fy_label").notNull(), // e.g. "2025-26"
+    odoOpen: integer("odo_open"), // km at 1 July; null = not recorded
+    odoClose: integer("odo_close"), // km at 30 June; null = not recorded
+  },
+  (t) => [uniqueIndex("vehicle_fy_odometer_vehicle_fy_unique").on(t.vehicleId, t.fyLabel)],
+);
 
 export const logbookPeriod = sqliteTable("logbook_period", {
   id: integer("id").primaryKey({ autoIncrement: true }),

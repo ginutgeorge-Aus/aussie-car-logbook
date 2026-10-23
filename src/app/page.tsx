@@ -4,6 +4,7 @@ import { listTrips } from "@/lib/data/trip";
 import { listExpenses } from "@/lib/data/expense";
 import { getSettings } from "@/lib/data/settings";
 import { listLogbookPeriods } from "@/lib/data/logbookPeriod";
+import { listVehicleFyOdometers } from "@/lib/data/vehicleFyOdometer";
 import { currentOdometer, fyKmTotals, filterTripsByFy } from "@/lib/logbook/compute";
 import { financialYear } from "@/lib/tax";
 import { buildFyReport } from "@/lib/reports/build";
@@ -56,16 +57,17 @@ export default async function Home() {
     );
   }
 
-  const [trips, expenses, settings, periods] = await Promise.all([
+  const [trips, expenses, settings, periods, fyOdometers] = await Promise.all([
     listTrips(),
     listExpenses(),
     getSettings(),
     listLogbookPeriods(),
+    listVehicleFyOdometers(),
   ]);
   const today = todayIso();
   const fyLabel = financialYear(today).label;
   // Same figures as /reports: one rounding, GST credit only when registered, depreciation included.
-  const report = buildFyReport({ trips, expenses, vehicle, settings, logbookPeriods: periods, fyLabel, today });
+  const report = buildFyReport({ trips, expenses, vehicle, settings, logbookPeriods: periods, fyOdometers, fyLabel, today });
   const source = report.businessUseSource;
   const km = fyKmTotals(trips, fyLabel);
   const odo = currentOdometer(trips, vehicle.odoOpen);

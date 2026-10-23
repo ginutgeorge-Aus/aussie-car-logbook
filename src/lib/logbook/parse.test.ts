@@ -1,5 +1,5 @@
-import { expect, test } from "vitest";
-import { dollarsToCents, centsToDollars, parseVehicleForm, parseTripForm, parseLogbookPeriodForm, parseLogbookPeriodOdometerForm } from "@/lib/logbook/parse";
+import { describe, expect, it, test } from "vitest";
+import { dollarsToCents, centsToDollars, parseVehicleForm, parseTripForm, parseLogbookPeriodForm, parseLogbookPeriodOdometerForm, parseVehicleFyOdometerForm } from "@/lib/logbook/parse";
 
 function fd(obj: Record<string, string>): FormData {
   const f = new FormData();
@@ -177,4 +177,31 @@ test("parseLogbookPeriodOdometerForm accepts valid readings and rejects bad ones
   expect(r.ok).toBe(false);
   if (!r.ok) expect(r.fieldErrors.odoEnd).toMatch(/higher/);
   expect(parseLogbookPeriodOdometerForm(fd({})).ok).toBe(false);
+});
+
+describe("parseVehicleFyOdometerForm", () => {
+  const form = fd;
+  it("accepts a valid FY with both, one or no readings", () => {
+    expect(parseVehicleFyOdometerForm(form({ fyLabel: "2025-26", odoOpen: "100", odoClose: "200" }))).toEqual({ ok: true, value: { fyLabel: "2025-26", odoOpen: 100, odoClose: 200 } });
+    expect(parseVehicleFyOdometerForm(form({ fyLabel: "2025-26", odoOpen: "100", odoClose: "" }))).toEqual({ ok: true, value: { fyLabel: "2025-26", odoOpen: 100, odoClose: null } });
+    expect(parseVehicleFyOdometerForm(form({ fyLabel: "2099-00" }))).toEqual({ ok: true, value: { fyLabel: "2099-00", odoOpen: null, odoClose: null } });
+    expect(parseVehicleFyOdometerForm(form({ fyLabel: "2025-26", odoOpen: "100", odoClose: "100" })).ok).toBe(true);
+  });
+  it.each(["", "2025", "2025-27", "2025-2026", "25-26", "2026-25"])("rejects FY label %j", (fyLabel) => {
+    const r = parseVehicleFyOdometerForm(form({ fyLabel }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.fieldErrors.fyLabel).toBeDefined();
+  });
+  it("rejects negative, fractional and non-numeric readings", () => {
+    for (const bad of ["-1", "1.5", "abc"]) {
+      const r = parseVehicleFyOdometerForm(form({ fyLabel: "2025-26", odoOpen: bad, odoClose: bad }));
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(Object.keys(r.fieldErrors).sort()).toEqual(["odoClose", "odoOpen"]);
+    }
+  });
+  it("rejects close below open", () => {
+    const r = parseVehicleFyOdometerForm(form({ fyLabel: "2025-26", odoOpen: "200", odoClose: "100" }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.fieldErrors.odoClose).toMatch(/below/);
+  });
 });
