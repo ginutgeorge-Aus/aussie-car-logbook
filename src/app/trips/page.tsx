@@ -1,7 +1,7 @@
 import { getVehicle } from "@/lib/data/vehicle";
 import { listTrips } from "@/lib/data/trip";
 import { listLogbookPeriods } from "@/lib/data/logbookPeriod";
-import { filterTripsByFy, fyKmTotals, logbookFyLabels, logbookPeriodBusinessPctBps, resolveBusinessUse } from "@/lib/logbook/compute";
+import { filterTripsByFy, fyKmTotals, logbookFyLabels, logbookPeriodBusinessPctBps, logbookPeriodUse, resolveBusinessUse } from "@/lib/logbook/compute";
 import { businessPctBps, financialYear, formatBusinessPct, fyLabelOr, logbookValidity } from "@/lib/tax";
 import { todayIso } from "@/lib/today";
 import { formatKm } from "@/lib/format";
@@ -31,10 +31,14 @@ export default async function TripsPage({ searchParams }: PageProps<"/trips">) {
   const pct = formatBusinessPct(businessPctBps(businessUse.ratio));
   const periodViews = periods.map((p) => {
     const { firstFy, lastFy } = logbookValidity(p);
+    const use = logbookPeriodUse(trips, p);
     return {
       id: p.id,
       startDate: p.startDate,
       endDate: p.endDate,
+      odoStart: p.odoStart ?? null,
+      odoEnd: p.odoEnd ?? null,
+      problem: !use.ok && use.kind === "invalid" ? use.reason : null,
       validity: `FY ${firstFy} to ${lastFy}`,
       businessPct: (() => {
         const bps = logbookPeriodBusinessPctBps(trips, p);

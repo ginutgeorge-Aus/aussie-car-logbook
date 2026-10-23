@@ -19,6 +19,9 @@ export type LogbookPeriodRow = {
   endDate: string;
   /** Income year the logbook is for when the period crosses 30 June; null = the FY it starts in. */
   nominatedFy?: string | null;
+  /** Odometer (km) at the start / end of the period; total km = end − start. Null until recorded. */
+  odoStart?: number | null;
+  odoEnd?: number | null;
 };
 
 export type VehicleRow = {

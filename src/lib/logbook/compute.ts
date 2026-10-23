@@ -26,35 +26,62 @@ export function filterTripsByFy<T extends { date: string }>(
   return trips.filter((t) => financialYear(t.date).label === fyLabel);
 }
 
+type PeriodTrip = Pick<TripRow, "vehicleId" | "date" | "odoStart" | "odoEnd" | "isBusiness">;
+
+/** Km a logbook period measures, or why it can't set business use (`no-trips` = nothing recorded in it, not an odometer error). */
+export type LogbookPeriodUse =
+  | { ok: true; businessKm: number; totalKm: number }
+  | { ok: false; kind: "no-trips" | "invalid"; reason: string };
+
 /**
- * Trip legs of the period's vehicle dated within the logbook period (inclusive).
+ * Business use measured by one logbook period under the ATO rule: business km
+ * (that vehicle's business trips dated within the period) over total km, where
+ * total km = odometer at the end of the period minus odometer at the start —
+ * NOT the sum of logged trips, since unlogged private trips would otherwise
+ * overstate business use. A period is unusable when its odometer readings are
+ * missing or not increasing, or a logged trip falls outside them or overlaps another.
+ * Source: https://www.ato.gov.au/individuals-and-families/your-tax-return/instructions-to-complete-your-tax-return/mytax-instructions/2026/deductions/work-related-expenses/work-related-car-expenses
  *
  * @param trips all trips.
- * @param period the logbook period.
+ * @param period the logbook period (with its odometer readings).
  */
-function logbookPeriodLegs(
-  trips: Pick<TripRow, "vehicleId" | "date" | "odoStart" | "odoEnd" | "isBusiness">[],
-  period: LogbookPeriodRow,
-): TripLeg[] {
-  return tripsToLegs(
-    trips.filter((t) => t.vehicleId === period.vehicleId && t.date >= period.startDate && t.date <= period.endDate),
-  );
+export function logbookPeriodUse(trips: PeriodTrip[], period: LogbookPeriodRow): LogbookPeriodUse {
+  const invalid = (reason: string): LogbookPeriodUse => ({ ok: false, kind: "invalid", reason });
+  const { odoStart, odoEnd } = period;
+  if (odoStart == null || odoEnd == null) {
+    return invalid("odometer readings are missing — add them on the Trips page");
+  }
+  if (odoEnd <= odoStart) {
+    return invalid("the end odometer must be higher than the start odometer — fix them on the Trips page");
+  }
+  const inPeriod = trips.filter((t) => t.vehicleId === period.vehicleId && t.date >= period.startDate && t.date <= period.endDate);
+  if (inPeriod.reduce((s, t) => s + tripKm(t), 0) === 0) return { ok: false, kind: "no-trips", reason: "no trips recorded" };
+  if (inPeriod.some((t) => t.odoStart < odoStart || t.odoEnd > odoEnd)) {
+    return invalid("a trip in it falls outside the period's odometer readings — fix the readings on the Trips page");
+  }
+  // One car can't cover the same km twice: overlapping trips would double-count business km.
+  const byOdo = [...inPeriod].sort((a, b) => a.odoStart - b.odoStart);
+  if (byOdo.some((t, i) => i > 0 && t.odoStart < byOdo[i - 1].odoEnd)) {
+    return invalid("two trips in it overlap on the odometer — fix the trips' odometer readings");
+  }
+  // Every trip lies within the readings and none overlap, so businessKm ≤ totalKm.
+  const totalKm = odoEnd - odoStart;
+  const businessKm = inPeriod.filter((t) => t.isBusiness).reduce((s, t) => s + tripKm(t), 0);
+  return { ok: true, businessKm, totalKm };
 }
 
 /**
  * Business use measured by one logbook period, in basis points (see
- * `businessPctBps`), or null when no kilometres were recorded inside it.
+ * `businessPctBps`), or null when the period is unusable (see
+ * `logbookPeriodUse`) or has no trips recorded.
  *
  * @param trips all trips.
  * @param period the logbook period.
  */
-export function logbookPeriodBusinessPctBps(
-  trips: Pick<TripRow, "vehicleId" | "date" | "odoStart" | "odoEnd" | "isBusiness">[],
-  period: LogbookPeriodRow,
-): number | null {
-  const legs = logbookPeriodLegs(trips, period);
-  if (legs.reduce((s, l) => s + l.km, 0) === 0) return null;
-  return businessPctBps(businessPct(legs));
+export function logbookPeriodBusinessPctBps(trips: PeriodTrip[], period: LogbookPeriodRow): number | null {
+  const use = logbookPeriodUse(trips, period);
+  if (!use.ok) return null;
+  return businessPctBps(use.businessKm / use.totalKm);
 }
 
 /** Where a report's business-use % came from. */
@@ -77,7 +104,7 @@ export type BusinessUseSource =
  * @returns the ratio (0..1), its source, and notices to show on the report.
  */
 export function resolveBusinessUse(input: {
-  trips: Pick<TripRow, "vehicleId" | "date" | "odoStart" | "odoEnd" | "isBusiness">[];
+  trips: PeriodTrip[];
   periods: LogbookPeriodRow[];
   fyLabel: string;
   today: string;
@@ -94,14 +121,14 @@ export function resolveBusinessUse(input: {
       notices.push(`Logbook period ${p.startDate} to ${p.endDate} hasn't finished yet — it's used once it ends.`);
       continue;
     }
-    const legs = logbookPeriodLegs(trips, p);
-    if (legs.reduce((s, l) => s + l.km, 0) === 0) {
-      notices.push(`Logbook period ${p.startDate} to ${p.endDate} has no trips recorded — it was ignored.`);
+    const use = logbookPeriodUse(trips, p);
+    if (!use.ok) {
+      notices.push(`Logbook period ${p.startDate} to ${p.endDate}: ${use.reason} — it was ignored.`);
       continue;
     }
     const { firstFy, lastFy } = logbookValidity(p);
     return {
-      ratio: businessPct(legs),
+      ratio: use.businessKm / use.totalKm,
       source: { kind: "logbook", periodId: p.id, startDate: p.startDate, endDate: p.endDate, firstFy, lastFy },
       notices,
     };

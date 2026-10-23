@@ -22,6 +22,13 @@
       "when": 1792665636139,
       "tag": "0002_vehicle_gst_logbook_nominated_fy",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1792710915809,
+      "tag": "0003_logbook_period_odometer",
+      "breakpoints": true
     }
   ]
 }

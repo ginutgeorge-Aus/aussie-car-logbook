@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { dollarsToCents, centsToDollars, parseVehicleForm, parseTripForm, parseLogbookPeriodForm } from "@/lib/logbook/parse";
+import { dollarsToCents, centsToDollars, parseVehicleForm, parseTripForm, parseLogbookPeriodForm, parseLogbookPeriodOdometerForm } from "@/lib/logbook/parse";
 
 function fd(obj: Record<string, string>): FormData {
   const f = new FormData();
@@ -90,27 +90,29 @@ test("parseTripForm errors when date missing", () => {
 });
 
 
+const ODO = { odoStart: "50000", odoEnd: "50900" };
+
 test("parseLogbookPeriodForm accepts a 12-week period", () => {
-  expect(parseLogbookPeriodForm(fd({ startDate: "2024-07-01", endDate: "2024-09-22" }))).toEqual({
+  expect(parseLogbookPeriodForm(fd({ startDate: "2024-07-01", endDate: "2024-09-22", ...ODO }))).toEqual({
     ok: true,
-    value: { startDate: "2024-07-01", endDate: "2024-09-22", nominatedFy: null },
+    value: { startDate: "2024-07-01", endDate: "2024-09-22", nominatedFy: null, odoStart: 50000, odoEnd: 50900 },
   });
 });
 
 test("parseLogbookPeriodForm keeps the nominated FY for a period crossing 30 June (#45)", () => {
-  const r = parseLogbookPeriodForm(fd({ startDate: "2025-06-10", endDate: "2025-09-10", nominatedFy: "2025-26" }));
-  expect(r).toEqual({ ok: true, value: { startDate: "2025-06-10", endDate: "2025-09-10", nominatedFy: "2025-26" } });
+  const r = parseLogbookPeriodForm(fd({ startDate: "2025-06-10", endDate: "2025-09-10", nominatedFy: "2025-26", ...ODO }));
+  expect(r).toEqual({ ok: true, value: { startDate: "2025-06-10", endDate: "2025-09-10", nominatedFy: "2025-26", odoStart: 50000, odoEnd: 50900 } });
 });
 
 test("parseLogbookPeriodForm drops a nomination for a period inside one FY, rejects one outside the period", () => {
-  const inside = parseLogbookPeriodForm(fd({ startDate: "2024-07-01", endDate: "2024-09-22", nominatedFy: "2024-25" }));
+  const inside = parseLogbookPeriodForm(fd({ startDate: "2024-07-01", endDate: "2024-09-22", nominatedFy: "2024-25", ...ODO }));
   expect(inside.ok && inside.value.nominatedFy).toBe(null);
-  const outside = parseLogbookPeriodForm(fd({ startDate: "2025-06-10", endDate: "2025-09-10", nominatedFy: "2026-27" }));
+  const outside = parseLogbookPeriodForm(fd({ startDate: "2025-06-10", endDate: "2025-09-10", nominatedFy: "2026-27", ...ODO }));
   expect(!outside.ok && outside.fieldErrors.nominatedFy).toBeDefined();
 });
 
 test("parseLogbookPeriodForm rejects a period under 12 weeks", () => {
-  const r = parseLogbookPeriodForm(fd({ startDate: "2024-07-01", endDate: "2024-09-21" }));
+  const r = parseLogbookPeriodForm(fd({ startDate: "2024-07-01", endDate: "2024-09-21", ...ODO }));
   expect(r.ok).toBe(false);
   if (!r.ok) expect(r.fieldErrors.endDate).toMatch(/12 continuous weeks/);
 });
@@ -127,4 +129,25 @@ test("parseLogbookPeriodForm rejects missing, invalid and reversed dates", () =>
   const reversed = parseLogbookPeriodForm(fd({ startDate: "2024-12-01", endDate: "2024-07-01" }));
   expect(reversed.ok).toBe(false);
   if (!reversed.ok) expect(reversed.fieldErrors.endDate).toMatch(/after/);
+});
+
+test("parseLogbookPeriodForm requires odometers: missing, negative, fractional, end not above start (#49)", () => {
+  const dates = { startDate: "2024-07-01", endDate: "2024-09-22" };
+  const missing = parseLogbookPeriodForm(fd(dates));
+  expect(missing.ok).toBe(false);
+  if (!missing.ok) expect(Object.keys(missing.fieldErrors)).toEqual(["odoStart", "odoEnd"]);
+  const bad = parseLogbookPeriodForm(fd({ ...dates, odoStart: "-1", odoEnd: "1.5" }));
+  expect(bad.ok).toBe(false);
+  if (!bad.ok) expect(Object.keys(bad.fieldErrors)).toEqual(["odoStart", "odoEnd"]);
+  const equal = parseLogbookPeriodForm(fd({ ...dates, odoStart: "500", odoEnd: "500" }));
+  expect(equal.ok).toBe(false);
+  if (!equal.ok) expect(equal.fieldErrors.odoEnd).toMatch(/higher/);
+});
+
+test("parseLogbookPeriodOdometerForm accepts valid readings and rejects bad ones", () => {
+  expect(parseLogbookPeriodOdometerForm(fd(ODO))).toEqual({ ok: true, value: { odoStart: 50000, odoEnd: 50900 } });
+  const r = parseLogbookPeriodOdometerForm(fd({ odoStart: "900", odoEnd: "100" }));
+  expect(r.ok).toBe(false);
+  if (!r.ok) expect(r.fieldErrors.odoEnd).toMatch(/higher/);
+  expect(parseLogbookPeriodOdometerForm(fd({})).ok).toBe(false);
 });
