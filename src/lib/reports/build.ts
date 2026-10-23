@@ -229,6 +229,7 @@ export function buildFyReport(input: {
         purchaseDateISO: vehicle.purchaseDate,
         fyLabel,
         purchaseGstClaimedCents,
+        effectiveLifeYears: vehicle.effectiveLifeYears ?? undefined,
       });
       depreciationDeductionCents = Math.round(decline * deductionRatio);
     } catch {

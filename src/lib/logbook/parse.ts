@@ -58,6 +58,7 @@ export function parseVehicleForm(
   purchaseDate: string | null;
   purchaseCostCents: number | null;
   purchaseGstCents: number | null;
+  effectiveLifeYears: number | null;
 }> {
   const errors: Record<string, string> = {};
   const make = str(fd, "make");
@@ -96,10 +97,15 @@ export function parseVehicleForm(
     }
   }
 
+  const effectiveLifeYears = optInt(str(fd, "effectiveLifeYears"));
+  if (Number.isNaN(effectiveLifeYears) || (effectiveLifeYears !== null && (effectiveLifeYears < 1 || effectiveLifeYears > 50))) {
+    errors.effectiveLifeYears = "Effective life must be a whole number of years, 1 to 50.";
+  }
+
   if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
   return {
     ok: true,
-    value: { make, model, rego, odoOpen: odoOpen ?? null, purchaseDate, purchaseCostCents, purchaseGstCents },
+    value: { make, model, rego, odoOpen: odoOpen ?? null, purchaseDate, purchaseCostCents, purchaseGstCents, effectiveLifeYears: effectiveLifeYears ?? null },
   };
 }
 

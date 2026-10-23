@@ -1,0 +1,1 @@
+ALTER TABLE `vehicle` ADD `effective_life_years` integer;

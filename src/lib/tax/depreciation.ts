@@ -63,9 +63,11 @@ export function diminishingValue(input: {
 }
 
 /**
- * Effective life of a car (years). 8 is the long-standing ATO figure for cars, but TR 2022/1 is
- * withdrawn and the ATO now points to its Effective Life lookup — re-check there yearly.
- * Source: https://www.ato.gov.au/businesses-and-organisations/income-deductions-and-concessions/depreciation-and-capital-expenses-and-allowances/general-depreciation-rules-capital-allowances/effective-life-of-an-asset
+ * Default effective life of a car (years): 8, per the Commissioner's determination LI 2025/20
+ * (Income Tax Assessment (Effective Life of Depreciating Assets) Determination 2025, s40-100(1) ITAA 1997),
+ * "Motor vehicles and trailers: Cars (less than one tonne, fewer than 9 passengers): Generally". Re-confirmed 2026-10-23;
+ * TR 2022/1 is withdrawn. A taxpayer may self-assess instead (s40-105), so `vehicle.effectiveLifeYears` overrides this.
+ * Source: https://www.ato.gov.au/law/view/view.htm?docid=%22OPS%2FLI202520%2F00001%22
  */
 export const EFFECTIVE_LIFE_YEARS = 8;
 
