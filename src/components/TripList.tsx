@@ -1,7 +1,16 @@
-import { tripKm } from "@/lib/logbook/compute";
+import { businessTripsMissingPurpose, tripKm } from "@/lib/logbook/compute";
 import { formatKm, humanDate } from "@/lib/format";
 import { TripType } from "@/components/ui";
 import type { TripRow } from "@/lib/logbook/types";
+
+/** Trip date, with the end date when the journey spans days. */
+const tripDates = (t: TripRow) => (t.endDate ? `${humanDate(t.date)} – ${humanDate(t.endDate, { withYear: true })}` : humanDate(t.date));
+
+/** Visible (not colour-only) flag for a business trip with no reason — the ATO needs one. */
+function Reason({ t, fallback }: { t: TripRow; fallback: string }) {
+  if (businessTripsMissingPurpose([t]).length > 0) return <span className="font-medium text-danger">Reason missing (ATO needs one)</span>;
+  return <>{t.purpose || fallback}</>;
+}
 
 /** Read-only recent trips: compact cards on phones, a table with odometer readings on desktop. */
 export function RecentTrips({ trips }: { trips: TripRow[] }) {
@@ -12,9 +21,9 @@ export function RecentTrips({ trips }: { trips: TripRow[] }) {
           <li key={t.id} className="flex min-h-13 items-center gap-3 border-b border-rule">
             <span aria-hidden="true" className={`h-7 w-1 rounded-sm ${t.isBusiness ? "bg-accent" : "bg-private"}`} />
             <div className="flex min-w-0 grow flex-col gap-0.5 py-2">
-              <span className="truncate text-[15px]">{t.purpose || (t.isBusiness ? "Business trip" : "Private trip")}</span>
+              <span className="truncate text-[15px]"><Reason t={t} fallback={t.isBusiness ? "Business trip" : "Private trip"} /></span>
               <span className="text-xs text-muted">
-                {humanDate(t.date)} · {t.isBusiness ? "Business" : "Private"}
+                {tripDates(t)} · {t.isBusiness ? "Business" : "Private"}
               </span>
             </div>
             <span className="font-mono text-[15px] font-medium whitespace-nowrap">{formatKm(tripKm(t))} km</span>
@@ -35,8 +44,8 @@ export function RecentTrips({ trips }: { trips: TripRow[] }) {
           <tbody>
             {trips.map((t) => (
               <tr key={t.id}>
-                <td className="border-b border-rule px-5 py-3 whitespace-nowrap text-nav-ink">{humanDate(t.date)}</td>
-                <td className="border-b border-rule px-3 py-3">{t.purpose ?? ""}</td>
+                <td className="border-b border-rule px-5 py-3 whitespace-nowrap text-nav-ink">{tripDates(t)}</td>
+                <td className="border-b border-rule px-3 py-3"><Reason t={t} fallback="" /></td>
                 <td className="border-b border-rule px-3 py-3 font-mono text-sm text-muted whitespace-nowrap">
                   {formatKm(t.odoStart)} → {formatKm(t.odoEnd)}
                 </td>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { deleteTripAction, updateTripAction } from "@/lib/actions";
-import { tripKm } from "@/lib/logbook/compute";
+import { businessTripsMissingPurpose, tripKm } from "@/lib/logbook/compute";
 import { formatKm, humanDate } from "@/lib/format";
 import { FormError } from "@/components/FieldError";
 import { TripFields } from "@/components/TripFields";
@@ -45,6 +45,16 @@ function TripActions({ trip, onEdit }: { trip: TripRowType; onEdit: () => void }
   );
 }
 
+/** Trip date, with the end date when the journey spans days. */
+function tripDates(t: TripRowType): string {
+  return t.endDate ? `${humanDate(t.date)} – ${humanDate(t.endDate, { withYear: true })}` : humanDate(t.date);
+}
+
+/** Visible (not colour-only) flag for a business trip with no reason — the ATO needs one. */
+function reasonLabel(t: TripRowType): string {
+  return businessTripsMissingPurpose([t]).length > 0 ? "Reason missing (ATO needs one)" : "";
+}
+
 /**
  * One trip, as a phone card (`variant="card"`, an `<li>`) or a desktop table
  * row (`variant="row"`). Edit swaps in the stacked edit form in place.
@@ -63,9 +73,11 @@ export function TripRow({ trip, variant }: { trip: TripRowType; variant: "card" 
           <div className="flex items-center gap-3 py-2">
             <span aria-hidden="true" className={`h-10 w-1 shrink-0 rounded-sm ${trip.isBusiness ? "bg-accent" : "bg-private"}`} />
             <div className="flex min-w-0 grow flex-col gap-0.5">
-              <span className="truncate text-[15px]">{trip.purpose || (trip.isBusiness ? "Business trip" : "Private trip")}</span>
+              <span className="truncate text-[15px]">
+                {reasonLabel(trip) ? <span className="font-medium text-danger">{reasonLabel(trip)}</span> : trip.purpose || (trip.isBusiness ? "Business trip" : "Private trip")}
+              </span>
               <span className="text-xs text-muted">
-                {humanDate(trip.date)} · {trip.isBusiness ? "Business" : "Private"} ·{" "}
+                {tripDates(trip)} · {trip.isBusiness ? "Business" : "Private"} ·{" "}
                 <span className="font-mono">{formatKm(trip.odoStart)} → {formatKm(trip.odoEnd)}</span>
               </span>
             </div>
@@ -91,8 +103,8 @@ export function TripRow({ trip, variant }: { trip: TripRowType; variant: "card" 
 
   return (
     <tr>
-      <td className="border-b border-rule px-5 py-1.5 whitespace-nowrap text-nav-ink">{humanDate(trip.date)}</td>
-      <td className="border-b border-rule px-3 py-1.5">{trip.purpose ?? ""}</td>
+      <td className="border-b border-rule px-5 py-1.5 whitespace-nowrap text-nav-ink">{tripDates(trip)}</td>
+      <td className="border-b border-rule px-3 py-1.5">{reasonLabel(trip) ? <span className="font-medium text-danger">{reasonLabel(trip)}</span> : (trip.purpose ?? "")}</td>
       <td className="border-b border-rule px-3 py-1.5 font-mono text-sm text-muted whitespace-nowrap">
         {formatKm(trip.odoStart)} → {formatKm(trip.odoEnd)}
       </td>
