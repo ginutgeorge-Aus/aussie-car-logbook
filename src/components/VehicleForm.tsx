@@ -40,6 +40,22 @@ export function VehicleForm({ vehicle }: { vehicle: VehicleRow | null }) {
           <FieldError {...fe("model").error} />
         </label>
       </div>
+      <label className="flex flex-col gap-1.5">
+        <span className={labelCls}>Engine capacity (cc, optional)</span>
+        <input
+          {...fe("engineCapacityCc").input}
+          name="engineCapacityCc"
+          type="number"
+          inputMode="numeric"
+          min={50}
+          max={10000}
+          step={1}
+          defaultValue={vehicle?.engineCapacityCc ?? ""}
+          className={`${inputCls} font-mono`}
+        />
+        <span className="text-sm text-muted">The ATO logbook records it. Leave blank for an electric car.</span>
+        <FieldError {...fe("engineCapacityCc").error} />
+      </label>
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1.5">
           <span className={labelCls}>Rego</span>

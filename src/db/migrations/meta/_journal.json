@@ -50,6 +50,13 @@
       "when": 1792758324126,
       "tag": "0006_vehicle_effective_life",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1792818709332,
+      "tag": "0007_vehicle_engine_capacity",
+      "breakpoints": true
     }
   ]
 }

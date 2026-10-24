@@ -37,7 +37,7 @@ test("parseVehicleForm ok with required fields", () => {
   const r = parseVehicleForm(fd({ make: "Toyota", model: "Corolla", rego: "ABC123", odoOpen: "50000" }));
   expect(r).toEqual({
     ok: true,
-    value: { make: "Toyota", model: "Corolla", rego: "ABC123", odoOpen: 50000, purchaseDate: null, purchaseCostCents: null, purchaseGstCents: null, effectiveLifeYears: null },
+    value: { make: "Toyota", model: "Corolla", rego: "ABC123", odoOpen: 50000, purchaseDate: null, purchaseCostCents: null, purchaseGstCents: null, effectiveLifeYears: null, engineCapacityCc: null },
   });
 });
 
@@ -236,4 +236,16 @@ describe("parseLogbookPeriodNominatedFyForm", () => {
     const r = parseLogbookPeriodNominatedFyForm(fd({ nominatedFy: "2024-25" }), "2024-07-01", "2024-09-22");
     expect(!r.ok && r.fieldErrors.nominatedFy).toMatch(/crossing 30 June/);
   });
+});
+
+test("parseVehicleForm reads an optional whole-number engine capacity in cc (#76)", () => {
+  const base = { make: "T", model: "C" };
+  const r = parseVehicleForm(fd({ ...base, engineCapacityCc: "1998" }));
+  expect(r.ok && r.value.engineCapacityCc).toBe(1998);
+  const blank = parseVehicleForm(fd({ ...base, engineCapacityCc: "" }));
+  expect(blank.ok && blank.value.engineCapacityCc).toBeNull();
+  for (const bad of ["49", "10001", "1.6", "abc", "-1600"]) {
+    const e = parseVehicleForm(fd({ ...base, engineCapacityCc: bad }));
+    expect(!e.ok && e.fieldErrors.engineCapacityCc).toBe("Engine capacity must be a whole number of cc, 50 to 10000.");
+  }
 });

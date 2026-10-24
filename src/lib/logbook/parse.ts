@@ -59,6 +59,7 @@ export function parseVehicleForm(
   purchaseCostCents: number | null;
   purchaseGstCents: number | null;
   effectiveLifeYears: number | null;
+  engineCapacityCc: number | null;
 }> {
   const errors: Record<string, string> = {};
   const make = str(fd, "make");
@@ -102,10 +103,18 @@ export function parseVehicleForm(
     errors.effectiveLifeYears = "Effective life must be a whole number of years, 1 to 50.";
   }
 
+  const engineCapacityCc = optInt(str(fd, "engineCapacityCc"));
+  if (Number.isNaN(engineCapacityCc) || (engineCapacityCc !== null && (engineCapacityCc < 50 || engineCapacityCc > 10000))) {
+    errors.engineCapacityCc = "Engine capacity must be a whole number of cc, 50 to 10000.";
+  }
+
   if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
   return {
     ok: true,
-    value: { make, model, rego, odoOpen: odoOpen ?? null, purchaseDate, purchaseCostCents, purchaseGstCents, effectiveLifeYears: effectiveLifeYears ?? null },
+    value: {
+      make, model, rego, odoOpen: odoOpen ?? null, purchaseDate, purchaseCostCents, purchaseGstCents,
+      effectiveLifeYears: effectiveLifeYears ?? null, engineCapacityCc: engineCapacityCc ?? null,
+    },
   };
 }
 
