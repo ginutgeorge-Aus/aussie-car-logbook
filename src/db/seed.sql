@@ -1,13 +1,6 @@
 -- Fake sample data for local dev/demo. No real personal or tax data.
--- Re-runnable: wipes every table (children first) and resets ids, so ids below stay 1.
--- LOCAL DEV ONLY - never run against a database holding real data.
-DELETE FROM trip;
-DELETE FROM expense;
-DELETE FROM logbook_period;
-DELETE FROM vehicle_fy_odometer;
-DELETE FROM vehicle;
-DELETE FROM settings;
-DELETE FROM sqlite_sequence WHERE name IN ('trip', 'expense', 'logbook_period', 'vehicle_fy_odometer', 'vehicle', 'settings');
+-- Insert-only (never deletes): docs/deploy-ui.md has users paste it into a fresh D1 console.
+-- `pnpm db:seed` runs seed-reset.sql first (local only) to make it re-runnable.
 INSERT INTO settings (fy_start_month, gst_registered, abn) VALUES (7, 1, NULL);
 INSERT INTO vehicle (make, model, rego, odo_open, purchase_date, purchase_cost_cents, purchase_gst_cents)
   VALUES ('Toyota', 'Corolla', 'ABC123', 50000, '2023-07-01', 3000000, 272727);
