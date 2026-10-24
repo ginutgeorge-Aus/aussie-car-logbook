@@ -48,6 +48,27 @@ export async function updateLogbookPeriodOdometer(id: number, odoStart: number, 
   await db.update(logbookPeriod).set({ odoStart, odoEnd }).where(eq(logbookPeriod.id, id));
 }
 
+/** Loads one logbook period's dates and nominated FY, or null when it doesn't exist. */
+export async function getLogbookPeriod(id: number): Promise<{ startDate: string; endDate: string; nominatedFy: string | null } | null> {
+  const db = await getDb();
+  const rows = await db
+    .select({ startDate: logbookPeriod.startDate, endDate: logbookPeriod.endDate, nominatedFy: logbookPeriod.nominatedFy })
+    .from(logbookPeriod)
+    .where(eq(logbookPeriod.id, id))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/** Sets the nominated FY of an existing logbook period and refreshes its informational `valid_until` cache. */
+export async function updateLogbookPeriodNominatedFy(id: number, nominatedFy: string): Promise<void> {
+  const existing = await getLogbookPeriod(id);
+  if (!existing) throw new Error("Logbook period not found.");
+  const { lastFy } = logbookValidity({ ...existing, nominatedFy });
+  const validUntil = `${Number(lastFy.slice(0, 4)) + 1}-06-30`;
+  const db = await getDb();
+  await db.update(logbookPeriod).set({ nominatedFy, validUntil }).where(eq(logbookPeriod.id, id));
+}
+
 /** Deletes a logbook period, first unlinking any trips that reference it (FK). */
 export async function deleteLogbookPeriod(id: number): Promise<void> {
   const db = await getDb();

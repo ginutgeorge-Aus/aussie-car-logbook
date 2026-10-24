@@ -185,6 +185,36 @@ export function parseLogbookPeriodOdometerForm(fd: FormData): ParseResult<{ odoS
 }
 
 /**
+ * Validates a posted nominated FY against the period's dates: it must be the FY
+ * the logbook starts or ends in. Only a period crossing 30 June has a choice of
+ * income year, so for any other period the value is not stored (null).
+ */
+function resolveNominatedFy(raw: string, startDate: string, endDate: string, errors: Record<string, string>): string | null {
+  const options = logbookNominableFys({ startDate, endDate });
+  if (!options.includes(raw)) {
+    errors.nominatedFy = "Choose the FY the logbook starts or ends in.";
+    return null;
+  }
+  return options.length > 1 ? raw : null;
+}
+
+/**
+ * Parses the form that changes the nominated FY of an existing logbook period.
+ * The dates come from the stored period (never the client). Only a period
+ * crossing 30 June can be edited; the choice must be one of its two FYs.
+ */
+export function parseLogbookPeriodNominatedFyForm(fd: FormData, startDate: string, endDate: string): ParseResult<{ nominatedFy: string }> {
+  const errors: Record<string, string> = {};
+  if (logbookNominableFys({ startDate, endDate }).length < 2) {
+    errors.nominatedFy = "Only a logbook period crossing 30 June has a choice of income year.";
+  } else {
+    resolveNominatedFy(str(fd, "nominatedFy"), startDate, endDate, errors);
+  }
+  if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
+  return { ok: true, value: { nominatedFy: str(fd, "nominatedFy") } };
+}
+
+/**
  * Parses the logbook-period form: start and end dates are required, must be
  * real ISO dates, end must not precede start, and the period must cover at
  * least 12 continuous weeks (ATO logbook method). Start/end odometer readings
@@ -204,13 +234,10 @@ export function parseLogbookPeriodForm(
       errors.endDate = "A logbook period must cover at least 12 continuous weeks (84 days).";
     }
   }
-  // Only a period crossing 30 June has a choice of income year; otherwise it's the FY it's in.
   let nominatedFy: string | null = null;
   const nominatedRaw = str(fd, "nominatedFy");
   if (!errors.startDate && !errors.endDate && nominatedRaw !== "") {
-    const options = logbookNominableFys({ startDate, endDate });
-    if (!options.includes(nominatedRaw)) errors.nominatedFy = "Choose the FY the logbook starts or ends in.";
-    else if (options.length > 1) nominatedFy = nominatedRaw;
+    nominatedFy = resolveNominatedFy(nominatedRaw, startDate, endDate, errors);
   }
   const { odoStart, odoEnd } = parsePeriodOdometers(fd, errors);
   if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };

@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { parseVehicleForm, parseTripForm, parseLogbookPeriodForm, parseLogbookPeriodOdometerForm, parseVehicleFyOdometerForm } from "@/lib/logbook/parse";
-import { createLogbookPeriod, deleteLogbookPeriod, updateLogbookPeriodOdometer } from "@/lib/data/logbookPeriod";
+import { parseVehicleForm, parseTripForm, parseLogbookPeriodForm, parseLogbookPeriodOdometerForm, parseLogbookPeriodNominatedFyForm, parseVehicleFyOdometerForm } from "@/lib/logbook/parse";
+import { createLogbookPeriod, deleteLogbookPeriod, getLogbookPeriod, updateLogbookPeriodNominatedFy, updateLogbookPeriodOdometer } from "@/lib/data/logbookPeriod";
 import { upsertVehicle } from "@/lib/data/vehicle";
 import { upsertVehicleFyOdometer } from "@/lib/data/vehicleFyOdometer";
 import { createTrip, updateTrip, deleteTrip } from "@/lib/data/trip";
@@ -127,6 +127,23 @@ export async function updateLogbookPeriodOdometerAction(_prev: ActionResult, fd:
   if (!parsed.ok) return { ok: false, fieldErrors: parsed.fieldErrors };
   try {
     await updateLogbookPeriodOdometer(id, parsed.value.odoStart, parsed.value.odoEnd);
+  } catch (e) {
+    return failure(e);
+  }
+  revalidateAll("/trips");
+  return { ok: true, saved: true };
+}
+
+/** Sets the nominated FY on the existing logbook period whose id is posted (validated against the stored dates). */
+export async function updateLogbookPeriodNominatedFyAction(_prev: ActionResult, fd: FormData): Promise<ActionResult> {
+  const id = idFrom(fd);
+  if (id === null) return { ok: false, error: "Invalid logbook period." };
+  try {
+    const period = await getLogbookPeriod(id);
+    if (!period) return { ok: false, error: "Logbook period not found." };
+    const parsed = parseLogbookPeriodNominatedFyForm(fd, period.startDate, period.endDate);
+    if (!parsed.ok) return { ok: false, fieldErrors: parsed.fieldErrors };
+    await updateLogbookPeriodNominatedFy(id, parsed.value.nominatedFy);
   } catch (e) {
     return failure(e);
   }

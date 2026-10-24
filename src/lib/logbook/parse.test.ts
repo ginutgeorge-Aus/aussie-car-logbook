@@ -1,5 +1,5 @@
 import { describe, expect, it, test } from "vitest";
-import { dollarsToCents, centsToDollars, parseVehicleForm, parseTripForm, parseLogbookPeriodForm, parseLogbookPeriodOdometerForm, parseVehicleFyOdometerForm } from "@/lib/logbook/parse";
+import { dollarsToCents, centsToDollars, parseVehicleForm, parseTripForm, parseLogbookPeriodForm, parseLogbookPeriodOdometerForm, parseLogbookPeriodNominatedFyForm, parseVehicleFyOdometerForm } from "@/lib/logbook/parse";
 
 function fd(obj: Record<string, string>): FormData {
   const f = new FormData();
@@ -216,4 +216,24 @@ test("parseVehicleForm reads an optional whole-year effective life (#66)", () =>
     const e = parseVehicleForm(fd({ ...base, effectiveLifeYears: bad }));
     expect(!e.ok && e.fieldErrors.effectiveLifeYears).toMatch(/1 to 50/);
   }
+});
+
+describe("parseLogbookPeriodNominatedFyForm", () => {
+  const crossing = ["2025-06-10", "2025-09-10"] as const;
+  test("accepts the start FY", () => {
+    expect(parseLogbookPeriodNominatedFyForm(fd({ nominatedFy: "2024-25" }), ...crossing)).toEqual({ ok: true, value: { nominatedFy: "2024-25" } });
+  });
+  test("accepts the end FY", () => {
+    expect(parseLogbookPeriodNominatedFyForm(fd({ nominatedFy: "2025-26" }), ...crossing)).toEqual({ ok: true, value: { nominatedFy: "2025-26" } });
+  });
+  test("rejects a label that is neither FY, or a missing one", () => {
+    const bad = parseLogbookPeriodNominatedFyForm(fd({ nominatedFy: "2026-27" }), ...crossing);
+    expect(!bad.ok && bad.fieldErrors.nominatedFy).toMatch(/starts or ends in/);
+    const none = parseLogbookPeriodNominatedFyForm(fd({}), ...crossing);
+    expect(!none.ok && none.fieldErrors.nominatedFy).toMatch(/starts or ends in/);
+  });
+  test("rejects a period that does not cross 30 June", () => {
+    const r = parseLogbookPeriodNominatedFyForm(fd({ nominatedFy: "2024-25" }), "2024-07-01", "2024-09-22");
+    expect(!r.ok && r.fieldErrors.nominatedFy).toMatch(/crossing 30 June/);
+  });
 });
