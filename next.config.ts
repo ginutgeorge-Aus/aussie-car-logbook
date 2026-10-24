@@ -1,7 +1,13 @@
 import type { NextConfig } from "next";
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+import pkg from "./package.json";
 
 const nextConfig: NextConfig = {
+  // Inlined at build for the About card: version + deploy time of this copy.
+  env: {
+    APP_VERSION: pkg.version,
+    BUILD_TIME: new Date().toISOString(),
+  },
   experimental: {
     serverActions: {
       // Default is 1MB. The client compresses receipts to ~200KB, but a raw
