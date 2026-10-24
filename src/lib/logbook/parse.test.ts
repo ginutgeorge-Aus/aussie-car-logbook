@@ -228,12 +228,12 @@ describe("parseLogbookPeriodNominatedFyForm", () => {
   });
   test("rejects a label that is neither FY, or a missing one", () => {
     const bad = parseLogbookPeriodNominatedFyForm(fd({ nominatedFy: "2026-27" }), ...crossing);
-    expect(!bad.ok && bad.fieldErrors.nominatedFy).toBeDefined();
+    expect(!bad.ok && bad.fieldErrors.nominatedFy).toMatch(/starts or ends in/);
     const none = parseLogbookPeriodNominatedFyForm(fd({}), ...crossing);
-    expect(!none.ok && none.fieldErrors.nominatedFy).toBeDefined();
+    expect(!none.ok && none.fieldErrors.nominatedFy).toMatch(/starts or ends in/);
   });
   test("rejects a period that does not cross 30 June", () => {
     const r = parseLogbookPeriodNominatedFyForm(fd({ nominatedFy: "2024-25" }), "2024-07-01", "2024-09-22");
-    expect(!r.ok && r.fieldErrors.nominatedFy).toBeDefined();
+    expect(!r.ok && r.fieldErrors.nominatedFy).toMatch(/crossing 30 June/);
   });
 });
