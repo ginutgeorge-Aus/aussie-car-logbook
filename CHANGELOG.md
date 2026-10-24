@@ -6,6 +6,43 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Users deploy tagged releases, not `main`.
 
+## [0.4.0] — 2026-10-24
+
+ATO logbook compliance release. Every rule is cited in `docs/ato-rules.md`.
+
+### ⚠️ Before you upgrade
+- **Back up first.** Note a D1 Time Travel bookmark before deploying
+  (`wrangler d1 time-travel info ginoos-log-book`); to roll back, run
+  `wrangler d1 time-travel restore ginoos-log-book --bookmark=<bookmark>`.
+  Migrations `0002`–`0007` only add columns and tables; no data is removed.
+- **Existing logbook periods become invalid until you enter their start and
+  end odometer readings** (#49). Until then the income-tax car deduction is
+  **$0** and the report says why. BAS GST credits use the business % from
+  that year's trips instead of the logbook %, so they can change.
+- **Existing vehicles lose the assumed 1/11 GST credit on the car purchase
+  until you enter the GST from the tax invoice** (#46). Enter `0` for a
+  private sale.
+
+### Added
+- Logbook period odometer readings set total km (#49).
+- Odometer readings at the start (1 Jul) and end (30 Jun) of each income
+  year, with a report notice when one is missing (#51).
+- Business trips need a reason; trips can have an end date (#50).
+- Logbooks that cross 30 June: nominate the income year, and edit it later (#45, #68).
+- Recorded car-purchase GST instead of an assumed 1/11 (#46).
+- Per-vehicle effective life override for depreciation (#66).
+- Engine capacity on the vehicle (#76).
+- Printable ATO logbook summary at `/trips/logbook/[id]` (#53).
+
+### Changed
+- No valid logbook → no income-tax car deduction (#52).
+- Held-back GST stays out of the income-tax deduction; documented (#67).
+- One car-purchase eligibility rule shared by depreciation and GST (#69).
+
+### Fixed
+- Expense edit form: ABN auto-tick and the $1,000 hint (#60).
+- Field errors are linked to their inputs for screen readers (#57).
+
 ## [0.1.1] — 2026-09-15
 
 Deploy-flow fixes — v0.1.0 could not be deployed by following the README from a
