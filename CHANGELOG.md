@@ -43,6 +43,48 @@ ATO logbook compliance release. Every rule is cited in `docs/ato-rules.md`.
 - Expense edit form: ABN auto-tick and the $1,000 hint (#60).
 - Field errors are linked to their inputs for screen readers (#57).
 
+## [0.3.0] — 2026-10-22
+
+### Added
+- Photo-only receipts, and ATO tax-invoice GST hold-back: seller ABN and a
+  tax-invoice flag gate BAS GST credits over $82.50 (#59).
+
+## [0.2.0] — 2026-10-22
+
+### Added
+- Settings screen for GST registration and ABN (#32).
+- "Odometer" UI redesign: app shell, dark/light tokens, mobile cards (#33).
+
+### Fixed
+- Business % now comes from a valid logbook period (#36).
+- GST-exclusive depreciation and ATO car cost limits (#37).
+- Rounding, GST validation and BAS gating (#38).
+- PWA install behind Cloudflare Access, manifest id, template assets removed (#35).
+
+### Changed
+- Node.js 22+ is required (#56).
+- Dependency updates (Next, React, Cloudflare, TypeScript 6).
+
+## [0.1.3] — 2026-10-21
+
+### Fixed
+- Deploy: use `wrangler deploy` in CI, not `opennext` (#48).
+
+## [0.1.2] — 2026-10-21
+
+### Added
+- Non-technical user manual in the wiki, with auto-sync (#15).
+- Dashboard deploy guide; Workers Builds deploy with migrations on deploy (#17, #20).
+
+### Fixed
+- Forms keep input on error, reset on save, and confirm delete (#29).
+- Receipts: one-tap scan, compression, OCR fixes (#19).
+
+### Changed
+- Docs: AI-coded attribution and early-stage caveats (#16); deploy gotchas (#18).
+- CI: workflow write tokens scoped to job level (#34); link check excludes
+  Cloudflare and localhost URLs (#42).
+
 ## [0.1.1] — 2026-09-15
 
 Deploy-flow fixes — v0.1.0 could not be deployed by following the README from a
@@ -82,5 +124,10 @@ method, self-hosted on Cloudflare.
   / `preview` scripts and a documented setup flow.
 - **Auth** — delegated to Cloudflare Access (no in-app auth); setup documented.
 
+[0.4.0]: https://github.com/ginutgeorge-Aus/aussie-car-logbook/releases/tag/v0.4.0
+[0.3.0]: https://github.com/ginutgeorge-Aus/aussie-car-logbook/releases/tag/v0.3.0
+[0.2.0]: https://github.com/ginutgeorge-Aus/aussie-car-logbook/releases/tag/v0.2.0
+[0.1.3]: https://github.com/ginutgeorge-Aus/aussie-car-logbook/releases/tag/v0.1.3
+[0.1.2]: https://github.com/ginutgeorge-Aus/aussie-car-logbook/releases/tag/v0.1.2
 [0.1.1]: https://github.com/ginutgeorge-Aus/aussie-car-logbook/releases/tag/v0.1.1
 [0.1.0]: https://github.com/ginutgeorge-Aus/aussie-car-logbook/releases/tag/v0.1.0
