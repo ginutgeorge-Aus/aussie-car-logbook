@@ -49,6 +49,8 @@ export type VehicleRow = {
   purchaseGstCents: number | null;
   /** Self-assessed effective life in whole years; null = the ATO default (8). */
   effectiveLifeYears: number | null;
+  /** Engine capacity in whole cc (the ATO logbook records it); null = not recorded, e.g. an EV. */
+  engineCapacityCc: number | null;
 };
 
 export type ParseResult<T> =

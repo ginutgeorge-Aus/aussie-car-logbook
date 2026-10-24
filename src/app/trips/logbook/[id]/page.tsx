@@ -35,6 +35,7 @@ export default async function LogbookSummaryPage({ params }: PageProps<"/trips/l
   const cell = "border-b border-line px-3 py-2.5";
 
   const facts: [string, React.ReactNode][] = [
+    ["Engine capacity", vehicle.engineCapacityCc != null ? `${formatKm(vehicle.engineCapacityCc)} cc` : notRecorded],
     ["Period", `${period.startDate} to ${period.endDate}`],
     ...(crossesJune ? [["Logbook is for", `FY ${logbookFirstFy(period)}`] as [string, React.ReactNode]] : []),
     ["Odometer at start", odoStart != null ? `${formatKm(odoStart)} km` : notRecorded],

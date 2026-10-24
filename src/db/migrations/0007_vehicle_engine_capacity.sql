@@ -1,0 +1,1 @@
+ALTER TABLE `vehicle` ADD `engine_capacity_cc` integer;

@@ -18,6 +18,7 @@ export async function upsertVehicle(input: {
   purchaseCostCents: number | null;
   purchaseGstCents: number | null;
   effectiveLifeYears: number | null;
+  engineCapacityCc: number | null;
 }): Promise<void> {
   const db = await getDb();
   const existing = await getVehicle();

@@ -130,7 +130,7 @@ describe("buildFyReport", () => {
     const expenses = [expense({ amountInclCents: 11000, gstCents: 1000, date: "2024-08-01" })];
     const vehicle: VehicleRow = {
       id: 1, make: "Toyota", model: "Corolla", rego: null,
-      odoOpen: 0, odoClose: null, purchaseDate: "2024-07-01", purchaseCostCents: 4000000, purchaseGstCents: 363636, effectiveLifeYears: null,
+      odoOpen: 0, odoClose: null, purchaseDate: "2024-07-01", purchaseCostCents: 4000000, purchaseGstCents: 363636, effectiveLifeYears: null, engineCapacityCc: null,
     };
     const r = report({ trips, expenses, vehicle, settings: { gstRegistered: true }, logbookPeriods: [LOGBOOK_2024], fyLabel: "2024-25", today: TODAY });
 
@@ -146,7 +146,7 @@ describe("buildFyReport", () => {
     const trips = [trip({ odoStart: 0, odoEnd: 100, isBusiness: true })];
     const vehicle: VehicleRow = {
       id: 1, make: "Toyota", model: "Corolla", rego: null,
-      odoOpen: 0, odoClose: null, purchaseDate: "2099-07-01", purchaseCostCents: 4000000, purchaseGstCents: null, effectiveLifeYears: null,
+      odoOpen: 0, odoClose: null, purchaseDate: "2099-07-01", purchaseCostCents: 4000000, purchaseGstCents: null, effectiveLifeYears: null, engineCapacityCc: null,
     };
     const r = report({ trips, expenses: [], vehicle, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2099-00", today: TODAY });
     expect(r.annual.depreciationDeductionCents).toBe(0);
@@ -219,7 +219,7 @@ describe("buildFyReport", () => {
     const expenses = [expense({ amountInclCents: 11000, gstCents: 1000 })];
     const vehicle: VehicleRow = {
       id: 1, make: "Toyota", model: "Corolla", rego: null,
-      odoOpen: 0, odoClose: null, purchaseDate: "2024-07-01", purchaseCostCents: 4000000, purchaseGstCents: 363636, effectiveLifeYears: null,
+      odoOpen: 0, odoClose: null, purchaseDate: "2024-07-01", purchaseCostCents: 4000000, purchaseGstCents: 363636, effectiveLifeYears: null, engineCapacityCc: null,
     };
     const r = report({ trips, expenses, vehicle, settings: { gstRegistered: true }, logbookPeriods: [], fyLabel: "2024-25", today: TODAY });
     expect(r.annual.claimable).toBe(false);
@@ -239,7 +239,7 @@ describe("buildFyReport", () => {
   describe("car purchase GST credit", () => {
     const vehicle: VehicleRow = {
       id: 1, make: "Toyota", model: "Corolla", rego: null,
-      odoOpen: 0, odoClose: null, purchaseDate: "2025-11-20", purchaseCostCents: 7500000, purchaseGstCents: 681818, effectiveLifeYears: null,
+      odoOpen: 0, odoClose: null, purchaseDate: "2025-11-20", purchaseCostCents: 7500000, purchaseGstCents: 681818, effectiveLifeYears: null, engineCapacityCc: null,
     };
     // 80% business in FY 2025-26.
     const trips = [
