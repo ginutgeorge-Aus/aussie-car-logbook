@@ -33,6 +33,8 @@ export default async function LogbookSummaryPage({ params }: PageProps<"/trips/l
   const totalKm = odoStart != null && odoEnd != null ? odoEnd - odoStart : null;
   const notRecorded = <span className="text-muted">not recorded</span>;
   const cell = "border-b border-line px-3 py-2.5";
+  // Odometer columns drop out on phones so Type/Reason stay on screen; print keeps every column (ATO logbook).
+  const odoCol = "hidden sm:table-cell print:table-cell";
 
   const facts: [string, React.ReactNode][] = [
     ["Engine capacity", vehicle.engineCapacityCc != null ? `${formatKm(vehicle.engineCapacityCc)} cc` : notRecorded],
@@ -81,8 +83,8 @@ export default async function LogbookSummaryPage({ params }: PageProps<"/trips/l
               <thead>
                 <tr className="text-xs uppercase tracking-[0.05em] text-muted">
                   <th scope="col" className={`${cell} font-medium`}>Date</th>
-                  <th scope="col" className={`${cell} text-right font-medium`}>Start odometer</th>
-                  <th scope="col" className={`${cell} text-right font-medium`}>End odometer</th>
+                  <th scope="col" className={`${cell} ${odoCol} text-right font-medium`}>Start odometer</th>
+                  <th scope="col" className={`${cell} ${odoCol} text-right font-medium`}>End odometer</th>
                   <th scope="col" className={`${cell} text-right font-medium`}>km</th>
                   <th scope="col" className={`${cell} font-medium`}>Type</th>
                   <th scope="col" className={`${cell} font-medium`}>Reason</th>
@@ -94,8 +96,8 @@ export default async function LogbookSummaryPage({ params }: PageProps<"/trips/l
                     <th scope="row" className={`${cell} font-normal`}>
                       {t.endDate ? `${humanDate(t.date)} – ${humanDate(t.endDate, { withYear: true })}` : humanDate(t.date, { withYear: true })}
                     </th>
-                    <td className={`${cell} text-right font-mono`}>{formatKm(t.odoStart)}</td>
-                    <td className={`${cell} text-right font-mono`}>{formatKm(t.odoEnd)}</td>
+                    <td className={`${cell} ${odoCol} text-right font-mono`}>{formatKm(t.odoStart)}</td>
+                    <td className={`${cell} ${odoCol} text-right font-mono`}>{formatKm(t.odoEnd)}</td>
                     <td className={`${cell} text-right font-mono`}>{formatKm(tripKm(t))}</td>
                     <td className={cell}><TripType isBusiness={t.isBusiness} /></td>
                     <td className={cell}>{t.purpose || <span className="text-muted">—</span>}</td>
