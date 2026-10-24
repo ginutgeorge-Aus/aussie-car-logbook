@@ -41,7 +41,7 @@ export function VehicleForm({ vehicle }: { vehicle: VehicleRow | null }) {
         </label>
       </div>
       <label className="flex flex-col gap-1.5">
-        <span className={labelCls}>Engine capacity (cc, optional)</span>
+        <span className={labelCls}>Engine capacity (cc)</span>
         <input
           {...fe("engineCapacityCc").input}
           name="engineCapacityCc"
@@ -53,7 +53,7 @@ export function VehicleForm({ vehicle }: { vehicle: VehicleRow | null }) {
           defaultValue={vehicle?.engineCapacityCc ?? ""}
           className={`${inputCls} font-mono`}
         />
-        <span className="text-sm text-muted">The ATO logbook records it. Leave blank for an electric car.</span>
+        <span className="text-sm text-muted">Required in the ATO logbook for a petrol, diesel or hybrid car. Leave blank only for an electric car.</span>
         <FieldError {...fe("engineCapacityCc").error} />
       </label>
       <div className="grid grid-cols-2 gap-3">
