@@ -11,12 +11,14 @@ Users deploy tagged releases, not `main`.
 ATO logbook compliance release. Every rule is cited in `docs/ato-rules.md`.
 
 ### ⚠️ Before you upgrade
-- **Back up first.** D1 Time Travel can restore the database
-  (`wrangler d1 time-travel info ginoos-log-book`). Migrations `0002`–`0007`
-  only add columns and tables; no data is removed.
+- **Back up first.** Note a D1 Time Travel bookmark before deploying
+  (`wrangler d1 time-travel info ginoos-log-book`); to roll back, run
+  `wrangler d1 time-travel restore ginoos-log-book --bookmark=<bookmark>`.
+  Migrations `0002`–`0007` only add columns and tables; no data is removed.
 - **Existing logbook periods become invalid until you enter their start and
   end odometer readings** (#49). Until then the income-tax car deduction is
-  **$0** and the report says why. BAS GST credits are unaffected.
+  **$0** and the report says why. BAS GST credits use the business % from
+  that year's trips instead of the logbook %, so they can change.
 - **Existing vehicles lose the assumed 1/11 GST credit on the car purchase
   until you enter the GST from the tax invoice** (#46). Enter `0` for a
   private sale.
