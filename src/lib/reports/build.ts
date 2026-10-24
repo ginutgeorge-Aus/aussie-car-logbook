@@ -74,6 +74,29 @@ function missingCarLimitNotice(purchaseFy: string, omitted: string): string {
 }
 
 /**
+ * The vehicle's purchase, when it has the details every car-purchase figure
+ * needs (date + cost). One place for that guard, so the BAS credit, the
+ * depreciation base and the "GST not recorded" notice can't drift apart.
+ *
+ * `gstCents()` is the capped purchase GST; it throws when the purchase FY has
+ * no ATO car limit configured (callers turn that into a notice).
+ */
+function carPurchase(vehicle: VehicleRow | null) {
+  if (!vehicle?.purchaseDate || vehicle.purchaseCostCents == null) return null;
+  const { purchaseDate: dateISO, purchaseCostCents: costCents, purchaseGstCents, effectiveLifeYears } = vehicle;
+  return {
+    dateISO,
+    costCents,
+    effectiveLifeYears,
+    purchaseFy: financialYear(dateISO).label,
+    /** GST was never entered (null) — distinct from an entered 0 (private sale). */
+    gstUnrecorded: purchaseGstCents == null,
+    gstCents: () => carPurchaseGstCents({ purchaseGstCents, purchaseDateISO: dateISO }),
+  };
+}
+type CarPurchase = NonNullable<ReturnType<typeof carPurchase>>;
+
+/**
  * Business share of the car-purchase GST credit for the report FY: claimed only
  * when GST-registered and only in the FY of purchase, capped at 1/11 of that
  * FY's car limit, then multiplied by the business-use ratio.
@@ -82,18 +105,16 @@ function missingCarLimitNotice(purchaseFy: string, omitted: string): string {
  *   quarter (null when none is claimed), and a notice when the car limit is missing.
  */
 function carPurchaseCredit(input: {
-  vehicle: VehicleRow | null;
+  car: CarPurchase | null;
   gstRegistered: boolean;
   fyLabel: string;
   ratio: number;
 }): { creditCents: number; dateISO: string | null; notice: string | null } {
-  const { vehicle, gstRegistered, fyLabel, ratio } = input;
+  const { car, gstRegistered, fyLabel, ratio } = input;
   const none = { creditCents: 0, dateISO: null, notice: null };
-  if (!gstRegistered || !vehicle?.purchaseDate || vehicle.purchaseCostCents == null) return none;
-  if (financialYear(vehicle.purchaseDate).label !== fyLabel) return none;
+  if (!gstRegistered || !car || car.purchaseFy !== fyLabel) return none;
   try {
-    const gst = carPurchaseGstCents({ purchaseGstCents: vehicle.purchaseGstCents, purchaseDateISO: vehicle.purchaseDate });
-    return { creditCents: Math.round(gst * ratio), dateISO: vehicle.purchaseDate, notice: null };
+    return { creditCents: Math.round(car.gstCents() * ratio), dateISO: car.dateISO, notice: null };
   } catch {
     return { ...none, notice: missingCarLimitNotice(fyLabel, "the car purchase GST credit is omitted from the BAS") };
   }
@@ -159,15 +180,10 @@ export function buildFyReport(input: {
     );
   }
 
-  const purchase = carPurchaseCredit({ vehicle, gstRegistered: settings.gstRegistered, fyLabel, ratio });
+  const car = carPurchase(vehicle);
+  const purchase = carPurchaseCredit({ car, gstRegistered: settings.gstRegistered, fyLabel, ratio });
   if (purchase.notice) notices.push(purchase.notice);
-  if (
-    settings.gstRegistered &&
-    vehicle?.purchaseDate &&
-    vehicle.purchaseCostCents != null &&
-    vehicle.purchaseGstCents == null &&
-    financialYear(vehicle.purchaseDate).label <= fyLabel
-  ) {
+  if (settings.gstRegistered && car && car.gstUnrecorded && car.purchaseFy <= fyLabel) {
     notices.push(
       "The GST on the car purchase isn't recorded, so no GST credit is claimed for it and depreciation uses the full cost. " +
         "Enter the GST from the tax invoice on the Vehicle page (0 for a private sale).",
@@ -205,10 +221,10 @@ export function buildFyReport(input: {
   );
 
   let depreciationDeductionCents = 0;
-  if (vehicle?.purchaseDate && vehicle.purchaseCostCents != null && financialYear(vehicle.purchaseDate).label <= fyLabel) {
+  if (car && car.purchaseFy <= fyLabel) {
     try {
       // The cost base drops by the credit claimed in the purchase FY, at that FY's business share.
-      const purchaseFy = financialYear(vehicle.purchaseDate).label;
+      const { purchaseFy } = car;
       let purchaseRatio = ratio;
       if (purchaseFy !== fyLabel) {
         const purchaseUse = resolveBusinessUse({ trips, periods: logbookPeriods, fyLabel: purchaseFy, today });
@@ -220,20 +236,18 @@ export function buildFyReport(input: {
         }
       }
       const purchaseGstClaimedCents = settings.gstRegistered
-        ? Math.round(
-            carPurchaseGstCents({ purchaseGstCents: vehicle.purchaseGstCents, purchaseDateISO: vehicle.purchaseDate }) * purchaseRatio,
-          )
+        ? Math.round(car.gstCents() * purchaseRatio)
         : 0;
       const decline = depreciationForFy({
-        purchaseCostCents: vehicle.purchaseCostCents,
-        purchaseDateISO: vehicle.purchaseDate,
+        purchaseCostCents: car.costCents,
+        purchaseDateISO: car.dateISO,
         fyLabel,
         purchaseGstClaimedCents,
-        effectiveLifeYears: vehicle.effectiveLifeYears ?? undefined,
+        effectiveLifeYears: car.effectiveLifeYears ?? undefined,
       });
       depreciationDeductionCents = Math.round(decline * deductionRatio);
     } catch {
-      notices.push(missingCarLimitNotice(financialYear(vehicle.purchaseDate).label, "Depreciation is omitted"));
+      notices.push(missingCarLimitNotice(car.purchaseFy, "Depreciation is omitted"));
     }
   }
 
