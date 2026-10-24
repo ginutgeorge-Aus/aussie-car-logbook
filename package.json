@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "knip": "knip",
     "db:local": "wrangler d1 migrations apply DB --local",
-    "db:seed": "wrangler d1 execute DB --local --file src/db/seed.sql",
+    "db:seed": "wrangler d1 execute DB --local --file src/db/seed-reset.sql && wrangler d1 execute DB --local --file src/db/seed.sql",
     "db:remote": "wrangler d1 migrations apply DB --remote",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && wrangler d1 migrations apply DB --remote && opennextjs-cloudflare deploy",
