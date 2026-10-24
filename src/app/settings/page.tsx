@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSettings } from "@/lib/data/settings";
+import { AboutCard } from "@/components/AboutCard";
 import { SettingsForm } from "@/components/SettingsForm";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,7 @@ export default async function SettingsPage() {
         <Link href="/" className="text-sm underline">Dashboard</Link>
       </div>
       <SettingsForm settings={settings} />
+      <AboutCard />
     </main>
   );
 }
