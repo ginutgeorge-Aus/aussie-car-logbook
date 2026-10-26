@@ -21,7 +21,7 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv"
   },
   "dependencies": {
-    "drizzle-orm": "^0.45.2",
+    "drizzle-orm": "^0.45.4",
     "next": "16.4.2",
     "react": "19.3.1",
     "react-dom": "19.3.1"
@@ -33,7 +33,7 @@
     "@types/node": "^26",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "drizzle-kit": "^0.31.10",
+    "drizzle-kit": "^0.31.11",
     "eslint": "^9.39.5",
     "eslint-config-next": "16.3.4",
     "knip": "^6.39.0",
