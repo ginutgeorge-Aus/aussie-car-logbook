@@ -15,8 +15,8 @@ This improves on the manual [deploy-ui.md](deploy-ui.md) guide in one way:
   GitHub App on it, which needs write/admin access you don't have on upstream.
 
 > **Respects the tag-based release model.** `release` is a pointer you move to a
-> stable **tag** when you want to ship (see [CLAUDE.md](../CLAUDE.md) "Git /
-> release model"). Everyday work on `main` never deploys. Workers Builds has no
+> stable **tag** when you want to ship (see the README
+> [Deploy to Cloudflare](../README.md#deploy-to-cloudflare) section). Everyday work on `main` never deploys. Workers Builds has no
 > tag trigger, so a `release` branch is how you get tag-based deploys on it.
 
 ## Prerequisites
