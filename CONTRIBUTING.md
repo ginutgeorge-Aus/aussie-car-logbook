@@ -54,6 +54,35 @@ Found a vulnerability? Do **not** open a public issue — see [SECURITY.md](SECU
 `chore:`, `docs:`, `test:`, `refactor:`. Keep the subject ≤ 50 chars; explain
 *why* in the body when it isn't obvious.
 
+## Releases
+
+Releases are automated with [release-please](https://github.com/googleapis/release-please).
+
+- **PR titles drive the changelog.** PRs are squash-merged, so the PR title
+  (Conventional Commits, checked by `pr-title.yml`) becomes the commit on `main`.
+  `feat:`, `fix:`, `perf:`, `refactor:` and `docs:` appear in `CHANGELOG.md`;
+  `chore:`, `ci:`, `test:`, `build:` and `style:` are hidden. Use `feat!:` or a
+  `BREAKING CHANGE:` footer for breaking changes.
+- **A Release PR stays open.** release-please keeps one PR that bumps
+  `package.json` and updates `CHANGELOG.md`.
+- **Before merging it**, the maintainer hand-edits a **Before you upgrade**
+  section into the Release PR body and `CHANGELOG.md` for anything users must
+  know: migrations, data effects, required manual steps, backup advice.
+- **Merging the Release PR** creates the `vX.Y.Z` tag and GitHub Release.
+  It does **not** deploy. Deploying is a separate step: move the `release`
+  branch to the new tag as described in [docs/deploy-auto.md](docs/deploy-auto.md).
+
+### One-time setup (maintainer)
+
+PRs opened with the default `GITHUB_TOKEN` don't trigger CI, so the Release PR
+could never pass the required checks. Use a PAT instead:
+
+1. Create a **fine-grained personal access token**: repository access = only
+   this repo; permissions **Contents: Read and write** and
+   **Pull requests: Read and write**.
+2. Save it as the repository secret **`RELEASE_PLEASE_TOKEN`**
+   (Settings, Secrets and variables, Actions).
+
 ## Code of Conduct
 
 By participating you agree to the [Code of Conduct](CODE_OF_CONDUCT.md).
