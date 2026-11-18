@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
+import { AppFooter } from "@/components/AppFooter";
 import { AppNav } from "@/components/AppNav";
 import { manifestLinkProps } from "@/lib/pwa/manifest-link";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
@@ -54,7 +55,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="min-h-full flex flex-col bg-bg text-ink font-sans pt-safe md:pt-0">
         <AppNav />
-        <div className="flex-1 flex flex-col pb-tabbar md:pb-10">{children}</div>
+        <div className="flex-1 flex flex-col pb-tabbar md:pb-10">
+          {children}
+          <AppFooter />
+        </div>
         <ServiceWorkerRegister />
       </body>
     </html>

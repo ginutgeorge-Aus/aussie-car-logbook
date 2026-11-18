@@ -4,3 +4,6 @@ one\.dash\.cloudflare\.com
 
 # Local development server — not accessible in CI
 localhost:3000
+
+# ATO site — returns 403 to CI bots; links verified by hand each July (docs/ato-rules.md)
+ato\.gov\.au

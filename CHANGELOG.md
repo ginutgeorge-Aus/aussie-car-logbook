@@ -6,6 +6,24 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Users deploy tagged releases, not `main`.
 
+## [0.4.1] — 2026-10-29
+
+Small fixes and dependency updates. No database migrations.
+
+### Added
+- About card shows the app version, last-updated date, and links to the
+  changelog and issue tracker (#88).
+
+### Fixed
+- Printable logbook: Type and Reason columns show on phones (#85).
+- Local seed can be re-run and now includes odometer readings (#86).
+- Link-check false alarms from the ATO site; dead link in the auto-deploy
+  guide (#96).
+
+### Dependencies
+- `drizzle-orm` 0.45.4, `@opennextjs/cloudflare` 1.20.13, `wrangler`
+  4.152.0, plus dev-tool and GitHub Actions updates (#89–#94).
+
 ## [0.4.0] — 2026-10-24
 
 ATO logbook compliance release. Every rule is cited in `docs/ato-rules.md`.
